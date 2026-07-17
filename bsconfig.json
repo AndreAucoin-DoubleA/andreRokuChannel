@@ -1,0 +1,6 @@
+{
+  "rootDir": "src",
+  "files": ["**/*"],
+  "plugins": ["@rokucommunity/bslint"],
+  "lintConfig": "bslint.json"
+}

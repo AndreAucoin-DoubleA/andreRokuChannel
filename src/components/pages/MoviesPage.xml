@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="MoviesPage" extends="BasePage">
+    <script type="text/brightscript" uri="pkg:/components/pages/MoviesPage.brs"/>
+    <children>
+        <Label
+            translation="[60,40]"
+            text="Movies"
+            font="font:LargeBoldSystemFont"
+            color="#FFFFFF"/>
+        <LayoutGroup
+            translation="[60, 120]"
+            layoutDirection="vert"
+            itemSpacings="[15]">
+            <Label text="1. Spider Man Brand New Day" font="font:MediumSystemFont" color="#AAAACC" />
+        </LayoutGroup>
+    </children>
+    
+</component>

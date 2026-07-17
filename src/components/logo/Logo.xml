@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="logo" extends="Group">
+    <script type="text/brightscript" uri="pkg:/components/logo/Logo.brs" />
+    <children>
+        <Poster
+            id="appLogo"
+            uri="pkg:/images/andre_test_wordmark.png"
+            width="418"
+            height="128"/>
+    </children>
+</component>

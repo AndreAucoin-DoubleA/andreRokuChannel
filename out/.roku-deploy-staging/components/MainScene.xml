@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="MainScene" extends="Scene">
+    <script type="text/brightscript" uri="pkg:/components/MainScene.brs" />
+    <script type="text/brightscript" uri="pkg:/source/bslib.brs" />
+    <children>
+        <Rectangle width="1920" height="1080" color="#1a1a2e" />
+        <Group id="contentArea" translation="[400,0]">
+            <HomePage id="homePage" visible="true" />
+            <MoviesPage id="moviesPage" visible="false" />
+            <GamesPage id="gamesPage" visible="false" />
+        </Group>
+        <Animation id="contentSlide" duration="0.2" easeFunction="outQuad" optional="true">
+            <Vector2DFieldInterpolator id="contentSlideInterp" key="[0.0, 1.0]" keyValue="[[400,0],[400,0]]" fieldToInterp="contentArea.translation" />
+        </Animation>
+        <Logo id="mainSceneLogo" />
+        <SiteNav id="sideBar" translation="[40,100]" />
+    </children>
+</component>

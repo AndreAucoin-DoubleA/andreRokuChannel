@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="NavItem" extends="Group">
+    <script type="text/brightscript" uri="pkg:/components/siteNav/NavItem.brs" />
+
+    <interface>
+        <field id="itemContent" type="node" onChange="onContentChanged"/>
+        <field id="focusPercent" type="float" onChange="updateHighlight"/>
+        <field id="listHasFocus" type="boolean" onChange="updateHighlight"/>
+    </interface>
+
+    <children>
+        <Poster
+            id="highlight"
+            uri="pkg:/images/highlight_rounded.9.png"
+            blendColor="#6C3FA0"
+            width="300"
+            height="70"
+            opacity="0.0"/>
+        <Poster
+            id="icon"
+            translation="[20,15]"
+            width="40"
+            height="40"/>
+        <Label
+            id="label"
+            translation="[90,2]"
+            height="70"
+            vertAlign="center"
+            color="#888899"
+            font="font:MediumSystemFont"/>
+
+        <Animation id="collapseAnim" duration="0.2" easeFunction="outQuad" optional="true">
+            <FloatFieldInterpolator
+                id="fadeInterp"
+                key="[0.0, 1.0]"
+                keyValue="[1.0, 1.0]"
+                fieldToInterp="label.opacity"/>
+            <FloatFieldInterpolator
+                id="highlightWidthInterp"
+                key="[0.0, 1.0]"
+                keyValue="[300, 300]"
+                fieldToInterp="highlight.width"/>
+        </Animation>
+    </children>
+</component>

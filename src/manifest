@@ -1,0 +1,12 @@
+#Channel Identity
+title = Learning Roku Development Cycle
+major_version = 1
+minor_version = 0
+build_version = 1
+ui_resolutions=fhd
+
+#Channel Icon
+mm_icon_focus_hd=pkg:/images/channel-poster_hd.png
+
+#Splash Screen
+splash_screen_fhd=pkg:/images/splash_fhd.jpg

@@ -1,0 +1,19 @@
+{
+  "name": "learningrokudev",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "lint": "npx bslint",
+    "lint:fix": "npx bslint --fix",
+    "lint:usage": "npx bslint --checkUsage"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@rokucommunity/bslint": "^0.8.44",
+    "brighterscript": "^0.73.0"
+  }
+}
