@@ -2,6 +2,10 @@
 <component name="BasePage" extends="Group">
     <script type="text/brightscript" uri="pkg:/components/pages/BasePage.brs" />
 
+    <interface>
+        <function name="focusContent"/>
+    </interface>
+
     <children>
         <Rectangle
             id="pageBackground"

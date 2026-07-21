@@ -54,7 +54,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
     if key = "right" and m.focusOnSidebar
         m.focusOnSidebar = false
         m.sideBar.collapsed = true
-        m.pages[m.currentPageIndex].setFocus(true)
+        m.pages[m.currentPageIndex].callFunc("focusContent")
         return true
     end if
 

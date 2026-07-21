@@ -7,12 +7,13 @@
             text="Movies"
             font="font:LargeBoldSystemFont"
             color="#FFFFFF"/>
-        <LayoutGroup
+        <RowList
+            id="rowList"
             translation="[60, 120]"
-            layoutDirection="vert"
-            itemSpacings="[15]">
-            <Label text="1. Spider Man Brand New Day" font="font:MediumSystemFont" color="#AAAACC" />
-        </LayoutGroup>
+            itemComponentName="MoviePosterItem"
+            itemSize="[1360,300]"
+            rowItemSize="[[200,300]]"
+            rowItemSpacing="[[20,0]]"/>
     </children>
     
 </component>

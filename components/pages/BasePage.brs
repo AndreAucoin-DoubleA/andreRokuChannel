@@ -15,6 +15,10 @@ function page_width(navCollapsed as boolean) as float
     return 1480.0
 end function
 
+function focusContent() as boolean
+    return m.top.setFocus(true)
+end function
+
 sub onNavCollapsedChanged()
     m.bgWidthInterp.keyValue = [m.pageBackground.width, page_width(m.global.navCollapsed)]
     m.bgAnim.control = "stop"
