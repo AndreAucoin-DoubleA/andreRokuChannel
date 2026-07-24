@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="MovieDetails" extends="Group">
+    <script type="text/brightscript" uri="pkg:/components/details/MovieDetails.brs"/>
+
+    <interface>
+        <field id="movieContent" type="node" onChange="onMovieContentChanged"/>
+    </interface>
+
+    <children>
+        <Rectangle width="1920" height="1080" color="#0f0f23" opacity="0.96"/>
+
+        <Poster
+            id="poster"
+            width="400"
+            height="600"
+            translation="[120,180]"
+            loadDisplayMode="scaleToZoom"/>
+
+        <Label
+            id="title"
+            translation="[580,180]"
+            width="1100"
+            wrap="true"
+            font="font:LargeBoldSystemFont"
+            color="#FFFFFF"/>
+
+        <Label
+            id="meta"
+            translation="[580,300]"
+            font="font:MediumSystemFont"
+            color="#AAAACC"/>
+
+        <Label
+            id="desc"
+            translation="[580,380]"
+            width="1100"
+            wrap="true"
+            font="font:MediumSystemFont"
+            color="#DDDDEE"/>
+
+        <Label
+            translation="[580,760]"
+            text="Press Back to return"
+            font="font:SmallSystemFont"
+            color="#8888AA"/>
+    </children>
+</component>

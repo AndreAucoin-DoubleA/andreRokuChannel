@@ -2,14 +2,11 @@
 <component name="MainScene" extends="Scene">
     <script type="text/brightscript" uri="pkg:/components/MainScene.brs" />
     <script type="text/brightscript" uri="pkg:/source/theme.brs" />
+    <script type="text/brightscript" uri="pkg:/source/config.brs" />
     <children>
         <Poster id="sceneBackground" width="1920" height="1080"/>
 
-        <Group id="contentArea" translation="[400,0]">
-            <HomePage id="homePage" visible="true"/>
-            <MoviesPage id="moviesPage" visible="false"/>
-            <GamesPage id="gamesPage" visible="false"/>
-        </Group>
+        <Group id="contentArea" translation="[400,0]"/>
 
         <Animation id="contentSlide" duration="0.2" easeFunction="outQuad" optional="true">
             <Vector2DFieldInterpolator

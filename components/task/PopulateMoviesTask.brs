@@ -4,44 +4,56 @@ end sub
 
 sub fetchMovies()
     config = getMovieConfig()
-    url = config.baseUrl + "/movie/popular?api_key=" + config.apiKey + "&page=1"
+    rows = getMoviePaths(config.baseUrl, config.apiKey)
 
-    request = CreateObject("roUrlTransfer")
     port = CreateObject("roMessagePort")
+    pending = {}
+    results = {}
 
-    request.SetMessagePort(port)
-    request.SetCertificatesFile("common:/certs/ca-bundle.crt")
+    for each row in rows
+        request = CreateObject("roUrlTransfer")
+        request.SetMessagePort(port)
+        request.SetCertificatesFile("common:/certs/ca-bundle.crt")
+        request.InitClientCertificates()
+        request.SetUrl(row.path)
 
-    request.InitClientCertificates()
-    request.SetUrl(url)
+        if request.AsyncGetToString()
+            id = request.GetIdentity().ToStr()
+            pending[id] = { request: request, title: row.title }
+        end if
+    end for
 
-    if request.AsyncGetToString()
-        while true
-            msg = wait(0, port)
-            if type(msg) = "roUrlEvent"
-                code = msg.GetResponseCode()
-
-                if code = 200
-                    json = ParseJson(msg.GetString())
-                    content = BuildMoviesContentNode(json)
-                    print "DEBUG built rows: "; content.GetChildCount(); " items in row 0: "; content.GetChild(0).GetChildCount()
-                    m.top.content = content
-                else
-                    print "TMDB request failed with code: "; code
-                    m.top.content = invalid
+    while pending.Count() > 0
+        msg = wait(0, port)
+        if type(msg) = "roUrlEvent"
+            id = msg.GetSourceIdentity().ToStr()
+            entry = pending[id]
+            if entry <> invalid
+                if msg.GetResponseCode() = 200
+                    results[entry.title] = ParseJson(msg.GetString())
                 end if
-                exit while
-            else if msg = invalid
-                request.AsyncCancel()
-                exit while
+                pending.Delete(id)
             end if
-        end while
-    end if
+        else if msg = invalid
+            for each id in pending
+                pending[id].request.AsyncCancel()
+            end for
+            pending.Clear()
+        end if
+    end while
+
+    root = CreateObject("roSGNode", "ContentNode")
+    for each row in rows
+        addMovieRow(root, row.title, results[row.title])
+    end for
+
+    m.top.content = root
 end sub
 
-function BuildMoviesContentNode(json as object) as object
-    root = CreateObject("roSGNode", "ContentNode")
+sub addMovieRow(root as object, title as string, json as object)
     row = root.CreateChild("ContentNode")
+    row.title = title
+    if json = invalid then return
 
     for each movie in json.results
         item = row.CreateChild("ContentNode")
@@ -55,6 +67,4 @@ function BuildMoviesContentNode(json as object) as object
         item.SetField("rating", movie.vote_average.ToStr())
         item.SetField("releaseDate", movie.release_date)
     end for
-    return root
-end function
-
+end sub

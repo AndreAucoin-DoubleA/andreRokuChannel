@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="MoviePosterItem" extends="Group">
+    <script type="text/brightscript" uri="pkg:/components/rowList/MoviePosterItem.brs" />
+
+    <interface>
+        <field id="itemContent" type="node" onChange="onContentChanged"/>
+        <field id="focusPercent" type="float" onChange="onFocusPercentChanged"/>
+        <field id="rowFocusPercent" type="float" onChange="onFocusPercentChanged"/>
+    </interface>
+
+    <children>
+        <Poster
+            id="poster"
+            width="200"
+            height="300"
+            translation="[15,32]"
+            scaleRotateCenter="[100,0]"
+            loadDisplayMode="scaleToZoom"/>
+        <Animation id="focusAnim" duration="0.2" easeFunction="outQuad">
+            <Vector2DFieldInterpolator id="scaleInterp" key="[0.0,1.0]" keyValue="[[1.0,1.0],[1.15,1.15]]" fieldToInterp="poster.scale"/>
+            <Vector2DFieldInterpolator id="transInterp" key="[0.0,1.0]" keyValue="[[15,32],[15,12]]" fieldToInterp="poster.translation"/>
+        </Animation>
+    </children>
+</component>

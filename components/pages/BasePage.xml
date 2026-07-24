@@ -5,20 +5,4 @@
     <interface>
         <function name="focusContent"/>
     </interface>
-
-    <children>
-        <Rectangle
-            id="pageBackground"
-            width="1480"
-            height="1080"
-            opacity="0.0"/>
-
-        <Animation id="bgAnim" duration="0.2" easeFunction="outQuad" optional="true">
-            <FloatFieldInterpolator
-                id="bgWidthInterp"
-                key="[0.0, 1.0]"
-                keyValue="[1480, 1480]"
-                fieldToInterp="pageBackground.width"/>
-        </Animation>
-    </children>
 </component>
