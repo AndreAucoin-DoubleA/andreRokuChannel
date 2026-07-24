@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="MoviesPage" extends="BasePage">
+    <script type="text/brightscript" uri="pkg:/components/pages/MoviesPage.brs"/>
+    <interface>
+        <field id="selectedMovie" type="node" alwaysNotify="true"/>
+    </interface>
+    <children>
+        <Label
+            translation="[60,40]"
+            text="Movies"
+            font="font:LargeBoldSystemFont"
+            color="#FFFFFF"/>
+        <RowList
+            id="rowList"
+            showRowLabel="true"
+            translation="[40, 150]"
+            itemComponentName="MoviePosterItem"
+            numRows="2"
+            vertFocusAnimationStyle="floatingFocus"
+            drawFocusFeedback= "false"
+            itemSize="[1700,400]"
+            rowItemSize="[[220,400]]"
+            rowItemSpacing="[[40,0]]"/>
+        <Label
+            id="loadingLabel"
+            translation="[60,120]"
+            text="Loading movies..."
+            font="font:MediumSystemFont"
+            color="#AAAACC"
+            visible="false"/>
+    </children>
+</component>

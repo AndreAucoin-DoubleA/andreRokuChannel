@@ -8,7 +8,6 @@ sub init()
 
     m.global.observeField("navCollapsed", "onCollapsedChanged")
 
-    ' set the initial state directly, no animation
     collapsed = m.global.navCollapsed
     m.label.opacity = bool_to_opacity(not collapsed)
     m.highlight.width = nav_width(collapsed)

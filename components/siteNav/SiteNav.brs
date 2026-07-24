@@ -5,9 +5,9 @@ sub init()
     m.widthInterp = m.top.findNode("widthInterp")
 
     content = CreateObject("roSGNode", "ContentNode")
-    addItem(content, "Home", "pkg:/images/home_icon.png")
-    addItem(content, "Movies", "pkg:/images/settings_icon.png")
-    addItem(content, "Games", "pkg:/images/menu_icon.png")
+    for each page in PageRegistry()
+        if page.type = "nav" then addItem(content, page.label, page.icon)
+    end for
     m.menuList.content = content
 
     m.menuList.observeField("itemFocused", "onFocusChanged")

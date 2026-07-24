@@ -1,6 +1,11 @@
 {
-  "rootDir": "src",
-  "files": ["**/*"],
+  "rootDir": ".",
+  "files": [
+    "manifest",
+    "source/**/*",
+    "components/**/*",
+    "images/**/*"
+  ],
   "plugins": ["@rokucommunity/bslint"],
   "lintConfig": "bslint.json"
 }

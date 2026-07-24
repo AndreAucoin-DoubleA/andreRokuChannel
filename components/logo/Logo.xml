@@ -4,7 +4,7 @@
     <children>
         <Poster
             id="appLogo"
-            uri="pkg:/images/andre_test_wordmark.png"
+            uri="pkg:/images/andre_test_logo.png"
             width="418"
             height="128"/>
     </children>
