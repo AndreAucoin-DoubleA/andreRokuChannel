@@ -105,6 +105,13 @@ sub closeDetails()
     if m.currentPage <> invalid then m.currentPage.callFunc("focusContent")
 end sub
 
+sub customSuspend(arg as dynamic)
+end sub
+
+sub customResume(arg as dynamic)
+    m.top.signalBeacon("AppResumeComplete")
+end sub
+
 function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
 
