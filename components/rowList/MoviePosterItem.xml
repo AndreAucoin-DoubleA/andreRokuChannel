@@ -15,7 +15,11 @@
             height="300"
             translation="[15,32]"
             scaleRotateCenter="[100,0]"
-            loadDisplayMode="scaleToZoom"/>
+            loadDisplayMode="scaleToZoom"
+            loadWidth="200"
+            loadHeight="300"
+            loadingBitmapUri="pkg:/images/poster_placeholder_hd.png"
+            failedBitmapUri="pkg:/images/poster_placeholder_hd.png"/>
         <Animation id="focusAnim" duration="0.2" easeFunction="outQuad">
             <Vector2DFieldInterpolator id="scaleInterp" key="[0.0,1.0]" keyValue="[[1.0,1.0],[1.15,1.15]]" fieldToInterp="poster.scale"/>
             <Vector2DFieldInterpolator id="transInterp" key="[0.0,1.0]" keyValue="[[15,32],[15,12]]" fieldToInterp="poster.translation"/>

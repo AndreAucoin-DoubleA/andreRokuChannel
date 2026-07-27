@@ -61,7 +61,7 @@ sub addMovieRow(root as object, title as string, json as object)
         item.SetField("description", movie.overview)
 
         if movie.poster_path <> invalid
-            item.SetField("HDPosterUrl", "https://image.tmdb.org/t/p/w500" + movie.poster_path)
+            item.SetField("HDPosterUrl", "https://image.tmdb.org/t/p/w342" + movie.poster_path)
         end if
 
         item.SetField("rating", movie.vote_average.ToStr())
