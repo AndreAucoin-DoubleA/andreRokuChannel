@@ -6,6 +6,8 @@ function getMovieConfig() as object
     }
 end function
 
+
+
 function getMoviePaths(baseUrl as string, apiKey as string) as object
     return [
         { title: "Movie - Popular", path: baseUrl + "/movie/popular?api_key=" + apiKey + "&page=1" }

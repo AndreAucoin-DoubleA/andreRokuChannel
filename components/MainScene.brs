@@ -83,7 +83,7 @@ sub onMovieSelected(msg as object)
     m.details = getPageNode(pageById("details"))
     m.details.movieContent = movie
     m.details.visible = true
-    m.details.setFocus(true)
+    m.details.callFunc("focusPlayButton")
     m.detailsOpen = true
 end sub
 

@@ -4,6 +4,7 @@
 
     <interface>
         <field id="movieContent" type="node" onChange="onMovieContentChanged"/>
+        <function name="focusPlayButton"/>
     </interface>
 
     <children>
@@ -38,10 +39,10 @@
             font="font:MediumSystemFont"
             color="#DDDDEE"/>
 
-        <Label
-            translation="[580,760]"
-            text="Press Back to return"
-            font="font:SmallSystemFont"
-            color="#8888AA"/>
+        <CustomButton
+            id="playButton"
+            text="Play"
+            width="260"
+            translation="[580, 710]"/>
     </children>
 </component>
