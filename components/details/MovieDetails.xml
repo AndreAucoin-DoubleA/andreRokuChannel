@@ -44,5 +44,11 @@
             text="Play"
             width="260"
             translation="[580, 710]"/>
+
+        <Video
+            id="videoPlayer"
+            width="1920"
+            height="1080"
+            visible="false"/>
     </children>
 </component>
