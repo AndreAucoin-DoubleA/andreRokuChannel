@@ -83,7 +83,7 @@ sub onMovieSelected(msg as object)
     m.details = getPageNode(pageById("details"))
     m.details.movieContent = movie
     m.details.visible = true
-    m.details.setFocus(true)
+    m.details.callFunc("focusPlayButton")
     m.detailsOpen = true
 end sub
 
@@ -103,6 +103,13 @@ sub closeDetails()
     m.details.visible = false
     m.detailsOpen = false
     if m.currentPage <> invalid then m.currentPage.callFunc("focusContent")
+end sub
+
+sub customSuspend(arg as dynamic)
+end sub
+
+sub customResume(arg as dynamic)
+    m.top.signalBeacon("AppResumeComplete")
 end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
