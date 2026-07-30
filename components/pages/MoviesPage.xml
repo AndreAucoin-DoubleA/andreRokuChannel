@@ -1,10 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="MoviesPage" extends="BasePage">
     <script type="text/brightscript" uri="pkg:/components/pages/MoviesPage.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/config.brs"/>
     <interface>
         <field id="selectedMovie" type="node" alwaysNotify="true"/>
     </interface>
     <children>
+        <Group id="heroGroup" opacity="0" visible="false">
+            <MaskGroup
+                id="itemSelectBackgroundMask"
+                translation="[460, 0]"
+                maskUri="pkg:/images/backdrop_corner_fade.png"
+                maskSize="[1300,680]"
+                maskOffset="[0,0]">
+                <Poster
+                    id="itemSelectBackground"
+                    width="1300"
+                    height="680"
+                    loadDisplayMode="scaleToZoom"
+                    visible="false"/>
+            </MaskGroup>
+
+            <Poster
+                id="movieLogo"
+                translation="[100, 140]"
+                width="420"
+                height="140"
+                loadDisplayMode="scaleToFit"
+                visible="false"/>
+
+            <Label
+                id="movieTitleLabel"
+                translation="[100, 140]"
+                width="420"
+                height="140"
+                font="font:LargeBoldSystemFont"
+                color="#FFFFFF"
+                vertAlign="top"
+                wrap="true"
+                visible="false"/>
+        </Group>
+
+        <Animation id="heroFadeAnim" duration="0.35" easeFunction="outQuad">
+            <FloatFieldInterpolator
+                id="heroFadeOpacityInterp"
+                key="[0,1]"
+                keyValue="[0,1]"
+                fieldToInterp="heroGroup.opacity"/>
+        </Animation>
+
         <RowList
             id="rowList"
             showRowLabel="true"
@@ -27,5 +71,13 @@
             font="font:MediumSystemFont"
             color="#AAAACC"
             visible="false"/>
+
+        <Poster
+            id="rightFade"
+            translation="[1680,0]"
+            width="260"
+            height="1080"
+            loadDisplayMode="scaleToFill"
+            uri="pkg:/images/movies_right_fade.png"/>
     </children>
 </component>
