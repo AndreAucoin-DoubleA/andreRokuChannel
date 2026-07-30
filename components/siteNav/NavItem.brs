@@ -20,7 +20,7 @@ end function
 
 function nav_width(collapsed as boolean) as float
     if collapsed then return 80.0
-    return 300.0
+    return 250.0
 end function
 
 sub onContentChanged()

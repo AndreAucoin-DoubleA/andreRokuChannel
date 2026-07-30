@@ -13,7 +13,7 @@
             id="highlight"
             uri="pkg:/images/highlight_rounded.9.png"
             blendColor="#6C3FA0"
-            width="300"
+            width="250"
             height="70"
             opacity="0.0"/>
         <Poster
@@ -38,7 +38,7 @@
             <FloatFieldInterpolator
                 id="highlightWidthInterp"
                 key="[0.0, 1.0]"
-                keyValue="[300, 300]"
+                keyValue="[250, 250]"
                 fieldToInterp="highlight.width"/>
         </Animation>
     </children>

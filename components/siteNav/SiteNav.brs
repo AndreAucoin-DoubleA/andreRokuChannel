@@ -1,8 +1,5 @@
 sub init()
     m.menuList = m.top.findNode("menuList")
-    m.navBackground = m.top.findNode("navBackground")
-    m.collapseAnim = m.top.findNode("collapseAnim")
-    m.widthInterp = m.top.findNode("widthInterp")
 
     content = CreateObject("roSGNode", "ContentNode")
     for each page in PageRegistry()
@@ -24,15 +21,6 @@ sub onFocusChanged()
 end sub
 
 sub onCollapsedChanged()
-    if m.top.collapsed
-        targetWidth = 100
-    else
-        targetWidth = 300
-    end if
-
-    m.widthInterp.keyValue = [m.navBackground.width, targetWidth]
-    m.collapseAnim.control = "stop"
-    m.collapseAnim.control = "start"
     m.global.navCollapsed = m.top.collapsed
 end sub
 

@@ -9,17 +9,30 @@
     <children>
         <Poster id="sceneBackground" width="1920" height="1080"/>
 
-        <Group id="contentArea" translation="[400,0]"/>
+        <Group id="contentArea" translation="[160,0]"/>
 
-        <Animation id="contentSlide" duration="0.2" easeFunction="outQuad" optional="true">
-            <Vector2DFieldInterpolator
-                id="contentSlideInterp"
-                key="[0.0, 1.0]"
-                keyValue="[[400,0],[400,0]]"
-                fieldToInterp="contentArea.translation"/>
+        <Poster
+            id="navFade"
+            translation="[0,0]"
+            width="140"
+            height="1080"
+            opacity="0.3"
+            loadDisplayMode="scaleToFill"
+            uri="pkg:/images/nav_fade.png"/>
+
+        <Animation id="navFadeAnim" duration="0.2" easeFunction="outQuad">
+            <FloatFieldInterpolator
+                id="navFadeWidthInterp"
+                key="[0,1]"
+                keyValue="[140,140]"
+                fieldToInterp="navFade.width"/>
+            <FloatFieldInterpolator
+                id="navFadeOpacityInterp"
+                key="[0,1]"
+                keyValue="[0.3,0.3]"
+                fieldToInterp="navFade.opacity"/>
         </Animation>
 
-        <Logo id="mainSceneLogo"/>
         <SiteNav id="sideBar" translation="[40,100]"/>
 
         <Poster
@@ -30,5 +43,4 @@
             loadDisplayMode="scaleToFill"
             uri="pkg:/images/bottom_fade.png"/>
     </children>
-    
 </component>

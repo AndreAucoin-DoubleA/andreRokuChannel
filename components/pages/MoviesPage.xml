@@ -15,14 +15,14 @@
             vertFocusAnimationStyle="fixedFocus"
             drawFocusFeedback="false"
             numRenderPasses="2"
-            itemSize="[1700,290]"
+            itemSize="[1800,290]"
             itemSpacing="[0,40]"
             rowItemSize="[[376,220]]"
             rowLabelOffset="[[25,25]]"
             rowItemSpacing="[[30,0]]"/>
         <Label
             id="loadingLabel"
-            translation="[60,120]"
+            translation="[40,120]"
             text="Loading movies..."
             font="font:MediumSystemFont"
             color="#AAAACC"

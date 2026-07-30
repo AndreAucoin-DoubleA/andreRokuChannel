@@ -16,7 +16,7 @@ sub Main()
     print "Channel available memory (KB): "; m.appMemoryMonitor.GetChannelAvailableMemory()
 
     globals = screen.getGlobalNode()
-    globals.addFields({ navCollapsed: false })
+    globals.addFields({ navCollapsed: true })
 
     screen.CreateScene("MainScene")
     screen.show()
