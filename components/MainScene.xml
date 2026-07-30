@@ -21,6 +21,14 @@
 
         <Logo id="mainSceneLogo"/>
         <SiteNav id="sideBar" translation="[40,100]"/>
+
+        <Poster
+            id="bottomFade"
+            translation="[0,880]"
+            width="1920"
+            height="200"
+            loadDisplayMode="scaleToFill"
+            uri="pkg:/images/bottom_fade.png"/>
     </children>
     
 </component>

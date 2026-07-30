@@ -8,7 +8,7 @@
         <RowList
             id="rowList"
             showRowLabel="true"
-            translation="[40, 100]"
+            translation="[40, 530]"
             itemComponentName="MoviePosterItem"
             numRows="3"
             rowFocusAnimationStyle="fixedFocus"
