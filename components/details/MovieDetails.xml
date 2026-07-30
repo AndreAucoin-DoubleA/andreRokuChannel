@@ -10,12 +10,18 @@
     <children>
         <Rectangle width="1920" height="1080" color="#0f0f23" opacity="0.96"/>
 
-        <Poster
-            id="poster"
-            width="400"
-            height="600"
+        <MaskGroup
+            id="posterMask"
             translation="[120,180]"
-            loadDisplayMode="scaleToZoom"/>
+            maskUri="pkg:/images/poster_mask.png"
+            maskSize="[400,600]"
+            maskOffset="[0,0]">
+            <Poster
+                id="poster"
+                width="400"
+                height="600"
+                loadDisplayMode="scaleToZoom"/>
+        </MaskGroup>
 
         <Label
             id="title"

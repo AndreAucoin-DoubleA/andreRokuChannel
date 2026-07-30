@@ -11,9 +11,9 @@ end sub
 
 sub onMovieSelected()
     sel = m.rowList.rowItemSelected
-    if sel = invalid or m.rowList.content = invalid then return
+    if sel = invalid or sel.Count() < 2 then return
 
-    row = m.rowList.content.getChild(sel[0])
+    row = m.rootContent.getChild(sel[0])
     if row = invalid then return
 
     m.top.selectedMovie = row.getChild(sel[1])
@@ -51,5 +51,3 @@ sub onLoadComplete()
         m.loadingLabel.visible = true
     end if
 end sub
-
-

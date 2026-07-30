@@ -81,7 +81,9 @@ sub addMovieRow(root as object, title as string, json as object)
         item = row.CreateChild("ContentNode")
         item.title = movie.title
         item.SetField("description", movie.overview)
-        if movie.poster_path <> invalid
+        if movie.backdrop_path <> invalid
+            item.SetField("HDPosterUrl", "https://image.tmdb.org/t/p/w300" + movie.backdrop_path)
+        else if movie.poster_path <> invalid
             item.SetField("HDPosterUrl", "https://image.tmdb.org/t/p/w342" + movie.poster_path)
         end if
         item.SetField("rating", movie.vote_average.ToStr())

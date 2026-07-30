@@ -60,5 +60,3 @@ function onKeyEvent(key as string, press as boolean) as boolean
     end if
     return false
 end function
-
-

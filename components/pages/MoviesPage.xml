@@ -5,22 +5,21 @@
         <field id="selectedMovie" type="node" alwaysNotify="true"/>
     </interface>
     <children>
-        <Label
-            translation="[60,40]"
-            text="Movies"
-            font="font:LargeBoldSystemFont"
-            color="#FFFFFF"/>
         <RowList
             id="rowList"
             showRowLabel="true"
-            translation="[40, 150]"
+            translation="[40, 100]"
             itemComponentName="MoviePosterItem"
-            numRows="2"
-            vertFocusAnimationStyle="floatingFocus"
-            drawFocusFeedback= "false"
-            itemSize="[1700,400]"
-            rowItemSize="[[220,400]]"
-            rowItemSpacing="[[40,0]]"/>
+            numRows="3"
+            rowFocusAnimationStyle="fixedFocus"
+            vertFocusAnimationStyle="fixedFocus"
+            drawFocusFeedback="false"
+            numRenderPasses="2"
+            itemSize="[1700,290]"
+            itemSpacing="[0,40]"
+            rowItemSize="[[376,220]]"
+            rowLabelOffset="[[25,25]]"
+            rowItemSpacing="[[30,0]]"/>
         <Label
             id="loadingLabel"
             translation="[60,120]"
