@@ -9,7 +9,9 @@ sub fetchLogo()
         return
     end if
 
-    url = m.top.baseUrl + "/movie/" + movieId + "/images?api_key=" + m.top.apiKey
+    config = getMovieConfig()
+
+    url = config.baseUrl + "/movie/" + movieId + "/images?api_key=" + config.apiKey
 
     request = CreateObject("roUrlTransfer")
     port = CreateObject("roMessagePort")

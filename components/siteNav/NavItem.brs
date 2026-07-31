@@ -9,16 +9,16 @@ sub init()
     m.global.observeField("navCollapsed", "onCollapsedChanged")
 
     collapsed = m.global.navCollapsed
-    m.label.opacity = bool_to_opacity(not collapsed)
-    m.highlight.width = nav_width(collapsed)
+    m.label.opacity = labelOpacity(collapsed)
+    m.highlight.width = highlightWidth(collapsed)
 end sub
 
-function bool_to_opacity(visible as boolean) as float
-    if visible then return 1.0
-    return 0.0
+function labelOpacity(collapsed as boolean) as float
+    if collapsed then return 0.0
+    return 1.0
 end function
 
-function nav_width(collapsed as boolean) as float
+function highlightWidth(collapsed as boolean) as float
     if collapsed then return 80.0
     return 250.0
 end function
@@ -31,26 +31,22 @@ end sub
 
 sub updateHighlight()
     p = m.top.focusPercent
-    opacity = p
-    if not m.top.listHasFocus
-        opacity = opacity * 0.45
+
+    dimFactor = 1.0
+    if not m.top.listHasFocus then dimFactor = 0.45
+    m.highlight.opacity = p * dimFactor
+
+    if p > 0.5
+        m.label.color = &hFFFFFFFF
+    else
+        m.label.color = &h888899FF
     end if
-    m.highlight.opacity = opacity
-
-    r = lerp(&h88, &hFF, p)
-    g = lerp(&h88, &hFF, p)
-    b = lerp(&h99, &hFF, p)
-    m.label.color = (r << 24) + (g << 16) + (b << 8) + &hFF
 end sub
-
-function lerp(low as integer, high as integer, percent as float) as integer
-    return low + int((high - low) * percent)
-end function
 
 sub onCollapsedChanged()
     collapsed = m.global.navCollapsed
-    m.fadeInterp.keyValue = [m.label.opacity, bool_to_opacity(not collapsed)]
-    m.highlightWidthInterp.keyValue = [m.highlight.width, nav_width(collapsed)]
+    m.fadeInterp.keyValue = [m.label.opacity, labelOpacity(collapsed)]
+    m.highlightWidthInterp.keyValue = [m.highlight.width, highlightWidth(collapsed)]
     m.collapseAnim.control = "stop"
     m.collapseAnim.control = "start"
 end sub

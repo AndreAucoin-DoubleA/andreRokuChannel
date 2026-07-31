@@ -119,10 +119,7 @@ sub loadLogo(movie as object)
         return
     end if
 
-    config = getMovieConfig()
     m.logoTask.control = "stop"
-    m.logoTask.baseUrl = config.baseUrl
-    m.logoTask.apiKey = config.apiKey
     m.logoTask.movieId = movieId
     m.logoTask.control = "RUN"
 end sub

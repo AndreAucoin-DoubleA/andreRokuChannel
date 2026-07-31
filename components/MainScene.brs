@@ -97,13 +97,13 @@ end sub
 
 sub focusContentArea()
     m.focusOnSidebar = false
-    m.sideBar.collapsed = true
+    m.global.navCollapsed = true
     if m.currentPage <> invalid then m.currentPage.callFunc("focusContent")
 end sub
 
 sub focusSidebar()
     m.focusOnSidebar = true
-    m.sideBar.collapsed = false
+    m.global.navCollapsed = false
     m.sideBar.callFunc("setFocusToList")
 end sub
 

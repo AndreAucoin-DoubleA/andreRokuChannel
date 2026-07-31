@@ -4,8 +4,7 @@
     <script type="text/brightscript" uri="pkg:/source/config.brs" />
 
     <interface>
-        <field id="itemFocused" type="integer" value="0" alwaysNotify="true"/>
-        <field id="collapsed" type="boolean" value="true" onChange="onCollapsedChanged"/>
+        <field id="itemFocused" type="integer" alias="menuList.itemFocused"/>
         <function name="setFocusToList"/>
     </interface>
 
