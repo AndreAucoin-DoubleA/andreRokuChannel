@@ -4,8 +4,10 @@ sub init()
 
     m.sideBar = m.top.findNode("sideBar")
     m.contentArea = m.top.findNode("contentArea")
-    m.contentSlide = m.top.findNode("contentSlide")
-    m.contentSlideInterp = m.top.findNode("contentSlideInterp")
+    m.navFade = m.top.findNode("navFade")
+    m.navFadeAnim = m.top.findNode("navFadeAnim")
+    m.navFadeWidthInterp = m.top.findNode("navFadeWidthInterp")
+    m.navFadeOpacityInterp = m.top.findNode("navFadeOpacityInterp")
     m.global.observeField("navCollapsed", "onNavCollapsedChanged")
 
     m.registry = PageRegistry()
@@ -22,7 +24,8 @@ sub init()
 
     m.sideBar.observeField("itemFocused", "onMenuFocused")
 
-    m.sideBar.callFunc("setFocusToList")
+    showPage(0)
+    focusContentArea()
 end sub
 
 sub onMenuFocused()
@@ -30,13 +33,18 @@ sub onMenuFocused()
 end sub
 
 sub onNavCollapsedChanged()
-    targetX = 400
-    if m.global.navCollapsed then targetX = 200
+    if m.global.navCollapsed
+        targetWidth = 140
+        targetOpacity = 0.3
+    else
+        targetWidth = 420
+        targetOpacity = 0.88
+    end if
 
-    currentPos = m.contentArea.translation
-    m.contentSlideInterp.keyValue = [currentPos, [targetX, currentPos[1]]]
-    m.contentSlide.control = "stop"
-    m.contentSlide.control = "start"
+    m.navFadeWidthInterp.keyValue = [m.navFade.width, targetWidth]
+    m.navFadeOpacityInterp.keyValue = [m.navFade.opacity, targetOpacity]
+    m.navFadeAnim.control = "stop"
+    m.navFadeAnim.control = "start"
 end sub
 
 sub showPage(index as integer)
@@ -89,13 +97,13 @@ end sub
 
 sub focusContentArea()
     m.focusOnSidebar = false
-    m.sideBar.collapsed = true
+    m.global.navCollapsed = true
     if m.currentPage <> invalid then m.currentPage.callFunc("focusContent")
 end sub
 
 sub focusSidebar()
     m.focusOnSidebar = true
-    m.sideBar.collapsed = false
+    m.global.navCollapsed = false
     m.sideBar.callFunc("setFocusToList")
 end sub
 

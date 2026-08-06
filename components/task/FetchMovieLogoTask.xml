@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="FetchMovieLogoTask" extends="Task">
+    <interface>
+        <field id="movieId" type="string"/>
+        <field id="baseUrl" type="string"/>
+        <field id="logoUrl" type="string" alwaysNotify="true"/>
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/task/FetchMovieLogoTask.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/config.brs"/>
+</component>

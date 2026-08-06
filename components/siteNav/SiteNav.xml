@@ -4,31 +4,17 @@
     <script type="text/brightscript" uri="pkg:/source/config.brs" />
 
     <interface>
-        <field id="itemFocused" type="integer" value="0" alwaysNotify="true"/>
-        <field id="collapsed" type="boolean" value="false" onChange="onCollapsedChanged"/>
+        <field id="itemFocused" type="integer" alias="menuList.itemFocused"/>
         <function name="setFocusToList"/>
     </interface>
 
+
     <children>
-        <Rectangle
-            id="navBackground"
-            width="300"
-            height="210"
-            opacity="0.0"/>
-
-        <Animation id="collapseAnim" duration="0.2" easeFunction="outQuad" optional="true">
-            <FloatFieldInterpolator
-                id="widthInterp"
-                key="[0.0, 1.0]"
-                keyValue="[300, 300]"
-                fieldToInterp="navBackground.width"/>
-        </Animation>
-
         <MarkupList
             id="menuList"
             itemComponentName="NavItem"
             translation="[0,0]"
-            itemSize="[300,70]"
+            itemSize="[250,70]"
             drawFocusFeedback="false"
             vertFocusAnimationStyle="floatingFocus"/>
     </children>

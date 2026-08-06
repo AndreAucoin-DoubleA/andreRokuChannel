@@ -1,32 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="MoviesPage" extends="BasePage">
     <script type="text/brightscript" uri="pkg:/components/pages/MoviesPage.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/config.brs"/>
     <interface>
         <field id="selectedMovie" type="node" alwaysNotify="true"/>
     </interface>
     <children>
-        <Label
-            translation="[60,40]"
-            text="Movies"
-            font="font:LargeBoldSystemFont"
-            color="#FFFFFF"/>
+        <Group id="heroGroup" opacity="0" visible="false">
+            <MaskGroup
+                id="itemSelectBackgroundMask"
+                translation="[460, 0]"
+                maskUri="pkg:/images/backdrop_corner_fade.png"
+                maskSize="[1300,680]"
+                maskOffset="[0,0]">
+                <Poster
+                    id="itemSelectBackground"
+                    width="1300"
+                    height="680"
+                    loadDisplayMode="scaleToZoom"
+                    visible="false"/>
+            </MaskGroup>
+
+            <Poster
+                id="movieLogo"
+                translation="[100, 140]"
+                width="420"
+                height="140"
+                loadDisplayMode="scaleToFit"
+                visible="false"/>
+
+            <Label
+                id="movieTitleLabel"
+                translation="[100, 140]"
+                width="420"
+                height="140"
+                font="font:LargeBoldSystemFont"
+                color="#FFFFFF"
+                vertAlign="top"
+                wrap="true"
+                visible="false"/>
+        </Group>
+
+        <Animation id="heroFadeAnim" duration="0.35" easeFunction="outQuad">
+            <FloatFieldInterpolator
+                id="heroFadeOpacityInterp"
+                key="[0,1]"
+                keyValue="[0,1]"
+                fieldToInterp="heroGroup.opacity"/>
+        </Animation>
+
         <RowList
             id="rowList"
             showRowLabel="true"
-            translation="[40, 150]"
+            translation="[40, 530]"
             itemComponentName="MoviePosterItem"
-            numRows="2"
-            vertFocusAnimationStyle="floatingFocus"
-            drawFocusFeedback= "false"
-            itemSize="[1700,400]"
-            rowItemSize="[[220,400]]"
-            rowItemSpacing="[[40,0]]"/>
+            numRows="3"
+            rowFocusAnimationStyle="fixedFocus"
+            vertFocusAnimationStyle="fixedFocus"
+            drawFocusFeedback="false"
+            numRenderPasses="2"
+            itemSize="[1800,290]"
+            itemSpacing="[0,40]"
+            rowItemSize="[[376,220]]"
+            rowLabelOffset="[[25,25]]"
+            rowItemSpacing="[[30,0]]"/>
         <Label
             id="loadingLabel"
-            translation="[60,120]"
+            translation="[40,120]"
             text="Loading movies..."
             font="font:MediumSystemFont"
             color="#AAAACC"
             visible="false"/>
+
+        <Poster
+            id="rightFade"
+            translation="[1680,0]"
+            width="260"
+            height="1080"
+            loadDisplayMode="scaleToFill"
+            uri="pkg:/images/movies_right_fade.png"/>
     </children>
 </component>

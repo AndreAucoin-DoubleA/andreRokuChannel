@@ -4,25 +4,35 @@
 
     <interface>
         <field id="itemContent" type="node" onChange="onContentChanged"/>
-        <field id="focusPercent" type="float" onChange="onFocusPercentChanged"/>
-        <field id="rowFocusPercent" type="float" onChange="onFocusPercentChanged"/>
+        <field id="focusPercent" type="float" onChange="onFocusChanged"/>
+        <field id="rowFocusPercent" type="float" onChange="onFocusChanged"/>
     </interface>
 
     <children>
         <Poster
-            id="poster"
-            width="200"
-            height="300"
-            translation="[15,32]"
-            scaleRotateCenter="[100,0]"
-            loadDisplayMode="scaleToZoom"
-            loadWidth="200"
-            loadHeight="300"
-            loadingBitmapUri="pkg:/images/poster_placeholder_hd.png"
-            failedBitmapUri="pkg:/images/poster_placeholder_hd.png"/>
-        <Animation id="focusAnim" duration="0.2" easeFunction="outQuad">
-            <Vector2DFieldInterpolator id="scaleInterp" key="[0.0,1.0]" keyValue="[[1.0,1.0],[1.15,1.15]]" fieldToInterp="poster.scale"/>
-            <Vector2DFieldInterpolator id="transInterp" key="[0.0,1.0]" keyValue="[[15,32],[15,12]]" fieldToInterp="poster.translation"/>
-        </Animation>
+            id="focusRing"
+            translation="[0,0]"
+            width="376"
+            height="220"
+            renderPass="1"
+            loadSync="true"
+            uri="pkg:/images/item_focus_ring.png"
+            visible="false"/>
+        <MaskGroup
+            id="posterMask"
+            translation="[10,10]"
+            maskUri="pkg:/images/poster_mask_landscape.png"
+            maskSize="[356,200]"
+            maskOffset="[0,0]">
+            <Poster
+                id="poster"
+                width="356"
+                height="200"
+                loadDisplayMode="scaleToZoom"
+                loadWidth="356"
+                loadHeight="200"
+                loadingBitmapUri="pkg:/images/poster_placeholder_landscape.png"
+                failedBitmapUri="pkg:/images/poster_placeholder_landscape.png"/>
+        </MaskGroup>
     </children>
 </component>

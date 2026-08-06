@@ -1,39 +1,14 @@
 sub init()
     m.menuList = m.top.findNode("menuList")
-    m.navBackground = m.top.findNode("navBackground")
-    m.collapseAnim = m.top.findNode("collapseAnim")
-    m.widthInterp = m.top.findNode("widthInterp")
 
     content = CreateObject("roSGNode", "ContentNode")
     for each page in PageRegistry()
-        if page.type = "nav" then addItem(content, page.label, page.icon)
+        if page.type = "nav"
+            item = content.createChild("ContentNode")
+            item.setFields({ title: page.label, hdPosterUrl: page.icon })
+        end if
     end for
     m.menuList.content = content
-
-    m.menuList.observeField("itemFocused", "onFocusChanged")
-end sub
-
-sub addItem(parent as object, label as string, iconUri as string)
-    item = parent.createChild("ContentNode")
-    item.title = label
-    item.hdPosterUrl = iconUri
-end sub
-
-sub onFocusChanged()
-    m.top.itemFocused = m.menuList.itemFocused
-end sub
-
-sub onCollapsedChanged()
-    if m.top.collapsed
-        targetWidth = 100
-    else
-        targetWidth = 300
-    end if
-
-    m.widthInterp.keyValue = [m.navBackground.width, targetWidth]
-    m.collapseAnim.control = "stop"
-    m.collapseAnim.control = "start"
-    m.global.navCollapsed = m.top.collapsed
 end sub
 
 sub setFocusToList()

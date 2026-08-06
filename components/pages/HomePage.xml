@@ -3,12 +3,12 @@
     <script type="text/brightscript" uri="pkg:/components/pages/HomePage.brs" />
     <children>
         <Label
-            translation="[60,40]"
+            translation="[40,80]"
             text="Home"
             font="font:LargeBoldSystemFont"
             color="#FFFFFF"/>
         <Label
-            translation="[60,120]"
+            translation="[40,160]"
             text="Welcome to the home page. Use the arrow keys to navigate."
             font="font:MediumSystemFont"
             color="#AAAACC"

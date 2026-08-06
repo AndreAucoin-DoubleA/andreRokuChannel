@@ -3,12 +3,12 @@
     <script type="text/brightscript" uri="pkg:/components/pages/GamesPage.brs" />
     <children>
         <Label
-            translation="[60,40]"
+            translation="[40,80]"
             text="Games"
             font="font:LargeBoldSystemFont"
             color="#FFFFFF"/>
         <LayoutGroup
-            translation="[60, 120]"
+            translation="[40, 160]"
             layoutDirection="vert"
             itemSpacings="[15]">
             <Label text="1. Mario Kart World Tour" font="font:MediumSystemFont" color="#AAAACC" />
