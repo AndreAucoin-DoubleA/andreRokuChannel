@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<component name="MoviesPage" extends="BasePage">
+<component name="MoviesPage" extends="BaseView">
     <script type="text/brightscript" uri="pkg:/components/pages/MoviesPage.brs"/>
     <script type="text/brightscript" uri="pkg:/source/config.brs"/>
-    <interface>
-        <field id="selectedMovie" type="node" alwaysNotify="true"/>
-    </interface>
     <children>
         <Group id="heroGroup" opacity="0" visible="false">
             <MaskGroup
@@ -74,7 +71,7 @@
 
         <Poster
             id="rightFade"
-            translation="[1680,0]"
+            translation="[1520,0]"
             width="260"
             height="1080"
             loadDisplayMode="scaleToFill"

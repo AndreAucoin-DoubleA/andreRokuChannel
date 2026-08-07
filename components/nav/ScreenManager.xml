@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="ScreenManager">
+    <script type="text/brightscript" uri="pkg:/components/nav/ScreenManager.brs" />
+    <script type="text/brightscript" uri="pkg:/source/config.brs"/>
+
+    <interface>
+        <field id="stackContainer" type="node"/>
+        <field id="modalContainer" type="node"/>
+
+        <function name="showStack"/>
+        <function name="route"/>
+        <function name="presentModal"/>
+        <function name="dismissModal"/>
+        <function name="focusActive"/>
+        <function name="suspendActive"/>
+        <function name="resumeActive"/>
+
+        <field id="activeStackId" type="string" alwaysNotify="true"/>
+        <field id="activeDepth" type="integer" value="0" alwaysNotify="true"/>
+    </interface>
+    
+</component>

@@ -6,9 +6,7 @@ sub init()
     m.movieLogo = m.top.findNode("movieLogo")
     m.movieTitleLabel = m.top.findNode("movieTitleLabel")
     m.heroFadeAnim = m.top.findNode("heroFadeAnim")
-    m.loaded = false
     m.heroSeeded = false
-    m.top.observeField("visible", "onVisibleChanged")
     m.rowList.observeField("rowItemSelected", "onMovieSelected")
     m.rowList.observeField("rowItemFocused", "onMovieFocused")
 
@@ -16,6 +14,9 @@ sub init()
     m.rowList.content = m.rootContent
 
     m.logoCache = {}
+    m.logoBusy = false
+    m.pendingLogoId = ""
+    m.movieTask = invalid
     m.currentTransitionKey = ""
     m.currentMovieId = invalid
     m.backdropReady = false
@@ -41,10 +42,12 @@ function movieAt(sel as object) as object
 end function
 
 sub onMovieSelected()
-    movie = movieAt(m.rowList.rowItemSelected)
+    sel = m.rowList.rowItemSelected
+    movie = movieAt(sel)
     if movie = invalid then return
 
-    m.top.selectedMovie = movie
+    row = m.rootContent.getChild(sel[0])
+    pushView("MovieDetails", { movie: movie, row: row, index: sel[1] })
 end sub
 
 sub onMovieFocused()
@@ -119,7 +122,19 @@ sub loadLogo(movie as object)
         return
     end if
 
-    m.logoTask.control = "stop"
+    if m.logoBusy
+        m.pendingLogoId = movieId
+        return
+    end if
+
+    startLogoFetch(movieId)
+end sub
+
+sub startLogoFetch(movieId as string)
+    if m.logoTask = invalid then return
+
+    m.logoBusy = true
+    m.pendingLogoId = ""
     m.logoTask.movieId = movieId
     m.logoTask.control = "RUN"
 end sub
@@ -129,10 +144,22 @@ sub onLogoFetched(msg as object)
     movieId = task.movieId
     logoUrl = msg.GetData()
 
+    m.logoBusy = false
     m.logoCache[movieId] = logoUrl
-    if movieId <> m.currentMovieId then return
 
-    applyCachedLogo(logoUrl)
+    if movieId = m.currentMovieId then applyCachedLogo(logoUrl)
+
+    nextId = m.pendingLogoId
+    if nextId = "" then return
+    m.pendingLogoId = ""
+
+    cached = m.logoCache[nextId]
+    if cached <> invalid
+        if nextId = m.currentMovieId then applyCachedLogo(cached)
+        return
+    end if
+
+    startLogoFetch(nextId)
 end sub
 
 sub applyCachedLogo(logoUrl as string)
@@ -210,25 +237,49 @@ sub onRowBatchReady(msg as object)
     end if
 end sub
 
-sub onVisibleChanged()
-    if m.top.visible and not m.loaded
-        print "[MoviesPage] onVisibleChanged: starting PopulateMoviesTask"
-        m.loaded = true
-        m.loadingLabel.visible = true
-        m.movieTask = CreateObject("roSGNode", "PopulateMoviesTask")
-        m.movieTask.batchSize = 5
-        m.movieTask.observeField("rowBatch", "onRowBatchReady")
-        m.movieTask.observeField("loadComplete", "onLoadComplete")
-        m.movieTask.control = "RUN"
-    end if
+sub viewDidLoad(params as object)
+    if m.movieTask <> invalid then return
+
+    print "[MoviesPage] viewDidLoad: starting PopulateMoviesTask"
+    m.loadingLabel.visible = true
+
+    m.movieTask = CreateObject("roSGNode", "PopulateMoviesTask")
+    m.movieTask.batchSize = 5
+    m.movieTask.observeField("rowBatch", "onRowBatchReady")
+    m.movieTask.observeField("loadComplete", "onLoadComplete")
+    m.movieTask.control = "RUN"
 end sub
 
-function focusContent() as boolean
+sub viewWillDisappear(params as object)
+    stopMovieTask()
+    stopLogoTask()
+end sub
+
+sub stopMovieTask()
+    if m.movieTask = invalid then return
+
+    m.movieTask.unobserveField("rowBatch")
+    m.movieTask.unobserveField("loadComplete")
+    m.movieTask.control = "stop"
+    m.movieTask = invalid
+end sub
+
+sub stopLogoTask()
+    m.pendingLogoId = ""
+    m.logoBusy = false
+
+    if m.logoTask = invalid then return
+
+    m.logoTask.unobserveField("logoUrl")
+    m.logoTask.control = "stop"
+    m.logoTask = invalid
+end sub
+
+function setViewFocus() as boolean
     return m.rowList.setFocus(true)
 end function
 
 sub onLoadComplete()
-    print "[MoviesPage] onLoadComplete fired, rootContent has " ; m.rootContent.GetChildCount() ; " row(s)"
     if m.rootContent.GetChildCount() = 0
         m.loadingLabel.text = "Couldn't load movies"
         m.loadingLabel.visible = true

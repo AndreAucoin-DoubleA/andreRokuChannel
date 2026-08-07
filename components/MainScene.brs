@@ -3,33 +3,39 @@ sub init()
     m.top.findNode("sceneBackground").uri = Theme().backgroundUri
 
     m.sideBar = m.top.findNode("sideBar")
-    m.contentArea = m.top.findNode("contentArea")
+    m.chrome = m.top.findNode("chrome")
     m.navFade = m.top.findNode("navFade")
     m.navFadeAnim = m.top.findNode("navFadeAnim")
     m.navFadeWidthInterp = m.top.findNode("navFadeWidthInterp")
     m.navFadeOpacityInterp = m.top.findNode("navFadeOpacityInterp")
+
+    m.screens = m.top.findNode("screens")
+    m.screens.stackContainer = m.top.findNode("stackLayer")
+    m.screens.modalContainer = m.top.findNode("modalLayer")
+    m.screens.observeField("activeDepth", "onActiveDepthChanged")
+
     m.global.observeField("navCollapsed", "onNavCollapsedChanged")
 
-    m.registry = PageRegistry()
     m.navPages = []
-    for each entry in m.registry
+    for each entry in PageRegistry()
         if entry.type = "nav" then m.navPages.push(entry)
     end for
 
-    m.pageCache = {}
-    m.currentPage = invalid
-    m.details = invalid
-    m.detailsOpen = false
     m.focusOnSidebar = true
-
     m.sideBar.observeField("itemFocused", "onMenuFocused")
 
-    showPage(0)
+    m.screens.callFunc("showStack", m.navPages[0].id)
     focusContentArea()
 end sub
 
 sub onMenuFocused()
-    showPage(m.sideBar.itemFocused)
+    entry = m.navPages[m.sideBar.itemFocused]
+    if entry = invalid then return
+    m.screens.callFunc("showStack", entry.id)
+end sub
+
+sub onActiveDepthChanged()
+    m.chrome.visible = (m.screens.activeDepth <= 1)
 end sub
 
 sub onNavCollapsedChanged()
@@ -47,58 +53,10 @@ sub onNavCollapsedChanged()
     m.navFadeAnim.control = "start"
 end sub
 
-sub showPage(index as integer)
-    entry = m.navPages[index]
-    if entry = invalid then return
-
-    page = getPageNode(entry)
-
-    for each id in m.pageCache
-        m.pageCache[id].visible = (id = entry.id)
-    end for
-    m.currentPage = page
-end sub
-
-function getPageNode(entry as object) as object
-    node = m.pageCache[entry.id]
-    if node <> invalid then return node
-
-    parent = m.contentArea
-    if entry.type = "overlay" then parent = m.top
-
-    node = parent.createChild(entry.component)
-    node.visible = false
-    m.pageCache[entry.id] = node
-
-    if node.hasField("selectedMovie")
-        node.observeField("selectedMovie", "onMovieSelected")
-    end if
-
-    return node
-end function
-
-function pageById(id as string) as object
-    for each entry in m.registry
-        if entry.id = id then return entry
-    end for
-    return invalid
-end function
-
-sub onMovieSelected(msg as object)
-    movie = msg.getData()
-    if movie = invalid then return
-
-    m.details = getPageNode(pageById("details"))
-    m.details.movieContent = movie
-    m.details.visible = true
-    m.details.callFunc("focusPlayButton")
-    m.detailsOpen = true
-end sub
-
 sub focusContentArea()
     m.focusOnSidebar = false
     m.global.navCollapsed = true
-    if m.currentPage <> invalid then m.currentPage.callFunc("focusContent")
+    m.screens.callFunc("focusActive")
 end sub
 
 sub focusSidebar()
@@ -107,26 +65,29 @@ sub focusSidebar()
     m.sideBar.callFunc("setFocusToList")
 end sub
 
-sub closeDetails()
-    m.details.visible = false
-    m.detailsOpen = false
-    if m.currentPage <> invalid then m.currentPage.callFunc("focusContent")
-end sub
-
 sub customSuspend(arg as dynamic)
+    m.screens.callFunc("suspendActive")
 end sub
 
 sub customResume(arg as dynamic)
+    m.screens.callFunc("resumeActive")
     m.top.signalBeacon("AppResumeComplete")
 end sub
+
 
 function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
 
-    if m.detailsOpen
-        if key = "back" then closeDetails()
-        return true
+    if key = "back"
+        if m.screens.callFunc("dismissModal") then return true
+        if not m.focusOnSidebar
+            focusSidebar()
+            return true
+        end if
+        return false
     end if
+
+    if m.screens.activeDepth > 1 then return false
 
     if key = "right" and m.focusOnSidebar
         focusContentArea()

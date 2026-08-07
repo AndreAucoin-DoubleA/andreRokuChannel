@@ -3,8 +3,12 @@ sub init()
     m.desc = m.top.findNode("desc")
     m.detailsBack = m.top.findNode("detailsBack")
     m.detailsBottomFade = m.top.findNode("detailsBottomFade")
+
     m.button = m.top.findNode("playButton")
     m.button.observeField("selected", "onButtonPressed")
+
+    m.nextButton = m.top.findNode("nextButton")
+    m.nextButton.observeField("selected", "onNextPressed")
 
     m.backdropFadeAnim = m.top.findNode("backdropFadeAnim")
     m.backdropFadeInterp = m.top.findNode("backdropFadeInterp")
@@ -17,18 +21,35 @@ sub init()
     m.video = m.top.findNode("videoPlayer")
     m.video.observeField("state", "onVideoStateChanged")
 
-    m.top.observeField("visible", "onVisibleChanged")
-
-    m.mode = "idle"
+    m.bgActive = false
+    m.fullscreenActive = false
     m.bgPlayed = false
+    m.trailerFailed = false
+    m.params = {}
 end sub
 
-sub focusPlayButton()
-    m.button.setFocus(true)
+sub viewDidLoad(params as object)
+    m.params = params
+    applyMovie(params.movie)
+    m.nextButton.visible = (nextSibling() <> invalid)
+end sub
+sub viewWillAppear(params as object)
+    beginAmbientCountdown()
 end sub
 
-sub onMovieContentChanged()
-    movie = m.top.movieContent
+sub viewWillHide(params as object)
+    resetPlayback()
+end sub
+
+sub viewWillDisappear(params as object)
+    resetPlayback()
+end sub
+
+function setViewFocus() as boolean
+    return m.button.setFocus(true)
+end function
+
+sub applyMovie(movie as object)
     if movie = invalid then return
 
     m.meta.text = "Rating: " + movie.rating + "    Released: " + movie.releaseDate
@@ -36,111 +57,47 @@ sub onMovieContentChanged()
     m.detailsBack.uri = movie.HDBackgroundImageUrl
 end sub
 
-sub onVisibleChanged()
-    resetDetails()
-    if m.top.visible then armBgTrailer()
-end sub
-
-sub onButtonPressed()
-    goFullscreen()
-end sub
-
-sub onBgTimerFire()
-    if m.mode <> "idle" or m.bgPlayed then return
-    goBackground()
-end sub
-
-sub onVideoStateChanged()
-    if m.video.state <> "finished" then return
-
-    if m.mode = "fullscreen"
-        exitFullscreen()
-    else if m.mode = "bg"
-        restoreDetails()
-    end if
-end sub
-
-function onKeyEvent(key as string, press as boolean) as boolean
-    if not press then return false
-
-    if m.mode = "fullscreen" and key = "back"
-        exitFullscreen()
-        return true
-    end if
-
-    return false
+function nextSibling() as object
+    if m.params.row = invalid or m.params.index = invalid then return invalid
+    return m.params.row.getChild(m.params.index + 1)
 end function
 
-sub goBackground()
-    m.mode = "bg"
-    playTrailer()
-    fadeBackdrop(0)
+' THE demo: pushes another instance of this same component
+sub onNextPressed()
+    nextMovie = nextSibling()
+    if nextMovie = invalid then return
+
+    pushView("MovieDetails", {
+        movie: nextMovie,
+        row: m.params.row,
+        index: m.params.index + 1
+    })
 end sub
 
-sub goFullscreen()
-    m.mode = "fullscreen"
-    m.bgTimer.control = "stop"
-    playTrailer()
-    m.video.setFocus(true)
-    showChrome(false)
-    fadeBackdrop(0)
-    fadeOverlay(0)
-end sub
-
-sub exitFullscreen()
-    restoreDetails()
-    armBgTrailer()
-end sub
-
-sub restoreDetails()
-    m.mode = "idle"
-    stopVideo()
-    showChrome(true)
-    fadeBackdrop(1)
-    fadeOverlay(1)
-    m.button.setFocus(true)
-end sub
-
-sub resetDetails()
-    m.mode = "idle"
-    m.bgTimer.control = "stop"
-    stopVideo()
-    stopFades()
-    m.detailsBack.opacity = 1
-    m.detailsBottomFade.opacity = 1
-    showChrome(true)
-end sub
-
-sub armBgTrailer()
+sub beginAmbientCountdown()
+    resetPlayback()
+    if m.trailerFailed then return
     m.bgPlayed = false
     m.bgTimer.control = "start"
 end sub
 
-sub playTrailer()
-    content = CreateObject("roSGNode", "ContentNode")
-    content.url = "https://media.w3.org/2010/05/bunny/trailer.mp4"
-    content.streamFormat = "mp4"
-
-    m.video.content = content
-    m.video.visible = true
-    m.video.control = "play"
-    m.bgPlayed = true
-end sub
-
-sub stopVideo()
+sub resetPlayback()
+    m.bgTimer.control = "stop"
     m.video.control = "stop"
     m.video.visible = false
-end sub
 
-sub showChrome(show as boolean)
-    m.meta.visible = show
-    m.desc.visible = show
-    m.button.visible = show
-end sub
-
-sub stopFades()
     m.backdropFadeAnim.control = "stop"
     m.overlayFadeAnim.control = "stop"
+
+    m.bgActive = false
+    m.fullscreenActive = false
+
+    m.detailsBack.opacity = 1
+    m.detailsBottomFade.opacity = 1
+    m.meta.visible = true
+    m.desc.visible = true
+    m.button.visible = true
+    m.nextButton.visible = (nextSibling() <> invalid)
 end sub
 
 sub fadeBackdrop(target as float)
@@ -154,3 +111,102 @@ sub fadeOverlay(target as float)
     m.overlayFadeInterp.keyValue = [m.detailsBottomFade.opacity, target]
     m.overlayFadeAnim.control = "start"
 end sub
+
+sub startTrailer()
+    content = CreateObject("roSGNode", "ContentNode")
+    content.url = "https://media.w3.org/2010/05/bunny/trailer.mp4"
+    content.streamFormat = "mp4"
+
+    m.video.content = content
+    m.video.visible = true
+    m.video.control = "play"
+end sub
+
+sub onBgTimerFire()
+    if m.fullscreenActive or m.bgPlayed then return
+
+    startTrailer()
+    m.bgActive = true
+    m.bgPlayed = true
+    fadeBackdrop(0)
+end sub
+
+sub onButtonPressed()
+    m.bgTimer.control = "stop"
+
+    if not m.bgActive then startTrailer()
+    m.bgActive = false
+    m.fullscreenActive = true
+    m.bgPlayed = true
+
+    m.video.setFocus(true)
+
+    m.meta.visible = false
+    m.desc.visible = false
+    m.button.visible = false
+    m.nextButton.visible = false
+    fadeBackdrop(0)
+    fadeOverlay(0)
+end sub
+
+sub onVideoStateChanged()
+    state = m.video.state
+
+    if state = "error"
+        m.trailerFailed = true
+        resetPlayback()
+        m.button.setFocus(true)
+        return
+    end if
+
+    if state = "finished"
+        m.video.control = "stop"
+        m.video.visible = false
+
+        if m.fullscreenActive
+            restoreDetails()
+        else if m.bgActive
+            m.bgActive = false
+            fadeBackdrop(1)
+        end if
+    end if
+end sub
+
+sub restoreDetails()
+    m.fullscreenActive = false
+    m.meta.visible = true
+    m.desc.visible = true
+    m.button.visible = true
+    m.nextButton.visible = (nextSibling() <> invalid)
+    fadeBackdrop(1)
+    fadeOverlay(1)
+    m.button.setFocus(true)
+
+    m.bgPlayed = false
+    m.bgTimer.control = "start"
+end sub
+
+function onKeyEvent(key as string, press as boolean) as boolean
+    if not press then return false
+
+    if m.fullscreenActive and key = "back"
+        m.video.control = "stop"
+        m.video.visible = false
+        restoreDetails()
+        return true
+    end if
+
+    if not m.fullscreenActive and m.nextButton.visible
+        if key = "down" and m.button.hasFocus()
+            m.nextButton.setFocus(true)
+            return true
+        end if
+
+        if key = "up" and m.nextButton.hasFocus()
+            m.button.setFocus(true)
+            return true
+        end if
+    end if
+
+    return false
+end function

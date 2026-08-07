@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<component name="MovieDetails" extends="Group">
+<component name="MovieDetails" extends="BaseView">
     <script type="text/brightscript" uri="pkg:/components/details/MovieDetails.brs"/>
-
-    <interface>
-        <field id="movieContent" type="node" onChange="onMovieContentChanged"/>
-        <function name="focusPlayButton"/>
-    </interface>
 
     <children>
         <Rectangle width="1920" height="1080" color="#0f0f23" opacity="0.96"/>
@@ -66,5 +61,8 @@
             text="Play"
             width="260"
             translation="[110, 550]"/>
+        
+        <CustomButton id="nextButton" text="Next in row" width="260"
+            translation="[110,640]" visible="false"/>
     </children>
 </component>

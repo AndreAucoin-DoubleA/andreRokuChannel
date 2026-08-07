@@ -64,6 +64,12 @@ function PageRegistry() as object
         { id: "home", label: "Home", icon: "pkg:/images/home_icon.png", component: "HomePage", type: "nav" }
         { id: "movies", label: "Movies", icon: "pkg:/images/settings_icon.png", component: "MoviesPage", type: "nav" }
         { id: "games", label: "Games", icon: "pkg:/images/menu_icon.png", component: "GamesPage", type: "nav" }
-        { id: "details", component: "MovieDetails", type: "overlay" }
     ]
+end function
+
+function pageById(id as string) as object
+    for each entry in PageRegistry()
+        if entry.id = id then return entry
+    end for
+    return invalid
 end function
