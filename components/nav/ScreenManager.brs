@@ -42,27 +42,9 @@ function showStack(id as string) as object
     return stack
 end function
 
-function route(request as object) as object
-    if request = invalid then return invalid
-
-    stack = m.activeStack
-
-    if request.stack <> invalid then stack = showStack(request.stack)
-    if stack = invalid then return invalid
-    if request.view = invalid then return stack
-
-    return stack.callFunc("push", request)
-end function
-
-function activeView() as object
-    if m.activeStack = invalid then return invalid
-    return m.activeStack.callFunc("topNode")
-end function
-
 function focusActive() as boolean
-    view = activeView()
-    if view = invalid then return false
-    return view.callFunc("setViewFocus")
+    if m.activeStack = invalid then return false
+    return m.activeStack.callFunc("focusTop")
 end function
 
 function suspendActive() as boolean

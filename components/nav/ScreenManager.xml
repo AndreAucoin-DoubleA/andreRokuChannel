@@ -7,7 +7,6 @@
         <field id="stackContainer" type="node"/>
 
         <function name="showStack"/>
-        <function name="route"/>
         <function name="focusActive"/>
         <function name="suspendActive"/>
         <function name="resumeActive"/>

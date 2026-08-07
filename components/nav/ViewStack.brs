@@ -20,12 +20,6 @@ function pop() as boolean
     return true
 end function
 
-function topNode() as object
-    entry = peek()
-    if entry = invalid then return invalid
-    return entry.node
-end function
-
 function focusTop() as boolean
     entry = peek()
     if entry = invalid then return false
@@ -64,6 +58,7 @@ sub revealTop()
 
     entry.node.visible = true
     resumeTop()
+    focusTop()
 end sub
 
 sub publishDepth()
@@ -76,7 +71,6 @@ function resumeTop() as boolean
     if entry = invalid then return false
 
     entry.node.callFunc("viewWillAppear", entry.params)
-    entry.node.callFunc("setViewFocus")
     return true
 end function
 
@@ -86,23 +80,7 @@ sub onNavRequest(msg as object)
     if req = invalid or req.action = invalid then return
 
     if req.action = "push" then push(req)
-    if req.action = "pop" then pop()
-    if req.action = "popToRoot" then popToRoot()
 end sub
-
-function popToRoot() as boolean
-    if depth() <= 1 then return false
-
-    while depth() > 1
-        destroyTop()
-    end while
-
-    revealTop()
-
-    publishDepth()
-
-    return true
-end function
 
 function suspendTop() as boolean
     entry = peek()
@@ -138,7 +116,6 @@ function pushEntry(request as object) as object
     node.visible = true
 
     node.callFunc("viewWillAppear", params)
-    node.callFunc("setViewFocus")
 
     return node
 end function
@@ -158,6 +135,8 @@ function push(request as object) as object
 
     node = pushEntry(request)
     publishDepth()
+
+    if node <> invalid then focusTop()
 
     return node
 end function

@@ -70,6 +70,13 @@ end sub
 
 sub customResume(arg as dynamic)
     m.screens.callFunc("resumeActive")
+
+    if m.focusOnSidebar
+        m.sideBar.callFunc("setFocusToList")
+    else
+        m.screens.callFunc("focusActive")
+    end if
+
     m.top.signalBeacon("AppResumeComplete")
 end sub
 

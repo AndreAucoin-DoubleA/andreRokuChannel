@@ -4,11 +4,7 @@
 
     <interface>
         <function name="setRoot"/>
-        <function name="push"/>
-        <function name="pop"/>
-        <function name="popToRoot"/>
         <function name="depth"/>
-        <function name="topNode"/>
         <function name="focusTop"/>
         <function name="suspendTop"/>
         <function name="resumeTop"/>
