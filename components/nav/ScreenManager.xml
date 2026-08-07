@@ -5,12 +5,9 @@
 
     <interface>
         <field id="stackContainer" type="node"/>
-        <field id="modalContainer" type="node"/>
 
         <function name="showStack"/>
         <function name="route"/>
-        <function name="presentModal"/>
-        <function name="dismissModal"/>
         <function name="focusActive"/>
         <function name="suspendActive"/>
         <function name="resumeActive"/>

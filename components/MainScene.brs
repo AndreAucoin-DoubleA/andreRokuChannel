@@ -11,7 +11,6 @@ sub init()
 
     m.screens = m.top.findNode("screens")
     m.screens.stackContainer = m.top.findNode("stackLayer")
-    m.screens.modalContainer = m.top.findNode("modalLayer")
     m.screens.observeField("activeDepth", "onActiveDepthChanged")
 
     m.global.observeField("navCollapsed", "onNavCollapsedChanged")
@@ -79,7 +78,6 @@ function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
 
     if key = "back"
-        if m.screens.callFunc("dismissModal") then return true
         if not m.focusOnSidebar
             focusSidebar()
             return true

@@ -1,8 +1,6 @@
 sub init()
     m.stacks = {}
     m.activeStack = invalid
-    m.modal = invalid
-    m.modalParams = {}
 end sub
 
 
@@ -56,54 +54,7 @@ function route(request as object) as object
     return stack.callFunc("push", request)
 end function
 
-function presentModal(request as object) as object
-    if request = invalid or request.view = invalid then return invalid
-
-    container = m.top.modalContainer
-
-    if container = invalid then return invalid
-    if m.modal <> invalid then dismissModal()
-
-    node = container.createChild(request.view)
-    if node = invalid then return invalid
-
-    if not node.IsSubtype("BaseView")
-        print "[ScreenManager] " ; request.view ; " must extend BaseView"
-        container.removeChild(node)
-        return invalid
-    end if
-
-    params = request.params
-    if params = invalid then params = {}
-
-    m.modal = node
-    m.modalParams = params
-
-    node.callFunc("viewDidLoad", params)
-    node.visible = true
-    node.callFunc("viewWillAppear", params)
-    return node
-end function
-
-
-function dismissModal() as boolean
-    if m.modal = invalid then return false
-
-    m.modal.callFunc("viewWillDisappear", m.modalParams)
-    m.modal.visible = false
-
-    container = m.top.modalContainer
-    if container <> invalid then container.removeChild(m.modal)
-
-    m.modal = invalid
-    m.modalParams = {}
-
-    focusActive()
-    return true
-end function
-
 function activeView() as object
-    if m.modal <> invalid then return m.modal
     if m.activeStack = invalid then return invalid
     return m.activeStack.callFunc("topNode")
 end function
@@ -115,20 +66,11 @@ function focusActive() as boolean
 end function
 
 function suspendActive() as boolean
-    if m.modal <> invalid
-        m.modal.callFunc("viewWillHide", m.modalParams)
-        return true
-    end if
     if m.activeStack = invalid then return false
     return m.activeStack.callFunc("suspendTop")
 end function
 
 function resumeActive() as boolean
-    if m.modal <> invalid
-        m.modal.callFunc("viewWillAppear", m.modalParams)
-        m.modal.callFunc("setViewFocus")
-        return true
-    end if
     if m.activeStack = invalid then return false
     return m.activeStack.callFunc("resumeTop")
 end function
