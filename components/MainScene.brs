@@ -13,7 +13,6 @@ sub init()
 
     applyTheme()
 
-    m.global.observeField("designTokens", "applyTheme")
     m.global.observeField("navCollapsed", "onNavCollapsedChanged")
 
     m.navPages = []
@@ -29,7 +28,7 @@ sub init()
 end sub
 
 sub applyTheme()
-    t = Theme(true)
+    t = Theme()
 
     m.top.backgroundColor = t.color("component.scene.backgroundColor", "0x0F0F23FF")
 

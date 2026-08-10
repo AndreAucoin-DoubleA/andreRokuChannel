@@ -28,11 +28,10 @@ sub init()
     m.trailerFailed = false
     m.params = {}
     applyTheme()
-    m.global.observeField("designTokens", "applyTheme")
 end sub
 
 sub applyTheme()
-    t = Theme(true)
+    t = Theme()
 
     m.scrim.color = t.color("component.movieDetails.scrimColor", "0x0F0F23FF")
     m.scrim.opacity = t.number("component.movieDetails.scrimOpacity", 0.96)

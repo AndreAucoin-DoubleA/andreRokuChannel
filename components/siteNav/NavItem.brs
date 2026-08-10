@@ -8,9 +8,6 @@ sub init()
 
     applyTheme()
 
-    ' Re-theme in place if the token table is ever swapped at runtime.
-    ' This is the whole reason applyTheme() is a separate sub.
-    m.global.observeField("designTokens", "applyTheme")
     m.global.observeField("navCollapsed", "onCollapsedChanged")
 
     collapsed = m.global.navCollapsed
@@ -18,14 +15,9 @@ sub init()
     m.highlight.width = highlightWidth(collapsed)
 end sub
 
-' Every themed assignment lives here and nowhere else.
-' Only component.* tokens are referenced - never a primitive like
-' color.brand.primary - so a rebrand never touches this file.
 sub applyTheme()
-    t = Theme(true)
+    t = Theme()
 
-    ' Cached on m because updateHighlight() runs on every focus frame; it must
-    ' stay a pure field assignment with no token lookups in that hot path.
     m.labelColor = t.color("component.navItem.labelColor", "0x888899FF")
     m.labelColorFocused = t.color("component.navItem.labelColorFocused", "0xFFFFFFFF")
 

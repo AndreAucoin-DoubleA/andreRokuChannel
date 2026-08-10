@@ -3,11 +3,10 @@ sub init()
     m.bodyLabel = m.top.findNode("bodyLabel")
 
     applyTheme()
-    m.global.observeField("designTokens", "applyTheme")
 end sub
 
 sub applyTheme()
-    t = Theme(true)
+    t = Theme()
 
     m.titleLabel.color = t.color("component.page.titleColor", "0xFFFFFFFF")
     m.titleLabel.font = t.font("component.page.titleTypography", "font:LargeBoldSystemFont")

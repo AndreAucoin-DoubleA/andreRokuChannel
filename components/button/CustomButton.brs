@@ -4,12 +4,11 @@ sub init()
 
     applyTheme()
 
-    m.global.observeField("designTokens", "applyTheme")
     m.top.observeField("focusedChild", "onFocusChanged")
 end sub
 
 sub applyTheme()
-    t = Theme(true)
+    t = Theme()
 
     m.bg = t.color("component.button.bgColor", "0x1B1B3AFF")
     m.bgFocused = t.color("component.button.bgColorFocused", "0x4444AAFF")

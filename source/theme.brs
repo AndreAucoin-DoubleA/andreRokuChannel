@@ -1,67 +1,45 @@
-function Theme(refresh = false as boolean) as object
-    if m._theme <> invalid and not refresh then return m._theme
+function Theme() as object
+    if m._theme <> invalid then return m._theme
 
     tokens = m.global.designTokens
     if tokens = invalid then tokens = {}
 
     m._theme = {
         tokens: tokens,
-        fontCache: {},
-        color: theme_color,
-        size: theme_size,
-        number: theme_number,
+        color: theme_value,
+        size: theme_value,
+        number: theme_value,
         font: theme_font
     }
     return m._theme
 end function
 
-function theme_color(name as string, fallback as string) as string
-    entry = m.tokens[LCase(name)]
-    if entry = invalid
-        print "[theme] MISSING color token: "; name
-        return fallback
-    end if
-    return entry.value
-end function
+function theme_value(name as string, fallback as dynamic) as dynamic
+    value = m.tokens[LCase(name)]
 
-function theme_size(name as string, fallback as float) as float
-    entry = m.tokens[LCase(name)]
-    if entry = invalid
-        print "[theme] MISSING size token: "; name
+    if value = invalid
+        print "[theme] MISSING token: "; name
         return fallback
     end if
-    return entry.value
-end function
 
-function theme_number(name as string, fallback as float) as float
-    entry = m.tokens[LCase(name)]
-    if entry = invalid
-        print "[theme] MISSING number token: "; name
-        return fallback
-    end if
-    return entry.value
+    return value
 end function
 
 function theme_font(name as string, fallback as string) as object
-    entry = m.tokens[LCase(name)]
-    if entry = invalid or type(entry.value) <> "roAssociativeArray"
+    spec = m.tokens[LCase(name)]
+
+    if spec = invalid or type(spec) <> "roAssociativeArray"
         print "[theme] MISSING typography token: "; name
         return fallback
     end if
 
-    spec = entry.value
-    key = LCase(spec.fontFamily) + "@" + Str(spec.fontSize)
-    if m.fontCache[key] <> invalid then return m.fontCache[key]
-
     uri = FontUri(spec.fontFamily)
     if uri = "" then return fallback
 
-    f = CreateObject("roSGNode", "Font")
-    f.uri = uri
-    f.size = spec.fontSize
-
-    m.fontCache[key] = f
-    return f
+    font = CreateObject("roSGNode", "Font")
+    font.uri = uri
+    font.size = spec.fontSize
+    return font
 end function
 
 function FontUri(family as string) as string

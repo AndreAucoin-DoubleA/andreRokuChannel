@@ -91,7 +91,7 @@ function NormalizeTokens(resolved as object) as object
     out = {}
     for each key in resolved
         entry = resolved[key]
-        out[key] = { type: entry.type, value: NormalizeValue(entry.type, entry.value) }
+        out[key] = NormalizeValue(entry.type, entry.value)
     end for
     return out
 end function

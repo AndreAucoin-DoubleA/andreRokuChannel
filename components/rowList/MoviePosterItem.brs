@@ -4,11 +4,10 @@ sub init()
     m.posterMask = m.top.findNode("posterMask")
 
     applyTheme()
-    m.global.observeField("designTokens", "applyTheme")
 end sub
 
 sub applyTheme()
-    t = Theme(true)
+    t = Theme()
 
     m.focusRing.width = t.size("component.moviePoster.width", 376)
     m.focusRing.height = t.size("component.moviePoster.height", 220)
