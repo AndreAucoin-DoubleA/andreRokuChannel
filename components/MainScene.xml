@@ -6,6 +6,7 @@
     <script type="text/brightscript" uri="pkg:/components/MainScene.brs" />
     <script type="text/brightscript" uri="pkg:/source/theme.brs" />
     <script type="text/brightscript" uri="pkg:/source/config.brs" />
+
     <children>
         <Poster id="sceneBackground" width="1920" height="1080"/>
 

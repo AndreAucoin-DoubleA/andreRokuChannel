@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="NavItem" extends="Group">
     <script type="text/brightscript" uri="pkg:/components/siteNav/NavItem.brs" />
+    <script type="text/brightscript" uri="pkg:/source/theme.brs" />
 
     <interface>
         <field id="itemContent" type="node" onChange="onContentChanged"/>

@@ -1,6 +1,5 @@
 sub init()
-    m.top.backgroundColor = "#0f0f23"
-    m.top.findNode("sceneBackground").uri = Theme().backgroundUri
+    m.top.findNode("sceneBackground").uri = AppAssets().backgroundUri
 
     m.sideBar = m.top.findNode("sideBar")
     m.chrome = m.top.findNode("chrome")
@@ -13,6 +12,9 @@ sub init()
     m.screens.stackContainer = m.top.findNode("stackLayer")
     m.screens.observeField("activeDepth", "onActiveDepthChanged")
 
+    applyTheme()
+
+    m.global.observeField("designTokens", "applyTheme")
     m.global.observeField("navCollapsed", "onNavCollapsedChanged")
 
     m.navPages = []
@@ -27,6 +29,15 @@ sub init()
     focusContentArea()
 end sub
 
+sub applyTheme()
+    t = Theme(true)
+
+    m.top.backgroundColor = t.color("component.scene.backgroundColor", "0x0F0F23FF")
+
+    m.navRailExpanded = t.size("component.scene.navRailExpanded", 420)
+    m.navRailCollapsed = t.size("component.scene.navRailCollapsed", 140)
+end sub
+
 sub onMenuFocused()
     entry = m.navPages[m.sideBar.itemFocused]
     if entry = invalid then return
@@ -39,10 +50,10 @@ end sub
 
 sub onNavCollapsedChanged()
     if m.global.navCollapsed
-        targetWidth = 140
+        targetWidth = m.navRailCollapsed
         targetOpacity = 0.3
     else
-        targetWidth = 420
+        targetWidth = m.navRailExpanded
         targetOpacity = 0.88
     end if
 

@@ -1,6 +1,7 @@
 sub init()
     m.meta = m.top.findNode("meta")
     m.desc = m.top.findNode("desc")
+    m.scrim = m.top.findNode("scrim")
     m.detailsBack = m.top.findNode("detailsBack")
     m.detailsBottomFade = m.top.findNode("detailsBottomFade")
 
@@ -26,6 +27,21 @@ sub init()
     m.bgPlayed = false
     m.trailerFailed = false
     m.params = {}
+    applyTheme()
+    m.global.observeField("designTokens", "applyTheme")
+end sub
+
+sub applyTheme()
+    t = Theme(true)
+
+    m.scrim.color = t.color("component.movieDetails.scrimColor", "0x0F0F23FF")
+    m.scrim.opacity = t.number("component.movieDetails.scrimOpacity", 0.96)
+
+    m.meta.color = t.color("component.movieDetails.metaColor", "0xAAAACCFF")
+    m.meta.font = t.font("component.movieDetails.metaTypography", "font:MediumSystemFont")
+
+    m.desc.color = t.color("component.movieDetails.descriptionColor", "0xDDDDEEFF")
+    m.desc.font = t.font("component.movieDetails.descriptionTypography", "font:MediumSystemFont")
 end sub
 
 sub viewDidLoad(params as object)

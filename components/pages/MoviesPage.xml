@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="MoviesPage" extends="BaseView">
     <script type="text/brightscript" uri="pkg:/components/pages/MoviesPage.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/theme.brs"/>
     <children>
         <Group id="heroGroup" opacity="0" visible="false">
             <MaskGroup
                 id="itemSelectBackgroundMask"
                 translation="[460, 0]"
                 maskUri="pkg:/images/backdrop_corner_fade.png"
-                maskSize="[1300,680]"
+                maskSize="[1460,680]"
                 maskOffset="[0,0]">
                 <Poster
                     id="itemSelectBackground"
-                    width="1300"
+                    width="1460"
                     height="680"
                     loadDisplayMode="scaleToZoom"
                     visible="false"/>
@@ -55,7 +56,7 @@
             vertFocusAnimationStyle="fixedFocus"
             drawFocusFeedback="false"
             numRenderPasses="2"
-            itemSize="[1800,290]"
+            itemSize="[1880,290]"
             itemSpacing="[0,40]"
             rowItemSize="[[376,220]]"
             rowLabelOffset="[[25,25]]"
@@ -70,8 +71,8 @@
 
         <Poster
             id="rightFade"
-            translation="[1520,0]"
-            width="260"
+            translation="[1570,0]"
+            width="400"
             height="1080"
             loadDisplayMode="scaleToFill"
             uri="pkg:/images/movies_right_fade.png"/>

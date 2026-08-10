@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="GamesPage" extends="BaseView">
     <script type="text/brightscript" uri="pkg:/components/pages/GamesPage.brs" />
+    <script type="text/brightscript" uri="pkg:/source/theme.brs" />
     <children>
         <Label
+            id="titleLabel"
             translation="[40,80]"
             text="Games"
             font="font:LargeBoldSystemFont"
             color="#FFFFFF"/>
         <LayoutGroup
+            id="gamesList"
             translation="[40, 160]"
             layoutDirection="vert"
             itemSpacings="[15]">
-            <Label text="1. Mario Kart World Tour" font="font:MediumSystemFont" color="#AAAACC" />
+            <Label id="game1Label" text="1. Mario Kart World Tour" font="font:MediumSystemFont" color="#AAAACC" />
         </LayoutGroup>
     </children>
 </component>

@@ -6,11 +6,40 @@ sub init()
     m.fadeInterp = m.top.findNode("fadeInterp")
     m.highlightWidthInterp = m.top.findNode("highlightWidthInterp")
 
+    applyTheme()
+
+    ' Re-theme in place if the token table is ever swapped at runtime.
+    ' This is the whole reason applyTheme() is a separate sub.
+    m.global.observeField("designTokens", "applyTheme")
     m.global.observeField("navCollapsed", "onCollapsedChanged")
 
     collapsed = m.global.navCollapsed
     m.label.opacity = labelOpacity(collapsed)
     m.highlight.width = highlightWidth(collapsed)
+end sub
+
+' Every themed assignment lives here and nowhere else.
+' Only component.* tokens are referenced - never a primitive like
+' color.brand.primary - so a rebrand never touches this file.
+sub applyTheme()
+    t = Theme(true)
+
+    ' Cached on m because updateHighlight() runs on every focus frame; it must
+    ' stay a pure field assignment with no token lookups in that hot path.
+    m.labelColor = t.color("component.navItem.labelColor", "0x888899FF")
+    m.labelColorFocused = t.color("component.navItem.labelColorFocused", "0xFFFFFFFF")
+
+    m.widthExpanded = t.size("component.navItem.width", 250)
+    m.widthCollapsed = t.size("component.navItem.widthCollapsed", 80)
+
+    itemHeight = t.size("component.navItem.height", 70)
+
+    m.highlight.blendColor = t.color("component.navItem.highlightColor", "0x6C3FA0FF")
+    m.highlight.height = itemHeight
+
+    m.label.height = itemHeight
+    m.label.color = m.labelColor
+    m.label.font = t.font("component.navItem.labelTypography", "font:MediumSystemFont")
 end sub
 
 function labelOpacity(collapsed as boolean) as float
@@ -19,8 +48,8 @@ function labelOpacity(collapsed as boolean) as float
 end function
 
 function highlightWidth(collapsed as boolean) as float
-    if collapsed then return 80.0
-    return 250.0
+    if collapsed then return m.widthCollapsed
+    return m.widthExpanded
 end function
 
 sub onContentChanged()
@@ -37,9 +66,9 @@ sub updateHighlight()
     m.highlight.opacity = p * dimFactor
 
     if p > 0.5
-        m.label.color = &hFFFFFFFF
+        m.label.color = m.labelColorFocused
     else
-        m.label.color = &h888899FF
+        m.label.color = m.labelColor
     end if
 end sub
 

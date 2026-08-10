@@ -16,7 +16,15 @@ sub Main()
     print "Channel available memory (KB): "; m.appMemoryMonitor.GetChannelAvailableMemory()
 
     globals = screen.getGlobalNode()
-    globals.addFields({ navCollapsed: true })
+
+    ' Parse the token file ONCE, here on the main thread, before the scene
+    ' exists. File I/O on the render thread blocks rendering, and every
+    ' component's init() reads designTokens during CreateScene below - so it
+    ' has to be on the global node first.
+    globals.addFields({
+        navCollapsed: true,
+        designTokens: loadTokens("pkg:/tokens/tokens.json")
+    })
 
     screen.CreateScene("MainScene")
     screen.show()

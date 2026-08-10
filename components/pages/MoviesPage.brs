@@ -30,6 +30,23 @@ sub init()
 
     m.logoTask = CreateObject("roSGNode", "FetchMovieLogoTask")
     m.logoTask.observeField("logoUrl", "onLogoFetched")
+
+    applyTheme()
+    m.global.observeField("designTokens", "applyTheme")
+end sub
+
+sub applyTheme()
+    t = Theme(true)
+
+    m.loadingLabel.color = t.color("component.page.statusTextColor", "0xAAAACCFF")
+    m.loadingLabel.font = t.font("component.page.statusTextTypography", "font:MediumSystemFont")
+
+    m.movieTitleLabel.color = t.color("component.page.heroTitleColor", "0xFFFFFFFF")
+    m.movieTitleLabel.font = t.font("component.page.heroTitleTypography", "font:LargeBoldSystemFont")
+
+    posterWidth = t.size("component.moviePoster.width", 376)
+    posterHeight = t.size("component.moviePoster.height", 220)
+    m.rowList.rowItemSize = [[posterWidth, posterHeight]]
 end sub
 
 function movieAt(sel as object) as object
