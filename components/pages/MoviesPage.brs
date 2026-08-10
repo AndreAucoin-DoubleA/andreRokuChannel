@@ -267,7 +267,7 @@ sub viewDidLoad(params as object)
     m.movieTask.control = "RUN"
 end sub
 
-sub viewWillDisappear(params as object)
+sub viewWillDisappear()
     stopMovieTask()
     stopLogoTask()
 end sub

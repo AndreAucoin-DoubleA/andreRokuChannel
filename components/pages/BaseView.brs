@@ -1,13 +1,13 @@
 sub viewDidLoad(params as object)
 end sub
 
-sub viewWillAppear(params as object)
+sub viewWillAppear()
 end sub
 
-sub viewWillHide(params as object)
+sub viewWillHide()
 end sub
 
-sub viewWillDisappear(params as object)
+sub viewWillDisappear()
 end sub
 
 function setViewFocus() as boolean

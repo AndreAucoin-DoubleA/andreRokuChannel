@@ -10,7 +10,7 @@
     <children>
         <Poster id="sceneBackground" width="1920" height="1080"/>
 
-        <Group id="stackLayer"/>
+        <ScreenManager id="screens"/>
 
         <Group id="chrome">
             <Poster
@@ -45,7 +45,5 @@
                 loadDisplayMode="scaleToFill"
                 uri="pkg:/images/bottom_fade.png"/>
         </Group>
-
-        <ScreenManager id="screens"/>
     </children>
 </component>

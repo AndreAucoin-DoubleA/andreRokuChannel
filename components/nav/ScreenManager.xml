@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<component name="ScreenManager">
+<component name="ScreenManager" extends="Group">
     <script type="text/brightscript" uri="pkg:/components/nav/ScreenManager.brs" />
     <script type="text/brightscript" uri="pkg:/source/config.brs"/>
 
     <interface>
-        <field id="stackContainer" type="node"/>
-
         <function name="showStack"/>
         <function name="focusActive"/>
         <function name="suspendActive"/>

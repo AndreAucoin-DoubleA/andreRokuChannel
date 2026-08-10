@@ -9,7 +9,6 @@ sub init()
     m.navFadeOpacityInterp = m.top.findNode("navFadeOpacityInterp")
 
     m.screens = m.top.findNode("screens")
-    m.screens.stackContainer = m.top.findNode("stackLayer")
     m.screens.observeField("activeDepth", "onActiveDepthChanged")
 
     applyTheme()

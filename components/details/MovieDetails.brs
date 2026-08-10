@@ -49,15 +49,15 @@ sub viewDidLoad(params as object)
     applyMovie(params.movie)
     m.nextButton.visible = (nextSibling() <> invalid)
 end sub
-sub viewWillAppear(params as object)
+sub viewWillAppear()
     beginAmbientCountdown()
 end sub
 
-sub viewWillHide(params as object)
+sub viewWillHide()
     resetPlayback()
 end sub
 
-sub viewWillDisappear(params as object)
+sub viewWillDisappear()
     resetPlayback()
 end sub
 

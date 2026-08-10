@@ -5,38 +5,31 @@ end sub
 
 
 function showStack(id as string) as object
-    entry = pageById(id)
+    if m.top.activeStackId = id then return m.activeStack
 
+    entry = pageById(id)
     if entry = invalid then return invalid
 
-    if m.activeStack <> invalid and m.top.activeStackId = id then return m.activeStack
-
-    if m.activeStack <> invalid then m.activeStack.callFunc("suspendTop")
-
-    container = m.top.stackContainer
-    if container = invalid then return invalid
+    if m.activeStack <> invalid
+        m.activeStack.callFunc("suspendTop")
+        m.activeStack.visible = false
+    end if
 
     stack = m.stacks[id]
-    isNew = (stack = invalid)
 
-    if isNew
-        stack = container.createChild("ViewStack")
-        stack.visible = false
-
-        stack.observeField("stackDepth", "onStackDepthChanged")
+    if stack = invalid
+        stack = m.top.createChild("ViewStack")
         m.stacks[id] = stack
 
         stack.callFunc("setRoot", { view: entry.component, params: {}, inset: [160, 0] })
+        stack.observeField("stackDepth", "onStackDepthChanged")
+    else
+        stack.callFunc("resumeTop")
     end if
 
-    for each key in m.stacks
-        m.stacks[key].visible = (key = id)
-    end for
-
+    stack.visible = true
     m.activeStack = stack
     m.top.activeStackId = id
-
-    if not isNew then stack.callFunc("resumeTop")
 
     publishDepth()
     return stack
