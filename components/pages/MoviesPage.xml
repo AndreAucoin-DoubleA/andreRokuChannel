@@ -3,7 +3,7 @@
     <script type="text/brightscript" uri="pkg:/components/pages/MoviesPage.brs"/>
     <script type="text/brightscript" uri="pkg:/source/theme.brs"/>
     <children>
-        <Group id="heroGroup" opacity="0" visible="false">
+        <Group id="heroGroup" opacity="0">
             <MaskGroup
                 id="itemSelectBackgroundMask"
                 translation="[460, 0]"
@@ -14,8 +14,7 @@
                     id="itemSelectBackground"
                     width="1460"
                     height="680"
-                    loadDisplayMode="scaleToZoom"
-                    visible="false"/>
+                    loadDisplayMode="scaleToZoom"/>
             </MaskGroup>
 
             <Poster
@@ -46,6 +45,10 @@
                 fieldToInterp="heroGroup.opacity"/>
         </Animation>
 
+        <Timer id="heroDebounce" duration="0.3" repeat="false"/>
+
+        <Timer id="inputGateTimeout" duration="8" repeat="false"/>
+
         <RowList
             id="rowList"
             showRowLabel="true"
@@ -55,7 +58,6 @@
             rowFocusAnimationStyle="fixedFocus"
             vertFocusAnimationStyle="fixedFocus"
             drawFocusFeedback="false"
-            numRenderPasses="2"
             itemSize="[1880,290]"
             itemSpacing="[0,40]"
             rowItemSize="[[376,220]]"

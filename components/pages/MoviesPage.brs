@@ -2,34 +2,30 @@ sub init()
     m.rowList = m.top.findNode("rowList")
     m.loadingLabel = m.top.findNode("loadingLabel")
     m.heroGroup = m.top.findNode("heroGroup")
-    m.itemSelectBackground = m.top.findNode("itemSelectBackground")
+    m.backdrop = m.top.findNode("itemSelectBackground")
     m.movieLogo = m.top.findNode("movieLogo")
     m.movieTitleLabel = m.top.findNode("movieTitleLabel")
     m.heroFadeAnim = m.top.findNode("heroFadeAnim")
-    m.heroSeeded = false
-    m.rowList.observeField("rowItemSelected", "onMovieSelected")
-    m.rowList.observeField("rowItemFocused", "onMovieFocused")
+    m.heroDebounce = m.top.findNode("heroDebounce")
+    m.inputGateTimeout = m.top.findNode("inputGateTimeout")
 
     m.rootContent = CreateObject("roSGNode", "ContentNode")
     m.rowList.content = m.rootContent
 
     m.logoCache = {}
-    m.logoBusy = false
-    m.pendingLogoId = ""
+    m.stagedRows = []
+    m.logoTask = invalid
     m.movieTask = invalid
-    m.currentTransitionKey = ""
-    m.currentMovieId = invalid
-    m.backdropReady = false
-    m.logoReady = false
-    m.logoIsImage = false
-    m.pendingBackdropUri = ""
-    m.pendingLogoUri = ""
+    m.currentMovieId = ""
+    m.pendingMovie = invalid
+    m.inputLocked = true
 
-    m.itemSelectBackground.observeField("loadStatus", "onBackdropLoadStatusChanged")
-    m.movieLogo.observeField("loadStatus", "onLogoLoadStatusChanged")
-
-    m.logoTask = CreateObject("roSGNode", "FetchMovieLogoTask")
-    m.logoTask.observeField("logoUrl", "onLogoFetched")
+    m.rowList.observeField("rowItemSelected", "onMovieSelected")
+    m.rowList.observeField("rowItemFocused", "onMovieFocused")
+    m.heroDebounce.observeField("fire", "onHeroDebounceFired")
+    m.inputGateTimeout.observeField("fire", "releaseInputGate")
+    m.backdrop.observeField("loadStatus", "onBackdropLoadStatus")
+    m.movieLogo.observeField("loadStatus", "onLogoLoadStatus")
 
     applyTheme()
 end sub
@@ -43,9 +39,52 @@ sub applyTheme()
     m.movieTitleLabel.color = t.color("component.page.heroTitleColor", "0xFFFFFFFF")
     m.movieTitleLabel.font = t.font("component.page.heroTitleTypography", "font:LargeBoldSystemFont")
 
-    posterWidth = t.size("component.moviePoster.width", 376)
-    posterHeight = t.size("component.moviePoster.height", 220)
-    m.rowList.rowItemSize = [[posterWidth, posterHeight]]
+    m.rowList.rowItemSize = [[t.size("component.moviePoster.width", 376), t.size("component.moviePoster.height", 220)]]
+end sub
+
+sub viewDidLoad(params as object)
+    if m.movieTask <> invalid then return
+
+    m.loadingLabel.visible = true
+    m.inputGateTimeout.control = "start"
+
+    m.movieTask = CreateObject("roSGNode", "PopulateMoviesTask")
+    m.movieTask.batchSize = 5
+    m.movieTask.observeField("rowBatch", "onRowBatchReady")
+    m.movieTask.observeField("loadComplete", "onLoadComplete")
+    m.movieTask.control = "RUN"
+end sub
+
+sub onRowBatchReady(msg as object)
+    batch = msg.GetData()
+    if batch = invalid then return
+
+    kids = batch.GetChildren(-1, 0)
+    if kids.Count() = 0 then return
+
+    batch.RemoveChildren(kids)
+
+    if m.rootContent.getChildCount() > 0
+        m.stagedRows.Append(kids)
+        return
+    end if
+
+    m.rootContent.AppendChildren(kids)
+    m.loadingLabel.visible = false
+    showHero(kids[0].getChild(0))
+end sub
+
+sub onLoadComplete()
+    if m.stagedRows.Count() > 0
+        m.rootContent.AppendChildren(m.stagedRows)
+        m.stagedRows = []
+    end if
+
+    if m.rootContent.getChildCount() > 0 then return
+
+    m.loadingLabel.text = "Couldn't load movies"
+    m.loadingLabel.visible = true
+    releaseInputGate()
 end sub
 
 function movieAt(sel as object) as object
@@ -57,221 +96,153 @@ function movieAt(sel as object) as object
     return row.getChild(sel[1])
 end function
 
-sub onMovieSelected()
-    sel = m.rowList.rowItemSelected
-    movie = movieAt(sel)
-    if movie = invalid then return
-
-    row = m.rootContent.getChild(sel[0])
-    pushView("MovieDetails", { movie: movie, row: row, index: sel[1] })
-end sub
-
 sub onMovieFocused()
     movie = movieAt(m.rowList.rowItemFocused)
     if movie = invalid then return
 
-    beginMovieTransition(movie)
+    m.pendingMovie = movie
+    m.heroDebounce.control = "stop"
+    m.heroDebounce.control = "start"
 end sub
 
-sub beginMovieTransition(movie as object)
-    movieIdStr = movie.movieId
-    if movieIdStr = invalid then movieIdStr = ""
-    key = movie.title + "|" + movieIdStr
-    if key = m.currentTransitionKey then return
-    m.currentTransitionKey = key
+sub onHeroDebounceFired()
+    if m.pendingMovie = invalid then return
 
-    m.currentMovieId = movie.movieId
-    m.currentLogoTitle = movie.title
-    m.backdropReady = false
-    m.logoReady = false
+    movie = m.pendingMovie
+    m.pendingMovie = invalid
+    showHero(movie)
+end sub
+
+sub showHero(movie as object)
+    if movie = invalid then return
+
+    movieId = movie.movieId
+    if movieId = invalid then movieId = ""
+    if movieId <> "" and movieId = m.currentMovieId then return
+    m.currentMovieId = movieId
+
+    uri = movie.HDBackgroundImageUrl
+    if uri = invalid then uri = ""
 
     m.heroFadeAnim.control = "stop"
     m.heroGroup.opacity = 0
-    m.heroGroup.visible = false
-    m.itemSelectBackground.visible = false
-    m.movieLogo.visible = false
-    m.movieTitleLabel.visible = false
+    m.backdrop.uri = uri
 
-    loadBackdrop(movie)
-    loadLogo(movie)
+    showLogo(movie, movieId)
+
+    if uri = "" then revealHero()
 end sub
 
-sub loadBackdrop(movie as object)
-    uri = movie.HDBackgroundImageUrl
-    m.pendingBackdropUri = uri
-
-    if uri = invalid or uri = ""
-        m.backdropReady = true
-        tryReveal()
-        return
-    end if
-
-    if m.itemSelectBackground.uri = uri and m.itemSelectBackground.loadStatus = "ready"
-        m.backdropReady = true
-        tryReveal()
-        return
-    end if
-
-    m.itemSelectBackground.uri = uri
-end sub
-
-sub onBackdropLoadStatusChanged()
-    status = m.itemSelectBackground.loadStatus
+sub onBackdropLoadStatus()
+    status = m.backdrop.loadStatus
     if status <> "ready" and status <> "failed" then return
-    if m.itemSelectBackground.uri <> m.pendingBackdropUri then return
 
-    m.backdropReady = true
-    tryReveal()
+    revealHero()
 end sub
 
-sub loadLogo(movie as object)
-    movieId = movie.movieId
+sub revealHero()
+    m.heroFadeAnim.control = "start"
+    releaseInputGate()
+end sub
 
-    if movieId = invalid or movieId = ""
-        useTextFallback()
+sub showLogo(movie as object, movieId as string)
+    m.movieTitleLabel.text = movie.title
+
+    if movieId = ""
+        applyLogo(invalid)
         return
     end if
 
     cached = m.logoCache[movieId]
     if cached <> invalid
-        applyCachedLogo(cached)
+        applyLogo(cached)
         return
     end if
 
-    if m.logoBusy
-        m.pendingLogoId = movieId
-        return
-    end if
-
+    m.movieLogo.visible = false
+    m.movieTitleLabel.visible = false
     startLogoFetch(movieId)
 end sub
 
+sub applyLogo(logoUrl as dynamic)
+    hasLogo = (logoUrl <> invalid and logoUrl <> "")
+
+    if hasLogo then m.movieLogo.uri = logoUrl
+    m.movieLogo.visible = hasLogo
+    m.movieTitleLabel.visible = not hasLogo
+end sub
+
+sub onLogoLoadStatus()
+    if m.movieLogo.loadStatus <> "failed" then return
+
+    m.movieLogo.visible = false
+    m.movieTitleLabel.visible = true
+end sub
+
 sub startLogoFetch(movieId as string)
+    cancelLogoFetch()
+
+    task = CreateObject("roSGNode", "FetchMovieLogoTask")
+    task.movieId = movieId
+    task.observeField("logoUrl", "onLogoFetched")
+    m.logoTask = task
+    task.control = "RUN"
+end sub
+
+sub cancelLogoFetch()
     if m.logoTask = invalid then return
 
-    m.logoBusy = true
-    m.pendingLogoId = ""
-    m.logoTask.movieId = movieId
-    m.logoTask.control = "RUN"
+    m.logoTask.unobserveField("logoUrl")
+    m.logoTask.control = "stop"
+    m.logoTask = invalid
 end sub
 
 sub onLogoFetched(msg as object)
-    task = msg.GetRoSGNode()
-    movieId = task.movieId
+    movieId = msg.GetRoSGNode().movieId
     logoUrl = msg.GetData()
 
-    m.logoBusy = false
     m.logoCache[movieId] = logoUrl
 
-    if movieId = m.currentMovieId then applyCachedLogo(logoUrl)
-
-    nextId = m.pendingLogoId
-    if nextId = "" then return
-    m.pendingLogoId = ""
-
-    cached = m.logoCache[nextId]
-    if cached <> invalid
-        if nextId = m.currentMovieId then applyCachedLogo(cached)
-        return
-    end if
-
-    startLogoFetch(nextId)
+    if movieId = m.currentMovieId then applyLogo(logoUrl)
 end sub
 
-sub applyCachedLogo(logoUrl as string)
-    if logoUrl = invalid or logoUrl = ""
-        useTextFallback()
-        return
-    end if
 
-    m.logoIsImage = true
-    m.pendingLogoUri = logoUrl
+function setViewFocus() as boolean
+    if m.inputLocked then return m.top.setFocus(true)
 
-    if m.movieLogo.uri = logoUrl and m.movieLogo.loadStatus = "ready"
-        m.logoReady = true
-        tryReveal()
-        return
-    end if
+    return m.rowList.setFocus(true)
+end function
 
-    m.movieLogo.uri = logoUrl
+function onKeyEvent(key as string, press as boolean) as boolean
+    if not m.inputLocked or not press then return false
+
+    return key = "up" or key = "down" or key = "right" or key = "OK"
+end function
+
+sub releaseInputGate()
+    if not m.inputLocked then return
+
+    m.inputLocked = false
+    m.inputGateTimeout.control = "stop"
+
+    if m.top.isInFocusChain() then m.rowList.setFocus(true)
 end sub
 
-sub onLogoLoadStatusChanged()
-    status = m.movieLogo.loadStatus
-    if status <> "ready" and status <> "failed" then return
-    if m.movieLogo.uri <> m.pendingLogoUri then return
+sub onMovieSelected()
+    sel = m.rowList.rowItemSelected
+    movie = movieAt(sel)
+    if movie = invalid then return
 
-    if status = "failed"
-        useTextFallback()
-        return
-    end if
-
-    m.logoReady = true
-    tryReveal()
-end sub
-
-sub useTextFallback()
-    m.logoIsImage = false
-    m.movieTitleLabel.text = m.currentLogoTitle
-    m.logoReady = true
-    tryReveal()
-end sub
-
-sub tryReveal()
-    if not m.backdropReady or not m.logoReady then return
-
-    m.itemSelectBackground.visible = true
-    m.movieLogo.visible = m.logoIsImage
-    m.movieTitleLabel.visible = not m.logoIsImage
-
-    m.heroGroup.visible = true
-    m.heroFadeAnim.control = "start"
-end sub
-
-sub onRowBatchReady(msg as object)
-    print "[MoviesPage] onRowBatchReady fired"
-    batch = msg.GetData()
-    if batch = invalid
-        print "[MoviesPage] onRowBatchReady: batch data was invalid"
-        return
-    end if
-
-    kids = batch.GetChildren(-1, 0)
-    print "[MoviesPage] onRowBatchReady: " ; kids.Count() ; " row(s) in this batch"
-    if kids.Count() = 0 then return
-
-    batch.RemoveChildren(kids)
-    m.rootContent.AppendChildren(kids)
-    m.loadingLabel.visible = false
-
-    if not m.heroSeeded
-        firstRow = m.rootContent.getChild(0)
-        if firstRow <> invalid and firstRow.getChild(0) <> invalid
-            m.heroSeeded = true
-            beginMovieTransition(firstRow.getChild(0))
-        end if
-    end if
-end sub
-
-sub viewDidLoad(params as object)
-    if m.movieTask <> invalid then return
-
-    print "[MoviesPage] viewDidLoad: starting PopulateMoviesTask"
-    m.loadingLabel.visible = true
-
-    m.movieTask = CreateObject("roSGNode", "PopulateMoviesTask")
-    m.movieTask.batchSize = 5
-    m.movieTask.observeField("rowBatch", "onRowBatchReady")
-    m.movieTask.observeField("loadComplete", "onLoadComplete")
-    m.movieTask.control = "RUN"
+    pushView("MovieDetails", { movie: movie, row: m.rootContent.getChild(sel[0]), index: sel[1] })
 end sub
 
 sub viewWillDisappear()
-    stopMovieTask()
-    stopLogoTask()
-end sub
+    m.heroDebounce.control = "stop"
+    m.inputGateTimeout.control = "stop"
+    m.pendingMovie = invalid
 
-sub stopMovieTask()
+    cancelLogoFetch()
+
     if m.movieTask = invalid then return
 
     m.movieTask.unobserveField("rowBatch")
@@ -280,24 +251,3 @@ sub stopMovieTask()
     m.movieTask = invalid
 end sub
 
-sub stopLogoTask()
-    m.pendingLogoId = ""
-    m.logoBusy = false
-
-    if m.logoTask = invalid then return
-
-    m.logoTask.unobserveField("logoUrl")
-    m.logoTask.control = "stop"
-    m.logoTask = invalid
-end sub
-
-function setViewFocus() as boolean
-    return m.rowList.setFocus(true)
-end function
-
-sub onLoadComplete()
-    if m.rootContent.GetChildCount() = 0
-        m.loadingLabel.text = "Couldn't load movies"
-        m.loadingLabel.visible = true
-    end if
-end sub

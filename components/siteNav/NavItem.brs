@@ -71,3 +71,4 @@ sub onCollapsedChanged()
     m.collapseAnim.control = "stop"
     m.collapseAnim.control = "start"
 end sub
+
