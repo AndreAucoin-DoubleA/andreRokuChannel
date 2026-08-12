@@ -87,8 +87,6 @@ sub onFavoriteToggled()
 
     favorited = m.favButton.favorited
 
-    ' applyMovie() writes this field to reflect stored state; only persist when
-    ' the user actually changed it, so loading a view never touches flash.
     if favorited = isFavorite(m.currentMovieId) then return
 
     setFavorite(m.currentMovieId, favorited)
@@ -99,7 +97,6 @@ function nextSibling() as object
     return m.params.row.getChild(m.params.index + 1)
 end function
 
-' THE demo: pushes another instance of this same component
 sub onNextPressed()
     nextMovie = nextSibling()
     if nextMovie = invalid then return
@@ -238,8 +235,6 @@ function onKeyEvent(key as string, press as boolean) as boolean
 
     if m.fullscreenActive then return false
 
-    ' The star sits off to the right of the button column, so it is reached
-    ' with right/left rather than being part of the vertical chain.
     if key = "right" and not m.favButton.hasFocus()
         m.returnFocus = focusedColumnControl()
         m.favButton.setFocus(true)
@@ -260,9 +255,6 @@ function onKeyEvent(key as string, press as boolean) as boolean
     return false
 end function
 
-' The left-hand button column, ordered top-to-bottom. nextButton only joins
-' when visible, so focus never lands on a hidden control. The star is not in
-' here - it lives to the right and is handled separately in onKeyEvent.
 function focusChain() as object
     chain = [m.button]
     if m.nextButton.visible then chain.Push(m.nextButton)
@@ -284,8 +276,6 @@ function moveFocus(delta as integer) as boolean
     for idx = 0 to chain.Count() - 1
         if chain[idx].hasFocus()
             target = idx + delta
-            ' At either end, return false so the key bubbles up instead of
-            ' trapping focus in this view.
             if target < 0 or target >= chain.Count() then return false
 
             chain[target].setFocus(true)

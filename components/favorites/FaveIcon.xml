@@ -7,8 +7,6 @@
     </interface>
 
     <children>
-        <!-- No uri here on purpose: onFavoritedChanged owns which image shows.
-             Focus is conveyed by opacity + scale in onFocusChanged. -->
         <Poster
             id="favIcon"
             width="64"

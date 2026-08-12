@@ -9,16 +9,15 @@ sub init()
     m.heroDebounce = m.top.findNode("heroDebounce")
     m.inputGateTimeout = m.top.findNode("inputGateTimeout")
 
-    m.rootContent = CreateObject("roSGNode", "ContentNode")
+    m.rootContent = m.global.catalog
     m.rowList.content = m.rootContent
 
     m.logoCache = {}
-    m.stagedRows = []
     m.logoTask = invalid
-    m.movieTask = invalid
     m.currentMovieId = ""
     m.pendingMovie = invalid
     m.inputLocked = true
+    m.heroShown = false
 
     m.rowList.observeField("rowItemSelected", "onMovieSelected")
     m.rowList.observeField("rowItemFocused", "onMovieFocused")
@@ -43,43 +42,35 @@ sub applyTheme()
 end sub
 
 sub viewDidLoad(params as object)
-    if m.movieTask <> invalid then return
-
-    m.loadingLabel.visible = true
     m.inputGateTimeout.control = "start"
 
-    m.movieTask = CreateObject("roSGNode", "PopulateMoviesTask")
-    m.movieTask.batchSize = 5
-    m.movieTask.observeField("rowBatch", "onRowBatchReady")
-    m.movieTask.observeField("loadComplete", "onLoadComplete")
-    m.movieTask.control = "RUN"
-end sub
-
-sub onRowBatchReady(msg as object)
-    batch = msg.GetData()
-    if batch = invalid then return
-
-    kids = batch.GetChildren(-1, 0)
-    if kids.Count() = 0 then return
-
-    batch.RemoveChildren(kids)
-
     if m.rootContent.getChildCount() > 0
-        m.stagedRows.Append(kids)
+        onCatalogArrived()
         return
     end if
 
-    m.rootContent.AppendChildren(kids)
-    m.loadingLabel.visible = false
-    showHero(kids[0].getChild(0))
+    m.loadingLabel.visible = true
+
+    m.global.observeField("catalogVersion", "onCatalogVersionChanged")
+    m.global.observeField("catalogReady", "onCatalogFinished")
 end sub
 
-sub onLoadComplete()
-    if m.stagedRows.Count() > 0
-        m.rootContent.AppendChildren(m.stagedRows)
-        m.stagedRows = []
-    end if
+sub onCatalogVersionChanged()
+    if m.heroShown then return
+    if m.rootContent.getChildCount() = 0 then return
 
+    onCatalogArrived()
+end sub
+
+sub onCatalogArrived()
+    m.heroShown = true
+    m.loadingLabel.visible = false
+
+    firstRow = m.rootContent.getChild(0)
+    if firstRow <> invalid then showHero(firstRow.getChild(0))
+end sub
+
+sub onCatalogFinished()
     if m.rootContent.getChildCount() > 0 then return
 
     m.loadingLabel.text = "Couldn't load movies"
@@ -242,13 +233,5 @@ sub viewWillDisappear()
     m.pendingMovie = invalid
 
     cancelLogoFetch()
-
-    if m.movieTask = invalid then return
-
-    m.movieTask.unobserveField("rowBatch")
-    m.movieTask.unobserveField("loadComplete")
-    m.movieTask.control = "stop"
-    m.movieTask = invalid
-
 end sub
 

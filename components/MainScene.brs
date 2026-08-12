@@ -25,6 +25,32 @@ sub init()
 
     m.screens.callFunc("showStack", m.navPages[0].id)
     focusContentArea()
+
+    startCatalogLoad()
+end sub
+
+sub startCatalogLoad()
+    m.catalogTask = CreateObject("roSGNode", "PopulateMoviesTask")
+    m.catalogTask.batchSize = 5
+    m.catalogTask.observeField("rowBatch", "onCatalogBatch")
+    m.catalogTask.observeField("loadComplete", "onCatalogComplete")
+    m.catalogTask.control = "RUN"
+end sub
+
+sub onCatalogBatch(msg as object)
+    batch = msg.GetData()
+    if batch = invalid then return
+
+    rows = batch.GetChildren(-1, 0)
+    if rows.Count() = 0 then return
+
+    batch.RemoveChildren(rows)
+    m.global.catalog.AppendChildren(rows)
+    m.global.catalogVersion = m.global.catalogVersion + 1
+end sub
+
+sub onCatalogComplete()
+    m.global.catalogReady = true
 end sub
 
 sub applyTheme()

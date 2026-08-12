@@ -1,19 +1,15 @@
 sub init()
     m.favIcon = m.top.findNode("favIcon")
 
-    ' Scale about the icon's centre, not its top-left corner, so focus grows
-    ' it in place instead of pushing it down and right.
     m.top.scaleRotateCenter = [32, 32]
 
     m.top.observeField("focusedChild", "onFocusChanged")
 
-    ' Fields left at their default value never fire onChange, so paint once.
     onFavoritedChanged()
     onFocusChanged()
 end sub
 
 sub onFavoritedChanged()
-    ' An external write to favorited can land before init() has run.
     if m.favIcon = invalid then return
 
     if m.top.favorited
@@ -39,6 +35,5 @@ function onKeyEvent(key as string, press as boolean) as boolean
         return true
     end if
 
-    ' up/down are the parent's business - let them bubble.
     return false
 end function

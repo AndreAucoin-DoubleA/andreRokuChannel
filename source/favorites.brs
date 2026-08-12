@@ -1,10 +1,3 @@
-' Favorited movie IDs, persisted in the channel registry.
-'
-' A movieId is a favorite if a key with that name exists in the "favorites"
-' section; the stored value is unused. Registry writes go to flash, so
-' Flush() is only called when something actually changed - see
-' onFavoriteToggled in MovieDetails.brs, which drops redundant writes.
-
 function favoritesSection() as object
     return CreateObject("roRegistrySection", "favorites")
 end function
@@ -21,10 +14,31 @@ sub setFavorite(movieId as dynamic, favorited as boolean)
     section = favoritesSection()
 
     if favorited
-        section.Write(movieId, "1")
+        section.Write(movieId, CreateObject("roDateTime").AsSeconds().ToStr())
     else
         section.Delete(movieId)
     end if
 
     section.Flush()
+
+    m.global.favoritesVersion = m.global.favoritesVersion + 1
 end sub
+
+function favoriteIds() as object
+    section = favoritesSection()
+    entries = []
+
+    for each movieId in section.GetKeyList()
+        entries.Push({ movieId: movieId, addedAt: section.Read(movieId).ToInt() })
+    end for
+
+    entries.SortBy("addedAt", "r")
+
+    ids = []
+
+    for each entry in entries
+        ids.Push(entry.movieId)
+    end for
+
+    return ids
+end function
