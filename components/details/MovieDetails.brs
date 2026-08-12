@@ -11,6 +11,9 @@ sub init()
     m.nextButton = m.top.findNode("nextButton")
     m.nextButton.observeField("selected", "onNextPressed")
 
+    m.favButton = m.top.findNode("detailsFav")
+    m.favButton.observeField("favorited", "onFavoriteToggled")
+
     m.backdropFadeAnim = m.top.findNode("backdropFadeAnim")
     m.backdropFadeInterp = m.top.findNode("backdropFadeInterp")
     m.overlayFadeAnim = m.top.findNode("overlayFadeAnim")
@@ -27,6 +30,8 @@ sub init()
     m.bgPlayed = false
     m.trailerFailed = false
     m.params = {}
+    m.currentMovieId = ""
+    m.returnFocus = invalid
     applyTheme()
 end sub
 
@@ -70,6 +75,23 @@ sub applyMovie(movie as object)
     m.meta.text = "Rating: " + movie.rating + "    Released: " + movie.releaseDate
     m.desc.text = movie.description
     m.detailsBack.uri = movie.HDBackgroundImageUrl
+
+    m.currentMovieId = movie.movieId
+    if m.currentMovieId = invalid then m.currentMovieId = ""
+
+    m.favButton.favorited = isFavorite(m.currentMovieId)
+end sub
+
+sub onFavoriteToggled()
+    if m.currentMovieId = "" then return
+
+    favorited = m.favButton.favorited
+
+    ' applyMovie() writes this field to reflect stored state; only persist when
+    ' the user actually changed it, so loading a view never touches flash.
+    if favorited = isFavorite(m.currentMovieId) then return
+
+    setFavorite(m.currentMovieId, favorited)
 end sub
 
 function nextSibling() as object
@@ -112,6 +134,7 @@ sub resetPlayback()
     m.meta.visible = true
     m.desc.visible = true
     m.button.visible = true
+    m.favButton.visible = true
     m.nextButton.visible = (nextSibling() <> invalid)
 end sub
 
@@ -159,6 +182,7 @@ sub onButtonPressed()
     m.meta.visible = false
     m.desc.visible = false
     m.button.visible = false
+    m.favButton.visible = false
     m.nextButton.visible = false
     fadeBackdrop(0)
     fadeOverlay(0)
@@ -192,6 +216,7 @@ sub restoreDetails()
     m.meta.visible = true
     m.desc.visible = true
     m.button.visible = true
+    m.favButton.visible = true
     m.nextButton.visible = (nextSibling() <> invalid)
     fadeBackdrop(1)
     fadeOverlay(1)
@@ -211,17 +236,62 @@ function onKeyEvent(key as string, press as boolean) as boolean
         return true
     end if
 
-    if not m.fullscreenActive and m.nextButton.visible
-        if key = "down" and m.button.hasFocus()
-            m.nextButton.setFocus(true)
-            return true
-        end if
+    if m.fullscreenActive then return false
 
-        if key = "up" and m.nextButton.hasFocus()
-            m.button.setFocus(true)
+    ' The star sits off to the right of the button column, so it is reached
+    ' with right/left rather than being part of the vertical chain.
+    if key = "right" and not m.favButton.hasFocus()
+        m.returnFocus = focusedColumnControl()
+        m.favButton.setFocus(true)
+        return true
+    end if
+
+    if key = "left" and m.favButton.hasFocus()
+        target = m.returnFocus
+        if target = invalid then target = m.button
+
+        target.setFocus(true)
+        return true
+    end if
+
+    if key = "down" then return moveFocus(1)
+    if key = "up" then return moveFocus(-1)
+
+    return false
+end function
+
+' The left-hand button column, ordered top-to-bottom. nextButton only joins
+' when visible, so focus never lands on a hidden control. The star is not in
+' here - it lives to the right and is handled separately in onKeyEvent.
+function focusChain() as object
+    chain = [m.button]
+    if m.nextButton.visible then chain.Push(m.nextButton)
+
+    return chain
+end function
+
+function focusedColumnControl() as object
+    for each control in focusChain()
+        if control.hasFocus() then return control
+    end for
+
+    return m.button
+end function
+
+function moveFocus(delta as integer) as boolean
+    chain = focusChain()
+
+    for idx = 0 to chain.Count() - 1
+        if chain[idx].hasFocus()
+            target = idx + delta
+            ' At either end, return false so the key bubbles up instead of
+            ' trapping focus in this view.
+            if target < 0 or target >= chain.Count() then return false
+
+            chain[target].setFocus(true)
             return true
         end if
-    end if
+    end for
 
     return false
 end function

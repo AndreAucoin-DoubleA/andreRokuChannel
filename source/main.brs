@@ -17,10 +17,6 @@ sub Main()
 
     globals = screen.getGlobalNode()
 
-    ' Parse the token file ONCE, here on the main thread, before the scene
-    ' exists. File I/O on the render thread blocks rendering, and every
-    ' component's init() reads designTokens during CreateScene below - so it
-    ' has to be on the global node first.
     globals.addFields({
         navCollapsed: true,
         designTokens: loadTokens("pkg:/tokens/tokens.json")

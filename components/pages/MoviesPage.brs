@@ -249,5 +249,6 @@ sub viewWillDisappear()
     m.movieTask.unobserveField("loadComplete")
     m.movieTask.control = "stop"
     m.movieTask = invalid
+
 end sub
 

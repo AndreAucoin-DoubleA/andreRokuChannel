@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="FaveIcon" extends="Group">
+    <script type="text/brightscript" uri="pkg:/components/favorites/FaveIcon.brs" />
+
+    <interface>
+        <field id="favorited" type="boolean" value="false" onChange="onFavoritedChanged"/>
+    </interface>
+
+    <children>
+        <!-- No uri here on purpose: onFavoritedChanged owns which image shows.
+             Focus is conveyed by opacity + scale in onFocusChanged. -->
+        <Poster
+            id="favIcon"
+            width="64"
+            height="64"
+            opacity="0.6"/>
+    </children>
+</component>
