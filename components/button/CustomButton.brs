@@ -10,9 +10,9 @@ end sub
 sub applyTheme()
     t = Theme()
 
-    m.bg = t.color("component.button.bgColor", "0x1B1B3AFF")
-    m.bgFocused = t.color("component.button.bgColorFocused", "0x4444AAFF")
-    m.labelColor = t.color("component.button.labelColor", "0xAAAACCFF")
+    m.bg = t.color("component.button.bgColor", "0x2A2D32FF")
+    m.bgFocused = t.color("component.button.bgColorFocused", "0x6C3FA0FF")
+    m.labelColor = t.color("component.button.labelColor", "0xB7BDC5FF")
     m.labelColorFocused = t.color("component.button.labelColorFocused", "0xFFFFFFFF")
 
     m.customButton.height = t.size("component.button.height", 70)

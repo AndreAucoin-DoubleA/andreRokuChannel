@@ -26,7 +26,7 @@ sub applyTheme()
     m.titleLabel.color = t.color("component.page.titleColor", "0xFFFFFFFF")
     m.titleLabel.font = t.font("component.page.titleTypography", "font:LargeBoldSystemFont")
 
-    m.bodyLabel.color = t.color("component.page.bodyColor", "0xAAAACCFF")
+    m.bodyLabel.color = t.color("component.page.bodyColor", "0xB7BDC5FF")
     m.bodyLabel.font = t.font("component.page.bodyTypography", "font:MediumSystemFont")
 
     m.rowList.rowItemSize = [[t.size("component.moviePoster.width", 376), t.size("component.moviePoster.height", 220)]]

@@ -15,7 +15,7 @@
             translation="[40,160]"
             text="Welcome to the home page. Use the arrow keys to navigate."
             font="font:MediumSystemFont"
-            color="#AAAACC"
+            color="#B7BDC5"
             width="800"
             wrap="true"/>
         <RowList

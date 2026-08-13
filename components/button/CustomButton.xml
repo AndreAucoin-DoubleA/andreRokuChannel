@@ -10,14 +10,14 @@
     </interface>
 
     <children>
-        <Rectangle id="customButton" width="280" height="70" color="#1b1b3a">
+        <Rectangle id="customButton" width="280" height="70" color="#2A2D32">
             <Label
                 id="label"
                 translation="[0,20]"
                 width="280"
                 horizAlign="center"
                 font="font:MediumBoldSystemFont"
-                color="#AAAACC"/>
+                color="#B7BDC5"/>
         </Rectangle>
     </children>
     

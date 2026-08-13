@@ -8,6 +8,7 @@ sub init()
     m.heroFadeAnim = m.top.findNode("heroFadeAnim")
     m.heroDebounce = m.top.findNode("heroDebounce")
     m.inputGateTimeout = m.top.findNode("inputGateTimeout")
+    m.rightFade = m.top.findNode("rightFade")
 
     m.rootContent = m.global.catalog
     m.rowList.content = m.rootContent
@@ -32,7 +33,9 @@ end sub
 sub applyTheme()
     t = Theme()
 
-    m.loadingLabel.color = t.color("component.page.statusTextColor", "0xAAAACCFF")
+    m.rightFade.blendColor = t.color("component.moviesPage.rightFadeBlendColor", "0x461915FF")
+
+    m.loadingLabel.color = t.color("component.page.statusTextColor", "0xB7BDC5FF")
     m.loadingLabel.font = t.font("component.page.statusTextTypography", "font:MediumSystemFont")
 
     m.movieTitleLabel.color = t.color("component.page.heroTitleColor", "0xFFFFFFFF")

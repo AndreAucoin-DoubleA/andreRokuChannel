@@ -68,7 +68,7 @@
             translation="[40,120]"
             text="Loading movies..."
             font="font:MediumSystemFont"
-            color="#AAAACC"
+            color="#B7BDC5"
             visible="false"/>
 
         <Poster

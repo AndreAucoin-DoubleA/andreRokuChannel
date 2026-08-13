@@ -14,7 +14,7 @@
             translation="[40, 160]"
             layoutDirection="vert"
             itemSpacings="[15]">
-            <Label id="game1Label" text="1. Mario Kart World Tour" font="font:MediumSystemFont" color="#AAAACC" />
+            <Label id="game1Label" text="1. Mario Kart World Tour" font="font:MediumSystemFont" color="#B7BDC5" />
         </LayoutGroup>
     </children>
 </component>

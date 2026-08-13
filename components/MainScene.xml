@@ -8,8 +8,6 @@
     <script type="text/brightscript" uri="pkg:/source/config.brs" />
 
     <children>
-        <Poster id="sceneBackground" width="1920" height="1080"/>
-
         <ScreenManager id="screens"/>
 
         <Group id="chrome">
@@ -18,7 +16,7 @@
                 translation="[0,0]"
                 width="140"
                 height="1080"
-                opacity="0.3"
+                opacity="0"
                 loadDisplayMode="scaleToFill"
                 uri="pkg:/images/nav_fade.png"/>
 
@@ -31,7 +29,7 @@
                 <FloatFieldInterpolator
                     id="navFadeOpacityInterp"
                     key="[0,1]"
-                    keyValue="[0.3,0.3]"
+                    keyValue="[0,0]"
                     fieldToInterp="navFade.opacity"/>
             </Animation>
 

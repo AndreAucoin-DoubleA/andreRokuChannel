@@ -27,7 +27,7 @@
             translation="[90,2]"
             height="70"
             vertAlign="center"
-            color="#888899"
+            color="#8E949D"
             font="font:MediumSystemFont"/>
 
         <Animation id="collapseAnim" duration="0.2" easeFunction="outQuad" optional="true">

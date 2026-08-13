@@ -55,9 +55,3 @@ function FontUri(family as string) as string
     end if
     return uri
 end function
-
-function AppAssets() as object
-    return {
-        backgroundUri: "pkg:/images/app_background_fhd.jpg"
-    }
-end function

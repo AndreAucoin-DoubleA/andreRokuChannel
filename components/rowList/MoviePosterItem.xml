@@ -15,6 +15,7 @@
             width="376"
             height="220"
             uri="pkg:/images/item_focus_ring.png"
+            blendColor="#8B5CD6"
             visible="false"/>
         <MaskGroup
             id="posterMask"

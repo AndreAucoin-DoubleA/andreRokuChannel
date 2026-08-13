@@ -38,13 +38,15 @@ end sub
 sub applyTheme()
     t = Theme()
 
-    m.scrim.color = t.color("component.movieDetails.scrimColor", "0x0F0F23FF")
+    m.scrim.color = t.color("component.movieDetails.scrimColor", "0x202226FF")
     m.scrim.opacity = t.number("component.movieDetails.scrimOpacity", 0.96)
 
-    m.meta.color = t.color("component.movieDetails.metaColor", "0xAAAACCFF")
+    m.detailsBottomFade.blendColor = t.color("component.movieDetails.bottomFadeBlendColor", "0xFFFF6DFF")
+
+    m.meta.color = t.color("component.movieDetails.metaColor", "0xB7BDC5FF")
     m.meta.font = t.font("component.movieDetails.metaTypography", "font:MediumSystemFont")
 
-    m.desc.color = t.color("component.movieDetails.descriptionColor", "0xDDDDEEFF")
+    m.desc.color = t.color("component.movieDetails.descriptionColor", "0xDDE0E4FF")
     m.desc.font = t.font("component.movieDetails.descriptionTypography", "font:MediumSystemFont")
 end sub
 

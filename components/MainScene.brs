@@ -1,9 +1,8 @@
 sub init()
-    m.top.findNode("sceneBackground").uri = AppAssets().backgroundUri
-
     m.sideBar = m.top.findNode("sideBar")
     m.chrome = m.top.findNode("chrome")
     m.navFade = m.top.findNode("navFade")
+    m.bottomFade = m.top.findNode("bottomFade")
     m.navFadeAnim = m.top.findNode("navFadeAnim")
     m.navFadeWidthInterp = m.top.findNode("navFadeWidthInterp")
     m.navFadeOpacityInterp = m.top.findNode("navFadeOpacityInterp")
@@ -56,11 +55,23 @@ end sub
 sub applyTheme()
     t = Theme()
 
-    m.top.backgroundColor = t.color("component.scene.backgroundColor", "0x0F0F23FF")
+    m.top.backgroundURI = ""
+    m.top.backgroundColor = t.color("component.scene.backgroundColor", "0x202226FF")
+
+    m.navFade.blendColor = t.color("component.scene.navFadeBlendColor", "0xE6E7B8FF")
+    m.navFadeOpacityCollapsed = t.number("component.scene.navFadeOpacityCollapsed", 0.0)
+    m.navFadeOpacityExpanded = t.number("component.scene.navFadeOpacityExpanded", 0.88)
+    m.navFade.opacity = navFadeOpacity(m.global.navCollapsed)
+    m.bottomFade.blendColor = t.color("component.scene.bottomFadeBlendColor", "0x3D1D16FF")
 
     m.navRailExpanded = t.size("component.scene.navRailExpanded", 420)
     m.navRailCollapsed = t.size("component.scene.navRailCollapsed", 140)
 end sub
+
+function navFadeOpacity(collapsed as boolean) as float
+    if collapsed then return m.navFadeOpacityCollapsed
+    return m.navFadeOpacityExpanded
+end function
 
 sub onMenuFocused()
     entry = m.navPages[m.sideBar.itemFocused]
@@ -75,14 +86,12 @@ end sub
 sub onNavCollapsedChanged()
     if m.global.navCollapsed
         targetWidth = m.navRailCollapsed
-        targetOpacity = 0.3
     else
         targetWidth = m.navRailExpanded
-        targetOpacity = 0.88
     end if
 
     m.navFadeWidthInterp.keyValue = [m.navFade.width, targetWidth]
-    m.navFadeOpacityInterp.keyValue = [m.navFade.opacity, targetOpacity]
+    m.navFadeOpacityInterp.keyValue = [m.navFade.opacity, navFadeOpacity(m.global.navCollapsed)]
     m.navFadeAnim.control = "stop"
     m.navFadeAnim.control = "start"
 end sub

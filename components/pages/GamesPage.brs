@@ -11,7 +11,7 @@ sub applyTheme()
     m.titleLabel.color = t.color("component.page.titleColor", "0xFFFFFFFF")
     m.titleLabel.font = t.font("component.page.titleTypography", "font:LargeBoldSystemFont")
 
-    bodyColor = t.color("component.page.bodyColor", "0xAAAACCFF")
+    bodyColor = t.color("component.page.bodyColor", "0xB7BDC5FF")
     bodyFont = t.font("component.page.bodyTypography", "font:MediumSystemFont")
 
     for i = 0 to m.gamesList.getChildCount() - 1

@@ -18,7 +18,7 @@ end sub
 sub applyTheme()
     t = Theme()
 
-    m.labelColor = t.color("component.navItem.labelColor", "0x888899FF")
+    m.labelColor = t.color("component.navItem.labelColor", "0x8E949DFF")
     m.labelColorFocused = t.color("component.navItem.labelColorFocused", "0xFFFFFFFF")
 
     m.widthExpanded = t.size("component.navItem.width", 250)

@@ -5,7 +5,7 @@
     <script type="text/brightscript" uri="pkg:/source/favorites.brs"/>
 
     <children>
-        <Rectangle id="scrim" width="1920" height="1080" color="#0f0f23" opacity="0.96"/>
+        <Rectangle id="scrim" width="1920" height="1080" color="#202226" opacity="0.96"/>
 
         <Video
             id="videoPlayer"
@@ -48,7 +48,7 @@
             id="meta"
             translation="[430,550]"
             font="font:MediumSystemFont"
-            color="#AAAACC"/>
+            color="#B7BDC5"/>
 
         <Label
             id="desc"
@@ -56,7 +56,7 @@
             width="1100"
             wrap="true"
             font="font:MediumSystemFont"
-            color="#DDDDEE"/>
+            color="#DDE0E4"/>
 
         <CustomButton
             id="playButton"
