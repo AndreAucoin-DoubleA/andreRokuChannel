@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build": "npx bsc",
+    "build:watch": "npx bsc --watch",
+    "deploy": "npx bsc --deploy",
     "lint": "npx bslint",
     "lint:fix": "npx bslint --fix",
     "lint:usage": "npx bslint --checkUsage"

@@ -1,4 +1,5 @@
 {
+  "extends": "?./bsconfig.local.json",
   "rootDir": ".",
   "files": [
     "manifest",
@@ -9,5 +10,10 @@
     "fonts/**/*"
   ],
   "plugins": ["@rokucommunity/bslint"],
-  "lintConfig": "bslint.json"
+  "lintConfig": "bslint.json",
+  "stagingDir": "./build/staging",
+  "retainStagingDir": true,
+  "createPackage": true,
+  "outFile": "./build/LearningRokuDev.zip",
+  "sourceMap": true
 }
