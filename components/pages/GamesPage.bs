@@ -8,7 +8,7 @@ sub init()
 end sub
 
 sub applyTheme()
-    t = Theme()
+    t = theme.Theme()
 
     m.titleLabel.color = t.color("component.page.titleColor", "0xFFFFFFFF")
     m.titleLabel.font = t.font("component.page.titleTypography", "font:LargeBoldSystemFont")

@@ -39,7 +39,7 @@ sub init()
 end sub
 
 sub applyTheme()
-    t = Theme()
+    t = theme.Theme()
 
     m.scrim.color = t.color("component.movieDetails.scrimColor", "0x202226FF")
     m.scrim.opacity = t.number("component.movieDetails.scrimOpacity", 0.96)
@@ -84,7 +84,7 @@ sub applyMovie(movie as object)
     m.currentMovieId = movie.movieId
     if m.currentMovieId = invalid then m.currentMovieId = ""
 
-    m.favButton.favorited = isFavorite(m.currentMovieId)
+    m.favButton.favorited = favorites.isFavorite(m.currentMovieId)
 end sub
 
 sub onFavoriteToggled()
@@ -92,9 +92,9 @@ sub onFavoriteToggled()
 
     favorited = m.favButton.favorited
 
-    if favorited = isFavorite(m.currentMovieId) then return
+    if favorited = favorites.isFavorite(m.currentMovieId) then return
 
-    setFavorite(m.currentMovieId, favorited)
+    favorites.setFavorite(m.currentMovieId, favorited)
 end sub
 
 function nextSibling() as object

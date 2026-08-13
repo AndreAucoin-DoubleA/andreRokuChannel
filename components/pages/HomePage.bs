@@ -24,7 +24,7 @@ sub init()
 end sub
 
 sub applyTheme()
-    t = Theme()
+    t = theme.Theme()
 
     m.titleLabel.color = t.color("component.page.titleColor", "0xFFFFFFFF")
     m.titleLabel.font = t.font("component.page.titleTypography", "font:LargeBoldSystemFont")
@@ -85,7 +85,7 @@ function cachedFavoriteIds() as object
         return m.cachedIds
     end if
 
-    m.cachedIds = favoriteIds()
+    m.cachedIds = favorites.favoriteIds()
     m.cachedIdsVersion = m.global.favoritesVersion
 
     return m.cachedIds

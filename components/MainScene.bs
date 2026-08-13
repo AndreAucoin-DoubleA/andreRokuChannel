@@ -19,7 +19,7 @@ sub init()
     m.global.observeField("navCollapsed", "onNavCollapsedChanged")
 
     m.navPages = []
-    for each entry in PageRegistry()
+    for each entry in config.PageRegistry()
         if entry.type = "nav" then m.navPages.push(entry)
     end for
 
@@ -57,7 +57,7 @@ sub onCatalogComplete()
 end sub
 
 sub applyTheme()
-    t = Theme()
+    t = theme.Theme()
 
     m.top.backgroundURI = ""
     m.top.backgroundColor = t.color("component.scene.backgroundColor", "0x202226FF")

@@ -19,7 +19,7 @@ sub Main()
 
     globals.addFields({
         navCollapsed: true,
-        designTokens: loadTokens("pkg:/tokens/tokens.json"),
+        designTokens: tokens.loadTokens("pkg:/tokens/tokens.json"),
         catalog: CreateObject("roSGNode", "ContentNode"),
         catalogVersion: 0,
         catalogReady: false,

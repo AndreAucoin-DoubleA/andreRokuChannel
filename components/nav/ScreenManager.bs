@@ -9,7 +9,7 @@ end sub
 function showStack(id as string) as object
     if m.top.activeStackId = id then return m.activeStack
 
-    entry = pageById(id)
+    entry = config.pageById(id)
     if entry = invalid then return invalid
 
     if m.activeStack <> invalid
