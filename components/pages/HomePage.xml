@@ -3,6 +3,7 @@
     <script type="text/brightscript" uri="pkg:/components/pages/HomePage.brs" />
     <script type="text/brightscript" uri="pkg:/source/theme.brs" />
     <script type="text/brightscript" uri="pkg:/source/favorites.brs"/>
+    <script type="text/brightscript" uri="pkg:/source/analytics.brs"/>
     <children>
         <Label
             id="titleLabel"

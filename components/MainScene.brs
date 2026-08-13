@@ -11,6 +11,7 @@ sub init()
     m.screens.observeField("activeDepth", "onActiveDepthChanged")
 
     applyTheme()
+    startAnalytics()
 
     m.global.observeField("navCollapsed", "onNavCollapsedChanged")
 
@@ -150,3 +151,8 @@ function onKeyEvent(key as string, press as boolean) as boolean
 
     return false
 end function
+
+sub startAnalytics()
+    m.analyticsTask = CreateObject("roSGNode", "AnalyticsTask")
+    m.global.addFields({ analyticsTask: m.analyticsTask })
+end sub

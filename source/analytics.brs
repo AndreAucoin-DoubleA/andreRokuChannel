@@ -1,0 +1,14 @@
+sub trackEvent(name as string, props = {} as object)
+    task = m.global.analyticsTask
+
+    if task = invalid
+        print "[analytics] DROPPED: "; name
+        return
+    end if
+
+    task.event = {
+        name: name,
+        props: props,
+        ts: CreateObject("roDateTime").ToISOString()
+    }
+end sub
