@@ -1,3 +1,5 @@
+import "pkg:/source/analytics.bs"
+
 function favoritesSection() as object
     return CreateObject("roRegistrySection", "favorites")
 end function

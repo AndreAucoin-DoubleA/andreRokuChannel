@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="GamesPage" extends="BaseView">
-    <script type="text/brightscript" uri="pkg:/components/pages/GamesPage.brs" />
-    <script type="text/brightscript" uri="pkg:/source/theme.brs" />
+    <script type="text/brightscript" uri="pkg:/components/pages/GamesPage.bs" />
     <children>
         <Label
             id="titleLabel"

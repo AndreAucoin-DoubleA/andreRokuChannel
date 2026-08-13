@@ -1,3 +1,5 @@
+import "pkg:/source/config.bs"
+
 sub init()
     m.stacks = {}
     m.activeStack = invalid

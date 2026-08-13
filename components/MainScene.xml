@@ -3,9 +3,7 @@
     <customization suspendhandler="customSuspend" />
     <customization resumehandler="customResume" />
 
-    <script type="text/brightscript" uri="pkg:/components/MainScene.brs" />
-    <script type="text/brightscript" uri="pkg:/source/theme.brs" />
-    <script type="text/brightscript" uri="pkg:/source/config.brs" />
+    <script type="text/brightscript" uri="pkg:/components/MainScene.bs" />
 
     <children>
         <ScreenManager id="screens"/>
