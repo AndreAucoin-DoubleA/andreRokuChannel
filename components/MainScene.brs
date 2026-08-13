@@ -1,104 +1,105 @@
 sub init()
-    m.top.backgroundColor = "#0f0f23"
-    m.top.findNode("sceneBackground").uri = Theme().backgroundUri
-
     m.sideBar = m.top.findNode("sideBar")
-    m.contentArea = m.top.findNode("contentArea")
+    m.chrome = m.top.findNode("chrome")
     m.navFade = m.top.findNode("navFade")
+    m.bottomFade = m.top.findNode("bottomFade")
     m.navFadeAnim = m.top.findNode("navFadeAnim")
     m.navFadeWidthInterp = m.top.findNode("navFadeWidthInterp")
     m.navFadeOpacityInterp = m.top.findNode("navFadeOpacityInterp")
+
+    m.screens = m.top.findNode("screens")
+    m.screens.observeField("activeDepth", "onActiveDepthChanged")
+
+    applyTheme()
+
     m.global.observeField("navCollapsed", "onNavCollapsedChanged")
 
-    m.registry = PageRegistry()
     m.navPages = []
-    for each entry in m.registry
+    for each entry in PageRegistry()
         if entry.type = "nav" then m.navPages.push(entry)
     end for
 
-    m.pageCache = {}
-    m.currentPage = invalid
-    m.details = invalid
-    m.detailsOpen = false
     m.focusOnSidebar = true
-
     m.sideBar.observeField("itemFocused", "onMenuFocused")
 
-    showPage(0)
+    m.screens.callFunc("showStack", m.navPages[0].id)
     focusContentArea()
+
+    startCatalogLoad()
 end sub
 
+sub startCatalogLoad()
+    m.catalogTask = CreateObject("roSGNode", "PopulateMoviesTask")
+    m.catalogTask.batchSize = 5
+    m.catalogTask.observeField("rowBatch", "onCatalogBatch")
+    m.catalogTask.observeField("loadComplete", "onCatalogComplete")
+    m.catalogTask.control = "RUN"
+end sub
+
+sub onCatalogBatch(msg as object)
+    batch = msg.GetData()
+    if batch = invalid then return
+
+    rows = batch.GetChildren(-1, 0)
+    if rows.Count() = 0 then return
+
+    batch.RemoveChildren(rows)
+    m.global.catalog.AppendChildren(rows)
+    m.global.catalogVersion = m.global.catalogVersion + 1
+end sub
+
+sub onCatalogComplete()
+    m.global.catalogReady = true
+end sub
+
+sub applyTheme()
+    t = Theme()
+
+    m.top.backgroundURI = ""
+    m.top.backgroundColor = t.color("component.scene.backgroundColor", "0x202226FF")
+
+    m.navFade.blendColor = t.color("component.scene.navFadeBlendColor", "0xE6E7B8FF")
+    m.navFadeOpacityCollapsed = t.number("component.scene.navFadeOpacityCollapsed", 0.0)
+    m.navFadeOpacityExpanded = t.number("component.scene.navFadeOpacityExpanded", 0.88)
+    m.navFade.opacity = navFadeOpacity(m.global.navCollapsed)
+    m.bottomFade.blendColor = t.color("component.scene.bottomFadeBlendColor", "0x3D1D16FF")
+
+    m.navRailExpanded = t.size("component.scene.navRailExpanded", 420)
+    m.navRailCollapsed = t.size("component.scene.navRailCollapsed", 140)
+end sub
+
+function navFadeOpacity(collapsed as boolean) as float
+    if collapsed then return m.navFadeOpacityCollapsed
+    return m.navFadeOpacityExpanded
+end function
+
 sub onMenuFocused()
-    showPage(m.sideBar.itemFocused)
+    entry = m.navPages[m.sideBar.itemFocused]
+    if entry = invalid then return
+    m.screens.callFunc("showStack", entry.id)
+end sub
+
+sub onActiveDepthChanged()
+    m.chrome.visible = (m.screens.activeDepth <= 1)
 end sub
 
 sub onNavCollapsedChanged()
     if m.global.navCollapsed
-        targetWidth = 140
-        targetOpacity = 0.3
+        targetWidth = m.navRailCollapsed
     else
-        targetWidth = 420
-        targetOpacity = 0.88
+        targetWidth = m.navRailExpanded
     end if
 
     m.navFadeWidthInterp.keyValue = [m.navFade.width, targetWidth]
-    m.navFadeOpacityInterp.keyValue = [m.navFade.opacity, targetOpacity]
+    m.navFadeOpacityInterp.keyValue = [m.navFade.opacity, navFadeOpacity(m.global.navCollapsed)]
     m.navFadeAnim.control = "stop"
     m.navFadeAnim.control = "start"
-end sub
-
-sub showPage(index as integer)
-    entry = m.navPages[index]
-    if entry = invalid then return
-
-    page = getPageNode(entry)
-
-    for each id in m.pageCache
-        m.pageCache[id].visible = (id = entry.id)
-    end for
-    m.currentPage = page
-end sub
-
-function getPageNode(entry as object) as object
-    node = m.pageCache[entry.id]
-    if node <> invalid then return node
-
-    parent = m.contentArea
-    if entry.type = "overlay" then parent = m.top
-
-    node = parent.createChild(entry.component)
-    node.visible = false
-    m.pageCache[entry.id] = node
-
-    if node.hasField("selectedMovie")
-        node.observeField("selectedMovie", "onMovieSelected")
-    end if
-
-    return node
-end function
-
-function pageById(id as string) as object
-    for each entry in m.registry
-        if entry.id = id then return entry
-    end for
-    return invalid
-end function
-
-sub onMovieSelected(msg as object)
-    movie = msg.getData()
-    if movie = invalid then return
-
-    m.details = getPageNode(pageById("details"))
-    m.details.movieContent = movie
-    m.details.visible = true
-    m.details.callFunc("focusPlayButton")
-    m.detailsOpen = true
 end sub
 
 sub focusContentArea()
     m.focusOnSidebar = false
     m.global.navCollapsed = true
-    if m.currentPage <> invalid then m.currentPage.callFunc("focusContent")
+    m.screens.callFunc("focusActive")
 end sub
 
 sub focusSidebar()
@@ -107,26 +108,35 @@ sub focusSidebar()
     m.sideBar.callFunc("setFocusToList")
 end sub
 
-sub closeDetails()
-    m.details.visible = false
-    m.detailsOpen = false
-    if m.currentPage <> invalid then m.currentPage.callFunc("focusContent")
-end sub
-
 sub customSuspend(arg as dynamic)
+    m.screens.callFunc("suspendActive")
 end sub
 
 sub customResume(arg as dynamic)
+    m.screens.callFunc("resumeActive")
+
+    if m.focusOnSidebar
+        m.sideBar.callFunc("setFocusToList")
+    else
+        m.screens.callFunc("focusActive")
+    end if
+
     m.top.signalBeacon("AppResumeComplete")
 end sub
+
 
 function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
 
-    if m.detailsOpen
-        if key = "back" then closeDetails()
-        return true
+    if key = "back"
+        if not m.focusOnSidebar
+            focusSidebar()
+            return true
+        end if
+        return false
     end if
+
+    if m.screens.activeDepth > 1 then return false
 
     if key = "right" and m.focusOnSidebar
         focusContentArea()

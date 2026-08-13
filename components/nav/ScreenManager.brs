@@ -1,0 +1,63 @@
+sub init()
+    m.stacks = {}
+    m.activeStack = invalid
+end sub
+
+
+function showStack(id as string) as object
+    if m.top.activeStackId = id then return m.activeStack
+
+    entry = pageById(id)
+    if entry = invalid then return invalid
+
+    if m.activeStack <> invalid
+        m.activeStack.callFunc("suspendTop")
+        m.activeStack.visible = false
+    end if
+
+    stack = m.stacks[id]
+
+    if stack = invalid
+        stack = m.top.createChild("ViewStack")
+        m.stacks[id] = stack
+
+        stack.callFunc("setRoot", { view: entry.component, params: {}, inset: [160, 0] })
+        stack.observeField("stackDepth", "onStackDepthChanged")
+    else
+        stack.callFunc("resumeTop")
+    end if
+
+    stack.visible = true
+    m.activeStack = stack
+    m.top.activeStackId = id
+
+    publishDepth()
+    return stack
+end function
+
+function focusActive() as boolean
+    if m.activeStack = invalid then return false
+    return m.activeStack.callFunc("focusTop")
+end function
+
+function suspendActive() as boolean
+    if m.activeStack = invalid then return false
+    return m.activeStack.callFunc("suspendTop")
+end function
+
+function resumeActive() as boolean
+    if m.activeStack = invalid then return false
+    return m.activeStack.callFunc("resumeTop")
+end function
+
+sub onStackDepthChanged()
+    publishDepth()
+end sub
+
+sub publishDepth()
+    if m.activeStack = invalid
+        m.top.activeDepth = 0
+        return
+    end if
+    m.top.activeDepth = m.activeStack.callFunc("depth")
+end sub

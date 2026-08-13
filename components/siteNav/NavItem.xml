@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="NavItem" extends="Group">
     <script type="text/brightscript" uri="pkg:/components/siteNav/NavItem.brs" />
+    <script type="text/brightscript" uri="pkg:/source/theme.brs" />
 
     <interface>
         <field id="itemContent" type="node" onChange="onContentChanged"/>
@@ -26,7 +27,7 @@
             translation="[90,2]"
             height="70"
             vertAlign="center"
-            color="#888899"
+            color="#8E949D"
             font="font:MediumSystemFont"/>
 
         <Animation id="collapseAnim" duration="0.2" easeFunction="outQuad" optional="true">

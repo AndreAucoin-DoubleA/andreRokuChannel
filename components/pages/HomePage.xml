@@ -1,18 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<component name="HomePage" extends="BasePage">
+<component name="HomePage" extends="BaseView">
     <script type="text/brightscript" uri="pkg:/components/pages/HomePage.brs" />
+    <script type="text/brightscript" uri="pkg:/source/theme.brs" />
+    <script type="text/brightscript" uri="pkg:/source/favorites.brs"/>
     <children>
         <Label
+            id="titleLabel"
             translation="[40,80]"
             text="Home"
             font="font:LargeBoldSystemFont"
             color="#FFFFFF"/>
         <Label
+            id="bodyLabel"
             translation="[40,160]"
             text="Welcome to the home page. Use the arrow keys to navigate."
             font="font:MediumSystemFont"
-            color="#AAAACC"
+            color="#B7BDC5"
             width="800"
             wrap="true"/>
+        <RowList
+            id="rowList"
+            showRowLabel="true"
+            translation="[40, 530]"
+            itemComponentName="MoviePosterItem"
+            numRows="3"
+            rowFocusAnimationStyle="fixedFocus"
+            vertFocusAnimationStyle="fixedFocus"
+            drawFocusFeedback="false"
+            itemSize="[1880,290]"
+            itemSpacing="[0,40]"
+            rowItemSize="[[376,220]]"
+            rowLabelOffset="[[25,25]]"
+            rowItemSpacing="[[30,0]]"/>
     </children>
 </component>

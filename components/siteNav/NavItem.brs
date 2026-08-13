@@ -6,11 +6,32 @@ sub init()
     m.fadeInterp = m.top.findNode("fadeInterp")
     m.highlightWidthInterp = m.top.findNode("highlightWidthInterp")
 
+    applyTheme()
+
     m.global.observeField("navCollapsed", "onCollapsedChanged")
 
     collapsed = m.global.navCollapsed
     m.label.opacity = labelOpacity(collapsed)
     m.highlight.width = highlightWidth(collapsed)
+end sub
+
+sub applyTheme()
+    t = Theme()
+
+    m.labelColor = t.color("component.navItem.labelColor", "0x8E949DFF")
+    m.labelColorFocused = t.color("component.navItem.labelColorFocused", "0xFFFFFFFF")
+
+    m.widthExpanded = t.size("component.navItem.width", 250)
+    m.widthCollapsed = t.size("component.navItem.widthCollapsed", 80)
+
+    itemHeight = t.size("component.navItem.height", 70)
+
+    m.highlight.blendColor = t.color("component.navItem.highlightColor", "0x6C3FA0FF")
+    m.highlight.height = itemHeight
+
+    m.label.height = itemHeight
+    m.label.color = m.labelColor
+    m.label.font = t.font("component.navItem.labelTypography", "font:MediumSystemFont")
 end sub
 
 function labelOpacity(collapsed as boolean) as float
@@ -19,8 +40,8 @@ function labelOpacity(collapsed as boolean) as float
 end function
 
 function highlightWidth(collapsed as boolean) as float
-    if collapsed then return 80.0
-    return 250.0
+    if collapsed then return m.widthCollapsed
+    return m.widthExpanded
 end function
 
 sub onContentChanged()
@@ -37,9 +58,9 @@ sub updateHighlight()
     m.highlight.opacity = p * dimFactor
 
     if p > 0.5
-        m.label.color = &hFFFFFFFF
+        m.label.color = m.labelColorFocused
     else
-        m.label.color = &h888899FF
+        m.label.color = m.labelColor
     end if
 end sub
 
@@ -50,3 +71,4 @@ sub onCollapsedChanged()
     m.collapseAnim.control = "stop"
     m.collapseAnim.control = "start"
 end sub
+

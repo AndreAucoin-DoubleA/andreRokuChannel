@@ -16,7 +16,15 @@ sub Main()
     print "Channel available memory (KB): "; m.appMemoryMonitor.GetChannelAvailableMemory()
 
     globals = screen.getGlobalNode()
-    globals.addFields({ navCollapsed: true })
+
+    globals.addFields({
+        navCollapsed: true,
+        designTokens: loadTokens("pkg:/tokens/tokens.json"),
+        catalog: CreateObject("roSGNode", "ContentNode"),
+        catalogVersion: 0,
+        catalogReady: false,
+        favoritesVersion: 0
+    })
 
     screen.CreateScene("MainScene")
     screen.show()

@@ -3,22 +3,22 @@ sub init()
     m.focusRing = m.top.findNode("focusRing")
 end sub
 
-' The ring belongs to the current item of the row that actually has focus.
-function isRowFocused() as boolean
-    return m.top.focusPercent >= 0.5 and m.top.rowFocusPercent >= 0.5
+function isFocused() as boolean
+    return m.top.itemHasFocus and m.top.rowHasFocus
 end function
 
 sub onContentChanged()
     content = m.top.itemContent
+
     if content = invalid
         m.poster.uri = ""
     else
         m.poster.uri = content.HDPosterUrl
     end if
 
-    m.focusRing.visible = isRowFocused()
+    m.focusRing.visible = isFocused()
 end sub
 
 sub onFocusChanged()
-    m.focusRing.visible = isRowFocused()
+    m.focusRing.visible = isFocused()
 end sub

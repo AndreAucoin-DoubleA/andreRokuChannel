@@ -1,7 +1,26 @@
 sub init()
     m.customButton = m.top.findNode("customButton")
     m.label = m.top.findNode("label")
+
+    applyTheme()
+
     m.top.observeField("focusedChild", "onFocusChanged")
+end sub
+
+sub applyTheme()
+    t = Theme()
+
+    m.bg = t.color("component.button.bgColor", "0x2A2D32FF")
+    m.bgFocused = t.color("component.button.bgColorFocused", "0x6C3FA0FF")
+    m.labelColor = t.color("component.button.labelColor", "0xB7BDC5FF")
+    m.labelColorFocused = t.color("component.button.labelColorFocused", "0xFFFFFFFF")
+
+    m.customButton.height = t.size("component.button.height", 70)
+    m.label.font = t.font("component.button.labelTypography", "font:MediumBoldSystemFont")
+
+    m.top.width = t.size("component.button.width", 280)
+
+    onFocusChanged()
 end sub
 
 sub onTextChanged()
@@ -16,11 +35,11 @@ end sub
 
 sub onFocusChanged()
     if m.top.hasFocus()
-        m.customButton.color = "#4444aa"
-        m.label.color = "#FFFFFF"
+        m.customButton.color = m.bgFocused
+        m.label.color = m.labelColorFocused
     else
-        m.customButton.color = "#1b1b3a"
-        m.label.color = "#AAAACC"
+        m.customButton.color = m.bg
+        m.label.color = m.labelColor
     end if
 end sub
 

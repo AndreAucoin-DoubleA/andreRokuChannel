@@ -2,6 +2,7 @@
 <component name="SiteNav" extends="Group" >
     <script type="text/brightscript" uri="pkg:/components/siteNav/SiteNav.brs" />
     <script type="text/brightscript" uri="pkg:/source/config.brs" />
+    <script type="text/brightscript" uri="pkg:/source/theme.brs" />
 
     <interface>
         <field id="itemFocused" type="integer" alias="menuList.itemFocused"/>

@@ -1,2 +1,137 @@
 sub init()
+    m.titleLabel = m.top.findNode("titleLabel")
+    m.bodyLabel = m.top.findNode("bodyLabel")
+    m.rowList = m.top.findNode("rowList")
+
+    m.rootContent = CreateObject("roSGNode", "ContentNode")
+    m.rowList.content = m.rootContent
+    m.rowList.visible = false
+
+    m.signature = ""
+    m.catalogIndex = invalid
+    m.indexedVersion = -1
+    m.cachedIds = invalid
+    m.cachedIdsVersion = -1
+
+    m.rowList.observeField("rowItemSelected", "onFavoriteSelected")
+    m.global.observeField("catalogVersion", "refreshFavorites")
+    m.global.observeField("favoritesVersion", "refreshFavorites")
+
+    applyTheme()
 end sub
+
+sub applyTheme()
+    t = Theme()
+
+    m.titleLabel.color = t.color("component.page.titleColor", "0xFFFFFFFF")
+    m.titleLabel.font = t.font("component.page.titleTypography", "font:LargeBoldSystemFont")
+
+    m.bodyLabel.color = t.color("component.page.bodyColor", "0xB7BDC5FF")
+    m.bodyLabel.font = t.font("component.page.bodyTypography", "font:MediumSystemFont")
+
+    m.rowList.rowItemSize = [[t.size("component.moviePoster.width", 376), t.size("component.moviePoster.height", 220)]]
+end sub
+
+sub viewWillAppear()
+    refreshFavorites()
+end sub
+
+sub refreshFavorites()
+    index = catalogIndex()
+    movies = favoriteMovies(index)
+
+    signature = favoritesSignature(movies)
+    if signature = m.signature then return
+    m.signature = signature
+
+    root = CreateObject("roSGNode", "ContentNode")
+
+    if movies.Count() > 0
+        row = root.createChild("ContentNode")
+        row.title = "My Favorites"
+        row.AppendChildren(movies)
+    end if
+
+    m.rootContent = root
+    m.rowList.content = root
+    m.rowList.visible = (movies.Count() > 0)
+
+    if movies.Count() > 0 then claimFocusForRow()
+end sub
+
+sub claimFocusForRow()
+    if not m.top.isInFocusChain() then return
+    if m.rowList.isInFocusChain() then return
+
+    m.rowList.setFocus(true)
+end sub
+
+function favoriteMovies(index as object) as object
+    movies = []
+
+    for each movieId in cachedFavoriteIds()
+        node = index[movieId]
+        if node <> invalid then movies.Push(node.clone(false))
+    end for
+
+    return movies
+end function
+
+function cachedFavoriteIds() as object
+    if m.cachedIds <> invalid and m.cachedIdsVersion = m.global.favoritesVersion
+        return m.cachedIds
+    end if
+
+    m.cachedIds = favoriteIds()
+    m.cachedIdsVersion = m.global.favoritesVersion
+
+    return m.cachedIds
+end function
+
+function catalogIndex() as object
+    if m.catalogIndex <> invalid and m.indexedVersion = m.global.catalogVersion
+        return m.catalogIndex
+    end if
+
+    index = {}
+
+    for each row in m.global.catalog.getChildren(-1, 0)
+        for each movie in row.getChildren(-1, 0)
+            id = movie.movieId
+            if id <> invalid and id <> "" and index[id] = invalid then index[id] = movie
+        end for
+    end for
+
+    m.catalogIndex = index
+    m.indexedVersion = m.global.catalogVersion
+
+    return index
+end function
+
+function favoritesSignature(movies as object) as string
+    ids = []
+
+    for each movie in movies
+        ids.Push(movie.movieId)
+    end for
+
+    return ids.Join(",")
+end function
+
+sub onFavoriteSelected()
+    sel = m.rowList.rowItemSelected
+
+    row = m.rootContent.getChild(sel[0])
+    if row = invalid then return
+
+    movie = row.getChild(sel[1])
+    if movie = invalid then return
+
+    pushView("MovieDetails", { movie: movie, row: row, index: sel[1] })
+end sub
+
+function setViewFocus() as boolean
+    if m.rootContent.getChildCount() = 0 then return m.top.setFocus(true)
+
+    return m.rowList.setFocus(true)
+end function

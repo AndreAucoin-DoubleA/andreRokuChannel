@@ -6,41 +6,42 @@
     <script type="text/brightscript" uri="pkg:/components/MainScene.brs" />
     <script type="text/brightscript" uri="pkg:/source/theme.brs" />
     <script type="text/brightscript" uri="pkg:/source/config.brs" />
+
     <children>
-        <Poster id="sceneBackground" width="1920" height="1080"/>
+        <ScreenManager id="screens"/>
 
-        <Group id="contentArea" translation="[160,0]"/>
+        <Group id="chrome">
+            <Poster
+                id="navFade"
+                translation="[0,0]"
+                width="140"
+                height="1080"
+                opacity="0"
+                loadDisplayMode="scaleToFill"
+                uri="pkg:/images/nav_fade.png"/>
 
-        <Poster
-            id="navFade"
-            translation="[0,0]"
-            width="140"
-            height="1080"
-            opacity="0.3"
-            loadDisplayMode="scaleToFill"
-            uri="pkg:/images/nav_fade.png"/>
+            <Animation id="navFadeAnim" duration="0.2" easeFunction="outQuad">
+                <FloatFieldInterpolator
+                    id="navFadeWidthInterp"
+                    key="[0,1]"
+                    keyValue="[140,140]"
+                    fieldToInterp="navFade.width"/>
+                <FloatFieldInterpolator
+                    id="navFadeOpacityInterp"
+                    key="[0,1]"
+                    keyValue="[0,0]"
+                    fieldToInterp="navFade.opacity"/>
+            </Animation>
 
-        <Animation id="navFadeAnim" duration="0.2" easeFunction="outQuad">
-            <FloatFieldInterpolator
-                id="navFadeWidthInterp"
-                key="[0,1]"
-                keyValue="[140,140]"
-                fieldToInterp="navFade.width"/>
-            <FloatFieldInterpolator
-                id="navFadeOpacityInterp"
-                key="[0,1]"
-                keyValue="[0.3,0.3]"
-                fieldToInterp="navFade.opacity"/>
-        </Animation>
+            <SiteNav id="sideBar" translation="[40,100]"/>
 
-        <SiteNav id="sideBar" translation="[40,100]"/>
-
-        <Poster
-            id="bottomFade"
-            translation="[0,880]"
-            width="1920"
-            height="200"
-            loadDisplayMode="scaleToFill"
-            uri="pkg:/images/bottom_fade.png"/>
+            <Poster
+                id="bottomFade"
+                translation="[0,880]"
+                width="1920"
+                height="200"
+                loadDisplayMode="scaleToFill"
+                uri="pkg:/images/bottom_fade.png"/>
+        </Group>
     </children>
 </component>

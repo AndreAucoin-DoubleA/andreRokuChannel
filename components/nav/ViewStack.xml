@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="ViewStack" extends="Group">
+    <script type="text/brightscript" uri="pkg:/components/nav/ViewStack.brs" />
+
+    <interface>
+        <function name="setRoot"/>
+        <function name="depth"/>
+        <function name="focusTop"/>
+        <function name="suspendTop"/>
+        <function name="resumeTop"/>
+
+        <field id="stackDepth" type="integer" value="0" alwaysNotify="true"/>
+        <field id="maxDepth" type="integer" value="8"/>
+    </interface>
+</component>
