@@ -1,0 +1,25 @@
+sub init()
+    m.top.functionName = "runLoop"
+    m.top.control = "RUN"
+end sub
+
+sub runLoop()
+    port = CreateObject("roMessagePort")
+    m.top.observeField("event", port)
+
+    while true
+        msg = wait(0, port)
+
+        if type(msg) = "roSGNodeEvent" and msg.GetField() = "event"
+            sendEvent(msg.GetData())
+        end if
+    end while
+end sub
+
+sub sendEvent(event as object)
+    if event = invalid or event.name = invalid then return
+
+    body = FormatJson(event)
+
+    print "[analytics]"; body
+end sub

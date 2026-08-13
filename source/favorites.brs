@@ -22,6 +22,12 @@ sub setFavorite(movieId as dynamic, favorited as boolean)
     section.Flush()
 
     m.global.favoritesVersion = m.global.favoritesVersion + 1
+
+    trackEvent("favorite_toggled", {
+        movieId: movieId,
+        favorited: favorited,
+        totalFavorites: section.GetKeyList().Count()
+    })
 end sub
 
 function favoriteIds() as object
