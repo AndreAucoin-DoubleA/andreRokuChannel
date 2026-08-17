@@ -1,0 +1,32 @@
+namespace deeplink
+
+    function hasLink(args as dynamic) as boolean
+        if args = invalid then return false
+        if args.contentId = invalid then return false
+        return args.contentId <> ""
+    end function
+
+    function parse(args as dynamic) as object
+        mediaType = args.mediaType
+        if mediaType = invalid then mediaType = " "
+
+        return {
+            contentId: args.contentId,
+            mediaType: LCase(mediaType),
+            autoPLay: isPlayable(mediaType)
+        }
+    end function
+
+    function isPlayable(mediaType as string) as boolean
+        playable = ["movie", "episode", "shortformvideo", "tvspecial", "live", "special"]
+        needle = LCase(mediaType)
+
+        for each entry in playable
+            if entry = needle then return true
+        end for
+
+        return false
+    end function
+
+
+end namespace

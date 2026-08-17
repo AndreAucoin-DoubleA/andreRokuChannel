@@ -1,7 +1,10 @@
-sub Main()
+sub Main(args as object)
     screen = CreateObject("roSGScreen")
     m.port = CreateObject("roMessagePort")
     screen.setMessagePort(m.port)
+
+    m.input = CreateObject("roInput")
+    m.input.SetMessagePort(m.port)
 
     deviceInfo = CreateObject("roDeviceInfo")
     deviceInfo.SetMessagePort(m.port)
@@ -29,6 +32,11 @@ sub Main()
     screen.CreateScene("MainScene")
     screen.show()
 
+    if deeplink.hasLink(args)
+        print "[Main] cold-start deep link: "; FormatJson(args)
+        m.screen.deepLink = deeplink.parse(args)
+    end if
+
     while true
         msg = wait(0, m.port)
         if type(msg) = "roSGScreenEvent"
@@ -40,6 +48,12 @@ sub Main()
         else if type(msg) = "roAppMemoryNotificationEvent"
             'App memory usage crossed a warning threshold (80/85/90/95%); free caches, release unused ContentNodes, etc.
             print "App memory usage: "; m.appMemoryMonitor.GetMemoryLimitPercent(); "%"
+        else if type(msg) = "roInputEvent"
+            if msg.IsInput()
+                info = msg.getInfo()
+                print "[Main] roInput: "; FormatJson(info)
+                if deeplink.hasLink(info) then m.screen.deepLink = deeplink.parse(info)
+            end if
         end if
     end while
 end sub

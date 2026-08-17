@@ -5,6 +5,10 @@
 
     <script type="text/brightscript" uri="pkg:/components/MainScene.bs" />
 
+    <interface>
+        <field id="deepLink" type="assocarray" alwaysNotify="true"/>
+    </interface>
+
     <children>
         <ScreenManager id="screens"/>
 

@@ -1,5 +1,6 @@
 import "pkg:/source/theme.bs"
 import "pkg:/source/config.bs"
+import "pkg:/source/deeplink.bs"
 
 sub init()
     m.sideBar = m.top.findNode("sideBar")
@@ -23,6 +24,10 @@ sub init()
         if entry.type = "nav" then m.navPages.push(entry)
     end for
 
+    m.pendingDeepLink = invalid
+    m.deepLinkTask = invalid
+    m.top.observeField("deepLink", "onDeepLinkChanged")
+
     m.focusOnSidebar = true
     m.sideBar.observeField("itemFocused", "onMenuFocused")
 
@@ -30,6 +35,71 @@ sub init()
     focusContentArea()
 
     startCatalogLoad()
+end sub
+
+
+sub onDeepLinkChanged(msg as object)
+    handleDeepLink(msg.GetData())
+end sub
+
+sub handleDeepLink(link as object)
+    if link = invalid or link.contentId = invalid or link.contentId = "" then return
+
+    print "[MainScene] deep link contentId="; link.contentId; " mediaType="; link.mediaType; " autoPlay="; link.autoPlay
+
+    goToPage("movies")
+
+    cancelDeepLinkFetch()
+
+    m.pendingDeepLink = link
+
+    task = CreateObject("roSGNode", "FetchMovieTask")
+    task.movieId = link.contentId
+    task.observeField("status", "onDeepLinkResolved")
+    m.deepLinkTask = task
+    task.control = "RUN"
+end sub
+
+sub cancelDeepLinkFetch()
+    if m.deepLinkTask = invalid then return
+
+    m.deepLinkTask.unobserveField("status")
+    m.deepLinkTask.control = "stop"
+    m.deepLinkTask = invalid
+end sub
+
+sub onDeepLinkResolved(msg as object)
+    task = msg.GetRoSGNode()
+    status = msg.GetData()
+
+    link = m.pendingDeepLink
+    m.pendingDeepLink = invalid
+    m.deepLinkTask = invalid
+
+    if status <> "ok" or link = invalid
+        showDeepLinkError()
+        return
+    end if
+
+    m.screen.callFunc("pushOnActive", {
+        view: "MovieDetails",
+        params: {movie: task.movie, autoPlay: link.autoPlay}
+    })
+end sub
+
+sub showDeepLinkError()
+    dialog = CreateObject("roSGNode", "Dialog")
+    dialog.title = "Content unavailable"
+    dialog.message = "We couldn't find that title. Showing the home screen instead."
+    dialog.buttons = ["OK"]
+
+    dialog.observeField("buttonSelected", "onDeepLinkErrorDismissed")
+    m.top.dialog = dialog
+end sub
+
+sub onDeepLinkErrorDismissed()
+    m.top.dialog.close = true
+    focusContentArea()
 end sub
 
 sub startCatalogLoad()
@@ -119,7 +189,9 @@ end sub
 sub customResume(arg as dynamic)
     m.screens.callFunc("resumeActive")
 
-    if m.focusOnSidebar
+    if deeplink.hasLink(arg)
+        handleDeepLink(deeplink.parse(arg))
+    else if m.focusOnSidebar
         m.sideBar.callFunc("setFocusToList")
     else
         m.screens.callFunc("focusActive")
@@ -158,4 +230,16 @@ end function
 sub startAnalytics()
     m.analyticsTask = CreateObject("roSGNode", "AnalyticsTask")
     m.global.addFields({ analyticsTask: m.analyticsTask })
+end sub
+
+sub goToPage(id as string)
+    for idx = 0 to m.navPages.Count() - 1
+        if m.navPages[idx].id = id
+            m.sideBar.callFunc("setSelectedIndex", idx)
+            exit for
+        end if
+    end for
+
+    m.screens.callFunc("showStack", id)
+    focusContentArea()
 end sub
