@@ -3,3 +3,4 @@ build/
 out/
 *.zip
 .DS_Store
+bsconfig.local.json

@@ -5,6 +5,5 @@
         <field id="batchSize" type="integer" value="5"/>
         <field id="loadComplete" type="boolean" value="false"/>
     </interface>
-    <script type="text/brightscript" uri="pkg:/components/task/PopulateMoviesTask.brs" />
-    <script type="text/brightscript" uri="pkg:/source/config.brs"/>
+    <script type="text/brightscript" uri="pkg:/components/task/PopulateMoviesTask.bs" />
 </component>

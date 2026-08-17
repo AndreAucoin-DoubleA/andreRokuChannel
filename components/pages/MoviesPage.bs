@@ -1,3 +1,5 @@
+import "pkg:/source/theme.bs"
+
 sub init()
     m.rowList = m.top.findNode("rowList")
     m.loadingLabel = m.top.findNode("loadingLabel")
@@ -31,7 +33,7 @@ sub init()
 end sub
 
 sub applyTheme()
-    t = Theme()
+    t = theme.Theme()
 
     m.rightFade.blendColor = t.color("component.moviesPage.rightFadeBlendColor", "0x461915FF")
 

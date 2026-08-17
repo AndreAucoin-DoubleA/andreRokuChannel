@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="MovieDetails" extends="BaseView">
-    <script type="text/brightscript" uri="pkg:/components/details/MovieDetails.brs"/>
-    <script type="text/brightscript" uri="pkg:/source/theme.brs"/>
-    <script type="text/brightscript" uri="pkg:/source/favorites.brs"/>
-    <script type="text/brightscript" uri="pkg:/source/analytics.brs"/>
+    <script type="text/brightscript" uri="pkg:/components/details/MovieDetails.bs"/>
 
     <children>
         <Rectangle id="scrim" width="1920" height="1080" color="#202226" opacity="0.96"/>

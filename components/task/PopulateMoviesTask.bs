@@ -1,3 +1,5 @@
+import "pkg:/source/config.bs"
+
 sub init()
     m.top.functionName = "fetchMovies"
 end sub
@@ -5,8 +7,8 @@ end sub
 sub fetchMovies()
     print "[PopulateMoviesTask] fetchMovies: start"
 
-    config = getMovieConfig()
-    rows = getMoviePaths(config.baseUrl, config.apiKey)
+    cfg = config.getMovieConfig()
+    rows = config.getMoviePaths(cfg.baseUrl, cfg.apiKey)
     print "[PopulateMoviesTask] fetchMovies: " ; rows.Count() ; " category rows to fetch"
 
     batchSize = m.top.batchSize

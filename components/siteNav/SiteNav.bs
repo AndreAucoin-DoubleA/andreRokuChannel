@@ -1,9 +1,12 @@
+import "pkg:/source/config.bs"
+import "pkg:/source/theme.bs"
+
 sub init()
     m.menuList = m.top.findNode("menuList")
     applyTheme()
 
     content = CreateObject("roSGNode", "ContentNode")
-    for each page in PageRegistry()
+    for each page in config.PageRegistry()
         if page.type = "nav"
             item = content.createChild("ContentNode")
             item.setFields({ title: page.label, hdPosterUrl: page.icon })
@@ -13,7 +16,7 @@ sub init()
 end sub
 
 sub applyTheme()
-    t = Theme()
+    t = theme.Theme()
     itemWidth = t.size("component.navItem.width", 250)
     itemHeight = t.size("component.navItem.height", 70)
     m.menuList.itemSize = [itemWidth, itemHeight]
