@@ -7,10 +7,12 @@
 
     <interface>
         <field id="deepLink" type="assocarray" alwaysNotify="true"/>
+        <function name="signalLaunchComplete"/>
     </interface>
 
     <children>
         <ScreenManager id="screens"/>
+        <Timer id="launchTimeout" duration="8" repeat="false"/>
 
         <Group id="chrome">
             <Poster
