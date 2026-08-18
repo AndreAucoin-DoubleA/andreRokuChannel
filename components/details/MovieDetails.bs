@@ -29,7 +29,7 @@ sub init()
     m.video = m.top.findNode("videoPlayer")
     m.video.observeField("state", "onVideoStateChanged")
 
-    m.video.notificationInterval = 5
+    m.video.notificationInterval = 1
     m.video.observeField("position", "onVideoPositionChanged")
 
     m.bgActive = false
@@ -43,6 +43,7 @@ sub init()
 
     m.lastPosition = 0
     m.videoDuration = 0
+    m.ticksSinceSave = 0
     m.trackPosition = false
 
     applyTheme()
@@ -233,6 +234,11 @@ sub onVideoStateChanged()
         return
     end if
 
+    if state = "paused"
+        savePositionNow()
+        return
+    end if
+
     if state = "finished"
         persistPosition()
         m.video.control = "stop"
@@ -331,15 +337,33 @@ sub onVideoPositionChanged()
 
     m.lastPosition = m.video.position
     m.videoDuration = m.video.duration
+
+    m.ticksSinceSave = m.ticksSinceSave + 1
+    if m.ticksSinceSave < 15 then return
+
+    m.ticksSinceSave = 0
+    savePositionNow()
+end sub
+
+sub savePositionNow()
+    position = m.video.position
+    duration = m.video.duration
+
+    if position <= 0 then position = m.lastPosition
+    if duration <= 0 then duration = m.videoDuration
+
+    if position <= 0 then return
+
+    bookmarks.savePosition(m.currentMovieId, position, duration)
 end sub
 
 sub persistPosition()
     if not m.trackPosition then return
-    if m.lastPosition <= 0 then return
 
-    bookmarks.savePosition(m.currentMovieId, m.lastPosition, m.videoDuration)
+    savePositionNow()
 
     m.lastPosition = 0
+    m.ticksSinceSave = 0
     m.trackPosition = false
 end sub
 
