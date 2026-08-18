@@ -1,0 +1,42 @@
+namespace bookmarks
+
+    function section() as object
+        return CreateObject("roRegistrySection", "bookmarks")
+    end function
+
+    function positionFor(movieId as dynamic) as integer
+        if movieId = invalid or movieId = "" then return 0
+
+        registry = section()
+        if not registry.Exists(movieId) then return 0
+
+        return registry.Read(movieId).ToInt()
+    end function
+
+    sub savePosition(movieId as dynamic, position as float, duration as float)
+
+        if movieId = invalid or movieId = "" then return
+        if duration <= 0 then return
+
+        registry = section()
+
+        if position < 5 or position > duration - 10
+            registry.Delete(movieId)
+        else
+            registry.Write(movieId, Int(position).ToStr())
+        end if
+
+        registry.Flush()
+    end sub
+
+    sub clear(movieId as dynamic)
+        if movieId = invalid or movieId = "" then return
+
+        registry = section()
+        registry.Delete(movieId)
+        registry.Flush()
+    end sub
+
+
+
+end namespace

@@ -1,5 +1,6 @@
 import "pkg:/source/theme.bs"
 import "pkg:/source/favorites.bs"
+import "pkg:/source/bookmarks.bs"
 
 sub init()
     m.meta = m.top.findNode("meta")
@@ -28,6 +29,9 @@ sub init()
     m.video = m.top.findNode("videoPlayer")
     m.video.observeField("state", "onVideoStateChanged")
 
+    m.video.notificationInterval = 1
+    m.video.observeField("position", "onVideoPositionChanged")
+
     m.bgActive = false
     m.fullscreenActive = false
     m.bgPlayed = false
@@ -36,6 +40,12 @@ sub init()
     m.currentMovieId = ""
     m.returnFocus = invalid
     m.autoPlay = false
+
+    m.lastPosition = 0
+    m.videoDuration = 0
+    m.ticksSinceSave = 0
+    m.trackPosition = false
+
     applyTheme()
 end sub
 
@@ -70,10 +80,12 @@ sub viewWillAppear()
 end sub
 
 sub viewWillHide()
+    persistPosition()
     resetPlayback()
 end sub
 
 sub viewWillDisappear()
+    persistPosition()
     resetPlayback()
 end sub
 
@@ -160,10 +172,18 @@ sub fadeOverlay(target as float)
     m.overlayFadeAnim.control = "start"
 end sub
 
-sub startTrailer()
+sub startTrailer(trackPosition as boolean)
     content = CreateObject("roSGNode", "ContentNode")
     content.url = "https://media.w3.org/2010/05/bunny/trailer.mp4"
     content.streamFormat = "mp4"
+
+    m.trackPosition = trackPosition
+
+    if trackPosition
+        content.playStart = bookmarks.positionFor(m.currentMovieId)
+    else
+        content.playStart = 0
+    end if
 
     m.video.content = content
     m.video.visible = true
@@ -173,7 +193,7 @@ end sub
 sub onBgTimerFire()
     if m.fullscreenActive or m.bgPlayed then return
 
-    startTrailer()
+    startTrailer(false)
     m.bgActive = true
     m.bgPlayed = true
     fadeBackdrop(0)
@@ -182,7 +202,12 @@ end sub
 sub onButtonPressed()
     m.bgTimer.control = "stop"
 
-    if not m.bgActive then startTrailer()
+   if m.bgActive
+        m.video.control = "stop"
+    end if
+
+    startTrailer(true)
+
     m.bgActive = false
     m.fullscreenActive = true
     m.bgPlayed = true
@@ -203,12 +228,19 @@ sub onVideoStateChanged()
 
     if state = "error"
         m.trailerFailed = true
+        persistPosition()
         resetPlayback()
         m.button.setFocus(true)
         return
     end if
 
+    if state = "paused"
+        savePositionNow()
+        return
+    end if
+
     if state = "finished"
+        persistPosition()
         m.video.control = "stop"
         m.video.visible = false
 
@@ -240,6 +272,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
 
     if m.fullscreenActive and key = "back"
+        persistPosition()
         m.video.control = "stop"
         m.video.visible = false
         restoreDetails()
@@ -298,3 +331,47 @@ function moveFocus(delta as integer) as boolean
 
     return false
 end function
+
+sub onVideoPositionChanged()
+    if not m.trackPosition then return
+
+    m.lastPosition = m.video.position
+    m.videoDuration = m.video.duration
+
+    m.ticksSinceSave = m.ticksSinceSave + 1
+    if m.ticksSinceSave < 15 then return
+
+    m.ticksSinceSave = 0
+    savePositionNow()
+end sub
+
+sub savePositionNow()
+    position = m.video.position
+    duration = m.video.duration
+
+    if position <= 0 then position = m.lastPosition
+    if duration <= 0 then duration = m.videoDuration
+
+    if position <= 0 then return
+
+    bookmarks.savePosition(m.currentMovieId, position, duration)
+end sub
+
+sub persistPosition()
+    if not m.trackPosition then return
+
+    savePositionNow()
+
+    m.lastPosition = 0
+    m.ticksSinceSave = 0
+    m.trackPosition = false
+end sub
+
+sub clearPosition()
+    if not m.trackPosition then return
+
+    bookmarks.clear(m.currentMovieId)
+
+    m.lastPosition = 0
+    m.trackPosition = false
+end sub
