@@ -16,6 +16,8 @@ sub init()
     m.cachedIds = invalid
     m.cachedIdsVersion = -1
 
+    m.launchReported = false
+
     m.rowList.observeField("rowItemSelected", "onFavoriteSelected")
     m.global.observeField("catalogVersion", "refreshFavorites")
     m.global.observeField("favoritesVersion", "refreshFavorites")
@@ -42,6 +44,8 @@ end sub
 sub refreshFavorites()
     index = catalogIndex()
     movies = favoriteMovies(index)
+
+    reportLaunchContentReady(movies)
 
     signature = favoritesSignature(movies)
     if signature = m.signature then return
@@ -138,3 +142,13 @@ function setViewFocus() as boolean
 
     return m.rowList.setFocus(true)
 end function
+
+sub reportLaunchContentReady(movies as object)
+    if m.launchReported then return
+
+    print "[HomePage] readyCheck: favIds=" ; cachedFavoriteIds().Count() ; " resolved=" ; movies.Count() ; " catalogVersion=" ; m.global.catalogVersion
+    if cachedFavoriteIds().Count() > 0 and movies.Count() = 0 then return
+
+    m.launchReported = true
+    m.top.getScene().callFunc("signalLaunchComplete")
+end sub

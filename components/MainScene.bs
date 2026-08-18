@@ -11,6 +11,11 @@ sub init()
     m.navFadeWidthInterp = m.top.findNode("navFadeWidthInterp")
     m.navFadeOpacityInterp = m.top.findNode("navFadeOpacityInterp")
 
+    m.launchBeaconFired = false
+    m.launchTimeout = m.top.findNode("launchTimeout")
+    m.launchTimeout.observeField("fire", "onLaunchTimeout")
+    m.launchTimeout.control = "start"
+
     m.screens = m.top.findNode("screens")
     m.screens.observeField("activeDepth", "onActiveDepthChanged")
 
@@ -88,6 +93,8 @@ sub onDeepLinkResolved(msg as object)
         view: "MovieDetails",
         params: {movie: task.movie, autoPlay: link.autoPlay}
     })
+
+    signalLaunchComplete()
 end sub
 
 sub showDeepLinkError()
@@ -98,6 +105,8 @@ sub showDeepLinkError()
 
     dialog.observeField("buttonSelected", "onDeepLinkErrorDismissed")
     m.top.dialog = dialog
+
+    signalLaunchComplete()
 end sub
 
 sub onDeepLinkErrorDismissed()
@@ -245,4 +254,20 @@ sub goToPage(id as string)
 
     m.screens.callFunc("showStack", id)
     focusContentArea()
+end sub
+
+sub onLaunchTimeout()
+    print "[MainScene] launch beacon fired by TIMEOUT"
+    signalLaunchComplete()
+end sub
+
+sub signalLaunchComplete()
+    if m.launchBeaconFired then return
+    m.launchBeaconFired = true
+
+    m.launchTimeout.control = "stop"
+    m.launchTimeout.unobserveField("fire")
+
+    print "[MainScene] signalling AppLaunchComplete"
+    m.top.signalBeacon("AppLaunchComplete")
 end sub
