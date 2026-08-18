@@ -45,7 +45,10 @@ end sub
 sub handleDeepLink(link as object)
     if link = invalid or link.contentId = invalid or link.contentId = "" then return
 
-    print "[MainScene] deep link contentId="; link.contentId; " mediaType="; link.mediaType; " autoPlay="; link.autoPlay
+    if not link.isMovie
+        showDeepLinkError()
+        return
+    end if
 
     goToPage("movies")
 
@@ -81,7 +84,7 @@ sub onDeepLinkResolved(msg as object)
         return
     end if
 
-    m.screen.callFunc("pushOnActive", {
+    m.screens.callFunc("pushOnActive", {
         view: "MovieDetails",
         params: {movie: task.movie, autoPlay: link.autoPlay}
     })
@@ -90,7 +93,7 @@ end sub
 sub showDeepLinkError()
     dialog = CreateObject("roSGNode", "Dialog")
     dialog.title = "Content unavailable"
-    dialog.message = "We couldn't find that title. Showing the home screen instead."
+    dialog.message = "We couldn't open that link."
     dialog.buttons = ["OK"]
 
     dialog.observeField("buttonSelected", "onDeepLinkErrorDismissed")

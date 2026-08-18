@@ -29,12 +29,11 @@ sub Main(args as object)
         favoritesVersion: 0
     })
 
-    screen.CreateScene("MainScene")
+    m.scene = screen.CreateScene("MainScene")
     screen.show()
 
     if deeplink.hasLink(args)
-        print "[Main] cold-start deep link: "; FormatJson(args)
-        m.screen.deepLink = deeplink.parse(args)
+        m.scene.deepLink = deeplink.parse(args)
     end if
 
     while true
@@ -52,7 +51,7 @@ sub Main(args as object)
             if msg.IsInput()
                 info = msg.getInfo()
                 print "[Main] roInput: "; FormatJson(info)
-                if deeplink.hasLink(info) then m.screen.deepLink = deeplink.parse(info)
+                if deeplink.hasLink(info) then m.scene.deepLink = deeplink.parse(info)
             end if
         end if
     end while

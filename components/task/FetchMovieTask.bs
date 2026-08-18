@@ -23,7 +23,7 @@ sub fetchMovie()
     request.InitClientCertificates()
     request.SetUrl(url)
 
-    if not request.AsynGetToString()
+    if not request.AsyncGetToString()
         m.top.status = "failed"
         return
     end if
@@ -31,7 +31,7 @@ sub fetchMovie()
     msg = wait(8000, port)
 
     if msg = invalid
-        request.AsynGetToString()
+        request.AsyncCancel()
         m.top.status = "failed"
         return
     end if

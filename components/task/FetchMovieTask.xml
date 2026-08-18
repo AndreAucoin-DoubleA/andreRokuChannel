@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<component name="FetchMovieTask">
+<component name="FetchMovieTask" extends="Task">
     <script type="text/brightscript" uri="pkg:/components/task/FetchMovieTask.bs" />
     <interface>
         <field id="movieId" type="string"/>
