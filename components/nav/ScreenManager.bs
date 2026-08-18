@@ -63,3 +63,8 @@ sub publishDepth()
     end if
     m.top.activeDepth = m.activeStack.callFunc("depth")
 end sub
+
+function pushOnActive(request as object) as object
+    if m.activeStack = invalid then return invalid
+    return m.activeStack.callFunc("push", request)
+end function

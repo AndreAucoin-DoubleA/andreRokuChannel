@@ -25,3 +25,7 @@ end sub
 sub setFocusToList()
     m.menuList.setFocus(true)
 end sub
+
+sub setSelectedIndex(index as integer)
+    m.menuList.jumpToItem = index
+end sub

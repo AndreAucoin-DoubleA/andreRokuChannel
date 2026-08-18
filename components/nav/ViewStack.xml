@@ -8,6 +8,7 @@
         <function name="focusTop"/>
         <function name="suspendTop"/>
         <function name="resumeTop"/>
+        <function name="push"/>
 
         <field id="stackDepth" type="integer" value="0" alwaysNotify="true"/>
         <field id="maxDepth" type="integer" value="8"/>

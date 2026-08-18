@@ -5,6 +5,7 @@
     <interface>
         <field id="itemFocused" type="integer" alias="menuList.itemFocused"/>
         <function name="setFocusToList"/>
+        <function name="setSelectedIndex"/>
     </interface>
 
 

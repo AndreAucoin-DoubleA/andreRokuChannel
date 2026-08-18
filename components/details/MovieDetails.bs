@@ -35,6 +35,7 @@ sub init()
     m.params = {}
     m.currentMovieId = ""
     m.returnFocus = invalid
+    m.autoPlay = false
     applyTheme()
 end sub
 
@@ -55,11 +56,17 @@ end sub
 
 sub viewDidLoad(params as object)
     m.params = params
+    m.autoPlay = (params.autoPlay = true)
     applyMovie(params.movie)
     m.nextButton.visible = (nextSibling() <> invalid)
 end sub
 sub viewWillAppear()
     beginAmbientCountdown()
+
+    if m.autoPlay
+        m.autoPlay = false
+        onButtonPressed()
+    end if
 end sub
 
 sub viewWillHide()
@@ -71,6 +78,7 @@ sub viewWillDisappear()
 end sub
 
 function setViewFocus() as boolean
+    if m.fullscreenActive then return m.video.setFocus(true)
     return m.button.setFocus(true)
 end function
 
