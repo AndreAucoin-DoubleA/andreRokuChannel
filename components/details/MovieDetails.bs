@@ -15,6 +15,9 @@ sub init()
     m.nextButton = m.top.findNode("nextButton")
     m.nextButton.observeField("selected", "onNextPressed")
 
+    m.restartButton = m.top.findNode("restartButton")
+    m.restartButton.observeField("selected", "onRestartPress")
+
     m.favButton = m.top.findNode("detailsFav")
     m.favButton.observeField("favorited", "onFavoriteToggled")
 
@@ -50,6 +53,28 @@ sub init()
     applyTheme()
 end sub
 
+sub renderButton()
+    positionExist = bookmarks.positionFor(m.currentMovieId)
+
+    if positionExist > 0
+        m.button.text = "Resume"
+
+        m.restartButton.translation = "[110,640]"
+        m.restartButton.visible = "true"
+
+        m.nextButton.translation = "[110,730]"
+    else
+        m.button.text = "Play"
+        m.nextButton.translation = "[110,640]"
+    end if
+end sub
+
+
+sub onRestartPress()
+    bookmarks.clear(m.currentMovieId)
+    onButtonPressed()
+end sub
+
 sub applyTheme()
     t = theme.Theme()
 
@@ -73,6 +98,7 @@ sub viewDidLoad(params as object)
 end sub
 sub viewWillAppear()
     beginAmbientCountdown()
+    renderButton()
 
     if m.autoPlay
         m.autoPlay = false
@@ -230,6 +256,7 @@ sub onButtonPressed()
     m.button.visible = false
     m.favButton.visible = false
     m.nextButton.visible = false
+    m.restartButton.visible = false
     fadeBackdrop(0)
     fadeOverlay(0)
 end sub
@@ -311,6 +338,7 @@ sub restoreDetails()
 
     m.bgPlayed = false
     m.bgTimer.control = "start"
+    renderButton()
 end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
@@ -348,6 +376,7 @@ end function
 
 function focusChain() as object
     chain = [m.button]
+    if m.restartButton.visible then chain.Push(m.restartButton)
     if m.nextButton.visible then chain.Push(m.nextButton)
 
     return chain
