@@ -15,6 +15,9 @@ sub init()
     m.nextButton = m.top.findNode("nextButton")
     m.nextButton.observeField("selected", "onNextPressed")
 
+    m.restartButton = m.top.findNode("restartButton")
+    m.restartButton.observeField("selected", "onRestartPress")
+
     m.favButton = m.top.findNode("detailsFav")
     m.favButton.observeField("favorited", "onFavoriteToggled")
 
@@ -48,6 +51,42 @@ sub init()
     m.trackPosition = false
 
     applyTheme()
+end sub
+
+sub renderButtons()
+    canResume = bookmarks.positionFor(m.currentMovieId) > 0
+
+    if canResume
+        m.button.text = "Resume"
+    else
+        m.button.text = "Play"
+    end if
+
+    m.restartButton.visible = canResume
+
+    m.nextButton.translation = [110, 640]
+    if canResume then m.nextButton.translation = [110, 730]
+end sub
+
+sub showDetailsChrome(show as boolean)
+    m.meta.visible = show
+    m.desc.visible = show
+    m.button.visible = show
+    m.favButton.visible = show
+
+    if show
+        m.nextButton.visible = (nextSibling() <> invalid)
+        renderButtons()
+    else
+        m.nextButton.visible = false
+        m.restartButton.visible = false
+    end if
+end sub
+
+
+sub onRestartPress()
+    bookmarks.clear(m.currentMovieId)
+    onButtonPressed()
 end sub
 
 sub applyTheme()
@@ -156,11 +195,7 @@ sub resetPlayback()
 
     m.detailsBack.opacity = 1
     m.detailsBottomFade.opacity = 1
-    m.meta.visible = true
-    m.desc.visible = true
-    m.button.visible = true
-    m.favButton.visible = true
-    m.nextButton.visible = (nextSibling() <> invalid)
+    showDetailsChrome(true)
 end sub
 
 sub fadeBackdrop(target as float)
@@ -225,11 +260,7 @@ sub onButtonPressed()
 
     m.video.setFocus(true)
 
-    m.meta.visible = false
-    m.desc.visible = false
-    m.button.visible = false
-    m.favButton.visible = false
-    m.nextButton.visible = false
+    showDetailsChrome(false)
     fadeBackdrop(0)
     fadeOverlay(0)
 end sub
@@ -300,11 +331,7 @@ end sub
 
 sub restoreDetails()
     m.fullscreenActive = false
-    m.meta.visible = true
-    m.desc.visible = true
-    m.button.visible = true
-    m.favButton.visible = true
-    m.nextButton.visible = (nextSibling() <> invalid)
+    showDetailsChrome(true)
     fadeBackdrop(1)
     fadeOverlay(1)
     m.button.setFocus(true)
@@ -348,6 +375,7 @@ end function
 
 function focusChain() as object
     chain = [m.button]
+    if m.restartButton.visible then chain.Push(m.restartButton)
     if m.nextButton.visible then chain.Push(m.nextButton)
 
     return chain

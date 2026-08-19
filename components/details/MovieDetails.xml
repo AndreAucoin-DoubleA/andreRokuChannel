@@ -66,6 +66,9 @@
             id="detailsFav"
             translation="[1740, 550]"/>
 
+        <CustomButton id="restartButton" text="Start Over" width="260"
+            translation="[110,640]" visible="false"/>
+
         <CustomButton id="nextButton" text="Next in row" width="260"
             translation="[110,640]" visible="false"/>
     </children>
