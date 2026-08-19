@@ -2,7 +2,7 @@ import "pkg:/source/theme.bs"
 
 sub init()
     m.rowList = m.top.findNode("rowList")
-    m.loadingLabel = m.top.findNode("loadingLabel")
+    m.loader = m.top.findNode("loader")
     m.heroGroup = m.top.findNode("heroGroup")
     m.backdrop = m.top.findNode("itemSelectBackground")
     m.movieLogo = m.top.findNode("movieLogo")
@@ -37,9 +37,6 @@ sub applyTheme()
 
     m.rightFade.blendColor = t.color("component.moviesPage.rightFadeBlendColor", "0x461915FF")
 
-    m.loadingLabel.color = t.color("component.page.statusTextColor", "0xB7BDC5FF")
-    m.loadingLabel.font = t.font("component.page.statusTextTypography", "font:MediumSystemFont")
-
     m.movieTitleLabel.color = t.color("component.page.heroTitleColor", "0xFFFFFFFF")
     m.movieTitleLabel.font = t.font("component.page.heroTitleTypography", "font:LargeBoldSystemFont")
 
@@ -54,7 +51,7 @@ sub viewDidLoad(params as object)
         return
     end if
 
-    m.loadingLabel.visible = true
+    m.loader.callFunc("show")
 
     m.global.observeField("catalogVersion", "onCatalogVersionChanged")
     m.global.observeField("catalogReady", "onCatalogFinished")
@@ -69,7 +66,7 @@ end sub
 
 sub onCatalogArrived()
     m.heroShown = true
-    m.loadingLabel.visible = false
+    m.loader.callFunc("hide")
 
     firstRow = m.rootContent.getChild(0)
     if firstRow <> invalid then showHero(firstRow.getChild(0))
@@ -78,8 +75,7 @@ end sub
 sub onCatalogFinished()
     if m.rootContent.getChildCount() > 0 then return
 
-    m.loadingLabel.text = "Couldn't load movies"
-    m.loadingLabel.visible = true
+    m.loader.callFunc("showError", "Couldn't load movies")
     releaseInputGate()
 end sub
 
@@ -233,6 +229,7 @@ sub onMovieSelected()
 end sub
 
 sub viewWillDisappear()
+    m.loader.callFunc("hide")
     m.heroDebounce.control = "stop"
     m.inputGateTimeout.control = "stop"
     m.pendingMovie = invalid

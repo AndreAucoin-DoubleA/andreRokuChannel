@@ -5,6 +5,7 @@ sub init()
     m.titleLabel = m.top.findNode("titleLabel")
     m.bodyLabel = m.top.findNode("bodyLabel")
     m.rowList = m.top.findNode("rowList")
+    m.loader = m.top.findNode("loader")
 
     m.rootContent = CreateObject("roSGNode", "ContentNode")
     m.rowList.content = m.rootContent
@@ -21,6 +22,7 @@ sub init()
     m.rowList.observeField("rowItemSelected", "onFavoriteSelected")
     m.global.observeField("catalogVersion", "refreshFavorites")
     m.global.observeField("favoritesVersion", "refreshFavorites")
+    m.global.observeField("catalogReady", "onCatalogReady")
 
     applyTheme()
 end sub
@@ -42,6 +44,8 @@ sub viewWillAppear()
 end sub
 
 sub refreshFavorites()
+    updateLoader()
+
     index = catalogIndex()
     movies = favoriteMovies(index)
 
@@ -64,6 +68,27 @@ sub refreshFavorites()
     m.rowList.visible = (movies.Count() > 0)
 
     if movies.Count() > 0 then claimFocusForRow()
+end sub
+
+sub updateLoader()
+    if m.global.catalog.getChildCount() > 0 or m.global.catalogReady
+        m.loader.callFunc("hide")
+        return
+    end if
+
+    m.loader.callFunc("show")
+end sub
+
+sub onCatalogReady()
+    refreshFavorites()
+
+    if m.global.catalog.getChildCount() = 0
+        m.loader.callFunc("showError", "Couldn't load content")
+    end if
+end sub
+
+sub viewWillHide()
+    m.loader.callFunc("hide")
 end sub
 
 sub claimFocusForRow()

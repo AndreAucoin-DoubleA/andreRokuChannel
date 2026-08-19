@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="LoadingIndicator" extends="Group">
+    <script type="text/brightscript" uri="pkg:/components/common/LoadingIndicator.bs"/>
+
+    <interface>
+        <field id="message"      type="string" value="Loading..."/>
+        <field id="errorMessage" type="string" value="Something went wrong"/>
+        <field id="showDelay"    type="float"  value="0.4"/>
+        <field id="timeout"      type="float"  value="15"/>
+
+        <function name="show"/>
+        <function name="hide"/>
+        <function name="showError"/>
+    </interface>
+
+    <children>
+        <Timer id="delayTimer"   repeat="false"/>
+        <Timer id="timeoutTimer" repeat="false"/>
+
+        <Group id="content" visible="false">
+            <BusySpinner
+                id="spinner"
+                spinInterval="1.2"/>
+
+            <Label
+                id="statusLabel"
+                translation="[-120,110]"
+                width="336"
+                horizAlign="center"
+                font="font:MediumSystemFont"
+                color="#B7BDC5"/>
+        </Group>
+    </children>
+</component>
