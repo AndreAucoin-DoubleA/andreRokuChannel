@@ -89,7 +89,7 @@ end sub
 sub viewWillDisappear()
     persistPosition()
     resetPlayback()
-    viewWillDisappear()
+    closePlaybackError()
 end sub
 
 function setViewFocus() as boolean
