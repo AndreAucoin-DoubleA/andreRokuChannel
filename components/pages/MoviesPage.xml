@@ -62,13 +62,11 @@
             rowItemSize="[[376,220]]"
             rowLabelOffset="[[25,25]]"
             rowItemSpacing="[[30,0]]"/>
-        <Label
-            id="loadingLabel"
-            translation="[40,120]"
-            text="Loading movies..."
-            font="font:MediumSystemFont"
-            color="#B7BDC5"
-            visible="false"/>
+        <LoadingIndicator
+            id="loader"
+            translation="[752,492]"
+            message="Loading movies..."
+            errorMessage="Couldn't load movies"/>
 
         <Poster
             id="rightFade"

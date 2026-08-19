@@ -30,5 +30,11 @@
             rowItemSize="[[376,220]]"
             rowLabelOffset="[[25,25]]"
             rowItemSpacing="[[30,0]]"/>
+
+        <LoadingIndicator
+            id="loader"
+            translation="[752,492]"
+            message="Loading..."
+            errorMessage="Couldn't load content"/>
     </children>
 </component>

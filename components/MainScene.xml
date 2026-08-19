@@ -47,5 +47,11 @@
                 loadDisplayMode="scaleToFill"
                 uri="pkg:/images/bottom_fade.png"/>
         </Group>
+
+        <LoadingIndicator
+            id="deepLinkLoader"
+            translation="[912,492]"
+            message="Opening..."
+            errorMessage="We couldn't open that link."/>
     </children>
 </component>
