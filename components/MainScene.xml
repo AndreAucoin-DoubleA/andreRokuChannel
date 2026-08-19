@@ -53,5 +53,11 @@
             translation="[912,492]"
             message="Opening..."
             errorMessage="We couldn't open that link."/>
+
+        <LoadingIndicator
+            id="launchError"
+            translation="[912,492]"
+            timeout="0"
+            errorMessage="Couldn't load content"/>
     </children>
 </component>

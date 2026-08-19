@@ -12,6 +12,8 @@ sub init()
     m.navFadeOpacityInterp = m.top.findNode("navFadeOpacityInterp")
 
     m.launchBeaconFired = false
+    m.launchReason = invalid
+    m.launchError = m.top.findNode("launchError")
     m.launchTimeout = m.top.findNode("launchTimeout")
     m.launchTimeout.observeField("fire", "onLaunchTimeout")
     m.launchTimeout.control = "start"
@@ -78,6 +80,7 @@ sub cancelDeepLinkFetch()
     m.deepLinkTask.unobserveField("status")
     m.deepLinkTask.control = "stop"
     m.deepLinkTask = invalid
+    m.pendingDeepLink = invalid
 
     m.deepLinkLoader.callFunc("hide")
 end sub
@@ -99,7 +102,7 @@ sub onDeepLinkResolved(msg as object)
 
     m.screens.callFunc("pushOnActive", {
         view: "MovieDetails",
-        params: {movie: task.movie, autoPlay: link.autoPlay}
+        params: { movie: task.movie, autoPlay: link.autoPlay }
     })
 
     signalLaunchComplete()
@@ -142,6 +145,11 @@ sub onCatalogBatch(msg as object)
     batch.RemoveChildren(rows)
     m.global.catalog.AppendChildren(rows)
     m.global.catalogVersion = m.global.catalogVersion + 1
+
+    if m.launchReason = "timeout-failed"
+        m.launchError.callFunc("hide")
+        m.launchReason = "timeout-recovered"
+    end if
 end sub
 
 sub onCatalogComplete()
@@ -267,17 +275,34 @@ sub goToPage(id as string)
 end sub
 
 sub onLaunchTimeout()
-    print "[MainScene] launch beacon fired by TIMEOUT"
+    if m.pendingDeepLink <> invalid
+        print "[MainScene] launch TIMEOUT with deep link unresolved"
+        m.launchReason = "timeout-deeplink"
+        cancelDeepLinkFetch()
+        showDeepLinkError()
+        return
+    end if
+
+    if m.global.catalog.getChildCount() > 0
+        print "[MainScene] launch TIMEOUT - content present, reporting degraded"
+        m.launchReason = "timeout-degraded"
+        signalLaunchComplete()
+        return
+    end if
+
+    print "[MainScene] launch TIMEOUT with no content - showing error state"
+    m.launchReason = "timeout-failed"
+    m.launchError.callFunc("showError", "Couldn't load content")
     signalLaunchComplete()
 end sub
 
 sub signalLaunchComplete()
     if m.launchBeaconFired then return
     m.launchBeaconFired = true
-
     m.launchTimeout.control = "stop"
     m.launchTimeout.unobserveField("fire")
-
-    print "[MainScene] signalling AppLaunchComplete"
+    reason = m.launchReason
+    if reason = invalid then reason = "content-ready"
+    print "[MainScene] signalling AppLaunchComplete (" ; reason ; ")"
     m.top.signalBeacon("AppLaunchComplete")
 end sub

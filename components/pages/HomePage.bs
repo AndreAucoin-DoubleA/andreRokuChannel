@@ -71,8 +71,13 @@ sub refreshFavorites()
 end sub
 
 sub updateLoader()
-    if m.global.catalog.getChildCount() > 0 or m.global.catalogReady
+    if m.global.catalog.getChildCount() > 0
         m.loader.callFunc("hide")
+        return
+    end if
+
+    if m.global.catalogReady
+        m.loader.callFunc("showError", "Couldn't load content")
         return
     end if
 
@@ -81,10 +86,6 @@ end sub
 
 sub onCatalogReady()
     refreshFavorites()
-
-    if m.global.catalog.getChildCount() = 0
-        m.loader.callFunc("showError", "Couldn't load content")
-    end if
 end sub
 
 sub viewWillHide()
@@ -170,6 +171,8 @@ end function
 
 sub reportLaunchContentReady(movies as object)
     if m.launchReported then return
+
+    if m.global.catalog.getChildCount() = 0 and not m.global.catalogReady then return
 
     print "[HomePage] readyCheck: favIds=" ; cachedFavoriteIds().Count() ; " resolved=" ; movies.Count() ; " catalogVersion=" ; m.global.catalogVersion
     if cachedFavoriteIds().Count() > 0 and movies.Count() = 0 then return
