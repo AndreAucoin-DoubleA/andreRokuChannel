@@ -53,19 +53,33 @@ sub init()
     applyTheme()
 end sub
 
-sub renderButton()
-    positionExist = bookmarks.positionFor(m.currentMovieId)
+sub renderButtons()
+    canResume = bookmarks.positionFor(m.currentMovieId) > 0
 
-    if positionExist > 0
+    if canResume
         m.button.text = "Resume"
-
-        m.restartButton.translation = "[110,640]"
-        m.restartButton.visible = "true"
-
-        m.nextButton.translation = "[110,730]"
     else
         m.button.text = "Play"
-        m.nextButton.translation = "[110,640]"
+    end if
+
+    m.restartButton.visible = canResume
+
+    m.nextButton.translation = [110, 640]
+    if canResume then m.nextButton.translation = [110, 730]
+end sub
+
+sub showDetailsChrome(show as boolean)
+    m.meta.visible = show
+    m.desc.visible = show
+    m.button.visible = show
+    m.favButton.visible = show
+
+    if show
+        m.nextButton.visible = (nextSibling() <> invalid)
+        renderButtons()
+    else
+        m.nextButton.visible = false
+        m.restartButton.visible = false
     end if
 end sub
 
@@ -98,7 +112,6 @@ sub viewDidLoad(params as object)
 end sub
 sub viewWillAppear()
     beginAmbientCountdown()
-    renderButton()
 
     if m.autoPlay
         m.autoPlay = false
@@ -182,11 +195,7 @@ sub resetPlayback()
 
     m.detailsBack.opacity = 1
     m.detailsBottomFade.opacity = 1
-    m.meta.visible = true
-    m.desc.visible = true
-    m.button.visible = true
-    m.favButton.visible = true
-    m.nextButton.visible = (nextSibling() <> invalid)
+    showDetailsChrome(true)
 end sub
 
 sub fadeBackdrop(target as float)
@@ -251,12 +260,7 @@ sub onButtonPressed()
 
     m.video.setFocus(true)
 
-    m.meta.visible = false
-    m.desc.visible = false
-    m.button.visible = false
-    m.favButton.visible = false
-    m.nextButton.visible = false
-    m.restartButton.visible = false
+    showDetailsChrome(false)
     fadeBackdrop(0)
     fadeOverlay(0)
 end sub
@@ -327,18 +331,13 @@ end sub
 
 sub restoreDetails()
     m.fullscreenActive = false
-    m.meta.visible = true
-    m.desc.visible = true
-    m.button.visible = true
-    m.favButton.visible = true
-    m.nextButton.visible = (nextSibling() <> invalid)
+    showDetailsChrome(true)
     fadeBackdrop(1)
     fadeOverlay(1)
     m.button.setFocus(true)
 
     m.bgPlayed = false
     m.bgTimer.control = "start"
-    renderButton()
 end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
