@@ -26,8 +26,7 @@ sub Main(args as object)
         catalog: CreateObject("roSGNode", "ContentNode"),
         catalogVersion: 0,
         catalogReady: false,
-        favoritesVersion: 0,
-        launchFailed: false
+        favoritesVersion: 0
     })
 
     m.scene = screen.CreateScene("MainScene")

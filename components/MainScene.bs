@@ -12,6 +12,8 @@ sub init()
     m.navFadeOpacityInterp = m.top.findNode("navFadeOpacityInterp")
 
     m.launchBeaconFired = false
+    m.launchReason = invalid
+    m.launchError = m.top.findNode("launchError")
     m.launchTimeout = m.top.findNode("launchTimeout")
     m.launchTimeout.observeField("fire", "onLaunchTimeout")
     m.launchTimeout.control = "start"
@@ -78,6 +80,7 @@ sub cancelDeepLinkFetch()
     m.deepLinkTask.unobserveField("status")
     m.deepLinkTask.control = "stop"
     m.deepLinkTask = invalid
+    m.pendingDeepLink = invalid
 
     m.deepLinkLoader.callFunc("hide")
 end sub
@@ -143,7 +146,10 @@ sub onCatalogBatch(msg as object)
     m.global.catalog.AppendChildren(rows)
     m.global.catalogVersion = m.global.catalogVersion + 1
 
-    if m.global.launchFailed then m.global.launchFailed = false
+    if m.launchReason = "timeout-failed"
+        m.launchError.callFunc("hide")
+        m.launchReason = "timeout-recovered"
+    end if
 end sub
 
 sub onCatalogComplete()
@@ -286,7 +292,7 @@ sub onLaunchTimeout()
 
     print "[MainScene] launch TIMEOUT with no content - showing error state"
     m.launchReason = "timeout-failed"
-    m.global.launchFailed = true
+    m.launchError.callFunc("showError", "Couldn't load content")
     signalLaunchComplete()
 end sub
 
