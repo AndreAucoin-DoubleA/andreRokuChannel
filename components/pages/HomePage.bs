@@ -23,6 +23,7 @@ sub init()
     m.global.observeField("catalogVersion", "refreshFavorites")
     m.global.observeField("favoritesVersion", "refreshFavorites")
     m.global.observeField("catalogReady", "onCatalogReady")
+    m.global.observeField("launchFailed", "onLaunchFailed")
 
     applyTheme()
 end sub
@@ -176,4 +177,11 @@ sub reportLaunchContentReady(movies as object)
 
     m.launchReported = true
     m.top.getScene().callFunc("signalLaunchComplete")
+end sub
+
+sub onLaunchFailed()
+    if not m.global.launchFailed then return
+    if m.global.catalog.getChildCount() > 0 then return
+
+    m.loader.callFunc("showError", "Couldn't load content")
 end sub

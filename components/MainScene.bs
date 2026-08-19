@@ -99,7 +99,7 @@ sub onDeepLinkResolved(msg as object)
 
     m.screens.callFunc("pushOnActive", {
         view: "MovieDetails",
-        params: {movie: task.movie, autoPlay: link.autoPlay}
+        params: { movie: task.movie, autoPlay: link.autoPlay }
     })
 
     signalLaunchComplete()
@@ -142,6 +142,8 @@ sub onCatalogBatch(msg as object)
     batch.RemoveChildren(rows)
     m.global.catalog.AppendChildren(rows)
     m.global.catalogVersion = m.global.catalogVersion + 1
+
+    if m.global.launchFailed then m.global.launchFailed = false
 end sub
 
 sub onCatalogComplete()
@@ -267,17 +269,34 @@ sub goToPage(id as string)
 end sub
 
 sub onLaunchTimeout()
-    print "[MainScene] launch beacon fired by TIMEOUT"
+    if m.pendingDeepLink <> invalid
+        print "[MainScene] launch TIMEOUT with deep link unresolved"
+        m.launchReason = "timeout-deeplink"
+        cancelDeepLinkFetch()
+        showDeepLinkError()
+        return
+    end if
+
+    if m.global.catalog.getChildCount() > 0
+        print "[MainScene] launch TIMEOUT - content present, reporting degraded"
+        m.launchReason = "timeout-degraded"
+        signalLaunchComplete()
+        return
+    end if
+
+    print "[MainScene] launch TIMEOUT with no content - showing error state"
+    m.launchReason = "timeout-failed"
+    m.global.launchFailed = true
     signalLaunchComplete()
 end sub
 
 sub signalLaunchComplete()
     if m.launchBeaconFired then return
     m.launchBeaconFired = true
-
     m.launchTimeout.control = "stop"
     m.launchTimeout.unobserveField("fire")
-
-    print "[MainScene] signalling AppLaunchComplete"
+    reason = m.launchReason
+    if reason = invalid then reason = "content-ready"
+    print "[MainScene] signalling AppLaunchComplete (" ; reason ; ")"
     m.top.signalBeacon("AppLaunchComplete")
 end sub
