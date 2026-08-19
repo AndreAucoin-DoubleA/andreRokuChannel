@@ -39,6 +39,7 @@ sub init()
     m.params = {}
     m.currentMovieId = ""
     m.returnFocus = invalid
+    m.errorDialog = invalid
     m.autoPlay = false
 
     m.lastPosition = 0
@@ -82,11 +83,13 @@ end sub
 sub viewWillHide()
     persistPosition()
     resetPlayback()
+    closePlaybackError()
 end sub
 
 sub viewWillDisappear()
     persistPosition()
     resetPlayback()
+    viewWillDisappear()
 end sub
 
 function setViewFocus() as boolean
@@ -210,7 +213,7 @@ end sub
 sub onButtonPressed()
     m.bgTimer.control = "stop"
 
-   if m.bgActive
+    if m.bgActive
         m.video.control = "stop"
     end if
 
@@ -235,10 +238,14 @@ sub onVideoStateChanged()
     state = m.video.state
 
     if state = "error"
+        failedFullScreen = m.fullscreenActive
         m.trailerFailed = true
+
         persistPosition()
         resetPlayback()
         m.button.setFocus(true)
+
+        if failedFullScreen then showPlaybackError()
         return
     end if
 
@@ -259,6 +266,36 @@ sub onVideoStateChanged()
             fadeBackdrop(1)
         end if
     end if
+end sub
+
+sub showPlayBackError()
+    if m.errorDialog <> invalid then return
+
+    dialog = CreateObject("roSGNode", "Dialog")
+    dialog.title = "Playback error"
+    dialog.message = "We couldn't play this video. Please try again"
+    dialog.buttons = ["OK"]
+
+    dialog.observeField("buttonSelected", "onPlaybackErrorDismissed")
+    dialog.observeField("wasClosed", "onPlaybackErrorDismissed")
+
+    m.errorDialog = dialog
+    m.top.getScene().dialog = dialog
+
+end sub
+
+sub closePlaybackError()
+    if m.errorDialog = invalid then return
+
+    m.errorDialog.unobserveField("buttonSelected")
+    m.errorDialog.unobserveField("wasClosed")
+    m.errorDialog.close = true
+    m.errorDialog = invalid
+end sub
+
+sub onPlaybackErrorDismissed()
+    closePlaybackError()
+    m.button.setFocus(true)
 end sub
 
 sub restoreDetails()
