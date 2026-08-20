@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="RowListDecor" extends="Group">
+    <script type="text/brightscript" uri="pkg:/components/rowList/RowListDecor.bs" />
+
+    <interface>
+        <field id="rowList" type="node" onChange="onRowListChanged"/>
+        <field id="offsetY" type="float" value="8" onChange="onGeometryChanged"/>
+    </interface>
+
+    <children>
+        <!-- capLayer is declared first so the corner caps paint under the ring. -->
+        <Group id="capLayer"/>
+        <Poster id="ring" visible="false"/>
+    </children>
+
+</component>

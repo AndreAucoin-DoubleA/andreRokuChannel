@@ -1,0 +1,116 @@
+import "pkg:/source/theme.bs"
+
+' Decoration for a RowList. Declare it after the RowList so it paints over the
+' scrolling items, then hand it the node:
+'
+'     <RowListDecor id="decor"/>
+'     m.top.findNode("decor").rowList = m.rowList
+'
+' It draws two layers off one set of row geometry, so they cannot drift apart:
+'
+'   ring - a single focus ring on the focused slot, hidden unless the RowList holds
+'          focus.
+'   caps - one overlay per row, sitting on the RowList's left clip boundary. A
+'          RowList hard-clips its rows, so a poster sliding out is sliced with a
+'          square vertical edge while its MaskGroup keeps rounding corners that have
+'          already scrolled past. Each cap masks off that row's item-box corners in
+'          the scene background colour, so items appear to vanish behind the ring's
+'          outer silhouette instead of being cut. These stay up for unfocused rows,
+'          which can still hold a mid-scroll offset.
+
+sub init()
+    m.rowList = invalid
+    m.capLayer = m.top.findNode("capLayer")
+    m.ring = m.top.findNode("ring")
+
+    ' Fields that move the decoration, kept apart from fields that only show or hide
+    ' it: a relayout recreates the cap Posters, and content is reassigned on every
+    ' catalog batch, so routing that through relayout would rebuild them a dozen
+    ' times during startup for no visual change.
+    m.geometryFields = ["itemSize", "rowItemSize", "itemSpacing", "numRows", "translation"]
+    m.visibilityFields = ["visible", "content", "focusedChild"]
+
+    t = theme.Theme()
+    m.ring.uri = "pkg:/images/item_focus_ring.png"
+    m.ring.blendColor = t.color("component.moviePoster.focusRingColor", "0x8B5CD6FF")
+    m.capColor = t.color("component.scene.backgroundColor", "0x202226FF")
+end sub
+
+sub onRowListChanged()
+    detach()
+
+    m.rowList = m.top.rowList
+    if m.rowList = invalid then return
+
+    for each field in m.geometryFields
+        m.rowList.observeField(field, "onGeometryChanged")
+    end for
+    for each field in m.visibilityFields
+        m.rowList.observeField(field, "onVisibilityChanged")
+    end for
+
+    onGeometryChanged()
+    onVisibilityChanged()
+end sub
+
+sub detach()
+    if m.rowList = invalid then return
+
+    for each field in m.geometryFields
+        m.rowList.unobserveField(field)
+    end for
+    for each field in m.visibilityFields
+        m.rowList.unobserveField(field)
+    end for
+
+    m.rowList = invalid
+end sub
+
+sub onGeometryChanged()
+    if m.rowList = invalid then return
+
+    sizes = m.rowList.rowItemSize
+    if sizes.Count() = 0 then return
+
+    itemWidth = sizes[0][0]
+    itemHeight = sizes[0][1]
+    rowHeight = m.rowList.itemSize[1]
+    rowPitch = rowHeight + m.rowList.itemSpacing[1]
+
+    ' Items sit at the bottom of each row cell, because the row label takes the space
+    ' above them. offsetY nudges that baseline back up.
+    left = m.rowList.translation[0]
+    baseTop = m.rowList.translation[1] + (rowHeight - itemHeight) - m.top.offsetY
+
+    m.ring.width = itemWidth
+    m.ring.height = itemHeight
+    m.ring.translation = [left, baseTop]
+
+    ' row_corner_cap.png is generated as the complement of item_focus_ring.png's outer
+    ' silhouette, so it covers only the item box's corners and never the ring itself.
+    ' The two are one authored set: 27 is the ring's corner inset, and drawing the cap
+    ' at any other width stretches the curve away from the ring it traces.
+    capWidth = 27
+
+    m.capLayer.removeChildrenIndex(m.capLayer.getChildCount(), 0)
+
+    for row = 0 to m.rowList.numRows - 1
+        cap = m.capLayer.createChild("Poster")
+        cap.uri = "pkg:/images/row_corner_cap.png"
+        cap.blendColor = m.capColor
+        cap.width = capWidth
+        cap.height = itemHeight
+        cap.translation = [left, baseTop + (row * rowPitch)]
+    end for
+end sub
+
+sub onVisibilityChanged()
+    if m.rowList = invalid then return
+
+    content = m.rowList.content
+    hasRows = (content <> invalid and content.getChildCount() > 0)
+    shown = m.rowList.visible and hasRows
+
+    m.top.visible = shown
+    m.ring.visible = shown and m.rowList.isInFocusChain()
+end sub

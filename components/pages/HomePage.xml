@@ -32,7 +32,7 @@
             rowLabelOffset="[[25,25]]"
             rowItemSpacing="[[30,0]]"/>
 
-        <RowListFocusRing id="focusRing" offsetY="8"/>
+        <RowListDecor id="decor"/>
 
         <LoadingIndicator
             id="loader"
