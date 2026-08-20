@@ -2,6 +2,7 @@ import "pkg:/source/theme.bs"
 
 sub init()
     m.rowList = m.top.findNode("rowList")
+    m.focusRing = m.top.findNode("focusRing")
     m.loader = m.top.findNode("loader")
     m.heroGroup = m.top.findNode("heroGroup")
     m.backdrop = m.top.findNode("itemSelectBackground")
@@ -30,6 +31,8 @@ sub init()
     m.movieLogo.observeField("loadStatus", "onLogoLoadStatus")
 
     applyTheme()
+
+    m.focusRing.rowList = m.rowList
 end sub
 
 sub applyTheme()

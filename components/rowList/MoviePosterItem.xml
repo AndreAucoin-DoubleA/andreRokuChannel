@@ -4,19 +4,9 @@
 
     <interface>
         <field id="itemContent" type="node" onChange="onContentChanged"/>
-        <field id="itemHasFocus" type="boolean" onChange="onFocusChanged"/>
-        <field id="rowHasFocus" type="boolean" onChange="onFocusChanged"/>
     </interface>
 
     <children>
-        <Poster
-            id="focusRing"
-            translation="[0,0]"
-            width="376"
-            height="220"
-            uri="pkg:/images/item_focus_ring.png"
-            blendColor="#8B5CD6"
-            visible="false"/>
         <MaskGroup
             id="posterMask"
             translation="[10,10]"

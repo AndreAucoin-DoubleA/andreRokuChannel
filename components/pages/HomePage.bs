@@ -5,6 +5,7 @@ sub init()
     m.titleLabel = m.top.findNode("titleLabel")
     m.bodyLabel = m.top.findNode("bodyLabel")
     m.rowList = m.top.findNode("rowList")
+    m.focusRing = m.top.findNode("focusRing")
     m.loader = m.top.findNode("loader")
 
     m.rootContent = CreateObject("roSGNode", "ContentNode")
@@ -25,6 +26,8 @@ sub init()
     m.global.observeField("catalogReady", "onCatalogReady")
 
     applyTheme()
+
+    m.focusRing.rowList = m.rowList
 end sub
 
 sub applyTheme()
