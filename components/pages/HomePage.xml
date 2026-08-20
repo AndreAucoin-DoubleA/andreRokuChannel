@@ -16,6 +16,7 @@
             color="#B7BDC5"
             width="800"
             wrap="true"/>
+
         <RowList
             id="rowList"
             showRowLabel="true"
@@ -30,6 +31,8 @@
             rowItemSize="[[376,220]]"
             rowLabelOffset="[[25,25]]"
             rowItemSpacing="[[30,0]]"/>
+
+        <RowListDecor id="decor"/>
 
         <LoadingIndicator
             id="loader"

@@ -62,6 +62,9 @@
             rowItemSize="[[376,220]]"
             rowLabelOffset="[[25,25]]"
             rowItemSpacing="[[30,0]]"/>
+
+        <RowListDecor id="decor"/>
+
         <LoadingIndicator
             id="loader"
             translation="[752,492]"

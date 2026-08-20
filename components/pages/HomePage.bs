@@ -25,6 +25,8 @@ sub init()
     m.global.observeField("catalogReady", "onCatalogReady")
 
     applyTheme()
+
+    m.top.findNode("decor").rowList = m.rowList
 end sub
 
 sub applyTheme()

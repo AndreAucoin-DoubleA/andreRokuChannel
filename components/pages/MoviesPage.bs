@@ -30,6 +30,8 @@ sub init()
     m.movieLogo.observeField("loadStatus", "onLogoLoadStatus")
 
     applyTheme()
+
+    m.top.findNode("decor").rowList = m.rowList
 end sub
 
 sub applyTheme()
