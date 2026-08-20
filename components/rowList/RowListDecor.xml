@@ -8,7 +8,6 @@
     </interface>
 
     <children>
-        <!-- capLayer is declared first so the corner caps paint under the ring. -->
         <Group id="capLayer"/>
         <Poster id="ring" visible="false"/>
     </children>
