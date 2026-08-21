@@ -51,14 +51,14 @@
         <RowList
             id="rowList"
             showRowLabel="true"
-            translation="[40, 530]"
+            translation="[40, 500]"
             itemComponentName="MoviePosterItem"
             numRows="3"
             rowFocusAnimationStyle="fixedFocus"
             vertFocusAnimationStyle="fixedFocus"
             drawFocusFeedback="false"
             itemSize="[1880,290]"
-            itemSpacing="[0,40]"
+            itemSpacing="[0,115]"
             rowItemSize="[[376,220]]"
             rowLabelOffset="[[25,25]]"
             rowItemSpacing="[[30,0]]"/>
