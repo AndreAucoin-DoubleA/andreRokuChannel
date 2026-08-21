@@ -7,6 +7,7 @@ sub init()
 
     m.geometryFields = ["itemSize", "rowItemSize", "itemSpacing", "numRows", "translation"]
     m.visibilityFields = ["visible", "content", "focusedChild"]
+    m.motionFields = ["currFocusRow"]
 
     t = theme.Theme()
     m.ring.uri = "pkg:/images/item_focus_ring.png"
@@ -26,9 +27,13 @@ sub onRowListChanged()
     for each field in m.visibilityFields
         m.rowList.observeField(field, "onVisibilityChanged")
     end for
+    for each field in m.motionFields
+        m.rowList.observeField(field, "onVertScroll")
+    end for
 
     onGeometryChanged()
     onVisibilityChanged()
+    onVertScroll()
 end sub
 
 sub detach()
@@ -38,6 +43,9 @@ sub detach()
         m.rowList.unobserveField(field)
     end for
     for each field in m.visibilityFields
+        m.rowList.unobserveField(field)
+    end for
+    for each field in m.motionFields
         m.rowList.unobserveField(field)
     end for
 
@@ -76,6 +84,27 @@ sub onGeometryChanged()
     end for
 end sub
 
+sub onVertScroll()
+    if m.rowList = invalid then return
+
+    if not canScrollVertically()
+        m.capLayer.visible = true
+        return
+    end if
+
+    row = m.rowList.currFocusRow
+    m.capLayer.visible = (Abs(row - Int(row)) < 0.01)
+end sub
+
+function canScrollVertically() as boolean
+    if not m.rowList.isInFocusChain() then return false
+
+    content = m.rowList.content
+    if content = invalid then return false
+
+    return content.getChildCount() > 1
+end function
+
 sub onVisibilityChanged()
     if m.rowList = invalid then return
 
@@ -85,4 +114,6 @@ sub onVisibilityChanged()
 
     m.top.visible = shown
     m.ring.visible = shown and m.rowList.isInFocusChain()
+
+    onVertScroll()
 end sub

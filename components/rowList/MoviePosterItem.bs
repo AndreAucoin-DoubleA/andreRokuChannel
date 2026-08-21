@@ -1,5 +1,6 @@
 sub init()
     m.poster = m.top.findNode("poster")
+    m.poster.observeField("loadStatus", "onPosterLoadStatus")
 end sub
 
 sub onContentChanged()
@@ -10,4 +11,20 @@ sub onContentChanged()
     else
         m.poster.uri = content.HDPosterUrl
     end if
+
+    ' TEMP DIAGNOSTIC
+    if content = invalid
+        print "[PosterItem] assign CLEARED"
+    else
+        print "[PosterItem] assign id=" ; content.movieId ; " title=" ; content.title
+    end if
+end sub
+
+' TEMP DIAGNOSTIC
+sub onPosterLoadStatus()
+    content = m.top.itemContent
+    id = "none"
+    if content <> invalid then id = content.movieId
+
+    print "[PosterItem] " ; m.poster.loadStatus ; " id=" ; id
 end sub
