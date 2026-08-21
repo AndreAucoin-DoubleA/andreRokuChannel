@@ -139,7 +139,7 @@ end function
 sub applyMovie(movie as object)
     if movie = invalid then return
 
-    m.meta.text = "Rating: " + movie.rating + "    Released: " + movie.releaseDate
+    m.meta.text = movie.title + "  -  Rating: " + movie.rating + "  -  Released: " + movie.releaseDate
     m.desc.text = movie.description
     m.detailsBack.uri = movie.HDBackgroundImageUrl
 

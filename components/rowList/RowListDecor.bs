@@ -4,6 +4,7 @@ sub init()
     m.rowList = invalid
     m.capLayer = m.top.findNode("capLayer")
     m.ring = m.top.findNode("ring")
+    m.summaryTitle = m.top.findNode("summaryTitle")
 
     m.geometryFields = ["itemSize", "rowItemSize", "itemSpacing", "numRows", "translation"]
     m.visibilityFields = ["visible", "content", "focusedChild"]
@@ -13,6 +14,10 @@ sub init()
     m.ring.uri = "pkg:/images/item_focus_ring.png"
     m.ring.blendColor = t.color("component.moviePoster.focusRingColor", "0x8B5CD6FF")
     m.capColor = t.color("component.scene.backgroundColor", "0x202226FF")
+
+    m.summaryTitle.color = t.color("component.rowList.summaryTitleColor", "0xFFFFFFFF")
+    m.summaryTitle.font = t.font("component.rowList.summaryTitleTypography", "font:MediumBoldSystemFont")
+    m.summaryTitle.ellipsizeOnBoundary = true
 end sub
 
 sub onRowListChanged()
@@ -64,11 +69,17 @@ sub onGeometryChanged()
     rowPitch = rowHeight + m.rowList.itemSpacing[1]
 
     left = m.rowList.translation[0]
-    baseTop = m.rowList.translation[1] + (rowHeight - itemHeight) - m.top.offsetY
+    posterTop = m.rowList.translation[1] + (rowHeight - itemHeight)
+    baseTop = posterTop - m.top.offsetY
 
     m.ring.width = itemWidth
     m.ring.height = itemHeight
     m.ring.translation = [left, baseTop]
+
+    hSpacing = m.rowList.rowItemSpacing[0][0]
+    columns = m.top.summaryColumns
+    m.summaryTitle.width = (columns * itemWidth) + ((columns - 1) * hSpacing)
+    m.summaryTitle.translation = [left, posterTop + itemHeight + m.top.summaryGap]
 
     capWidth = 27
 
@@ -114,6 +125,7 @@ sub onVisibilityChanged()
 
     m.top.visible = shown
     m.ring.visible = shown and m.rowList.isInFocusChain()
+    m.summaryTitle.visible = m.ring.visible
 
     onVertScroll()
 end sub

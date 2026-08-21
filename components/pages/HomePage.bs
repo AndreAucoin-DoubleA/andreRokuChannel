@@ -20,13 +20,15 @@ sub init()
     m.launchReported = false
 
     m.rowList.observeField("rowItemSelected", "onFavoriteSelected")
+    m.rowList.observeField("rowItemFocused", "onFavoriteFocused")
     m.global.observeField("catalogVersion", "refreshFavorites")
     m.global.observeField("favoritesVersion", "refreshFavorites")
     m.global.observeField("catalogReady", "onCatalogReady")
 
     applyTheme()
 
-    m.top.findNode("decor").rowList = m.rowList
+    m.decor = m.top.findNode("decor")
+    m.decor.rowList = m.rowList
 end sub
 
 sub applyTheme()
@@ -39,6 +41,9 @@ sub applyTheme()
     m.bodyLabel.font = t.font("component.page.bodyTypography", "font:MediumSystemFont")
 
     m.rowList.rowItemSize = [[t.size("component.moviePoster.width", 376), t.size("component.moviePoster.height", 220)]]
+
+    m.rowList.rowLabelColor = t.color("component.rowList.rowLabelColor", "0x8E949DFF")
+    m.rowList.rowLabelFont = t.font("component.rowList.rowLabelTypography", "font:SmallSystemFont")
 end sub
 
 sub viewWillAppear()
@@ -154,6 +159,19 @@ function favoritesSignature(movies as object) as string
 
     return ids.Join(",")
 end function
+
+sub onFavoriteFocused()
+    sel = m.rowList.rowItemFocused
+    if sel = invalid or sel.Count() < 2 then return
+
+    row = m.rootContent.getChild(sel[0])
+    if row = invalid then return
+
+    movie = row.getChild(sel[1])
+    if movie = invalid then return
+
+    m.decor.summaryText = movie.title
+end sub
 
 sub onFavoriteSelected()
     sel = m.rowList.rowItemSelected

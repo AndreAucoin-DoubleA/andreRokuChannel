@@ -31,7 +31,8 @@ sub init()
 
     applyTheme()
 
-    m.top.findNode("decor").rowList = m.rowList
+    m.decor = m.top.findNode("decor")
+    m.decor.rowList = m.rowList
 end sub
 
 sub applyTheme()
@@ -43,6 +44,9 @@ sub applyTheme()
     m.movieTitleLabel.font = t.font("component.page.heroTitleTypography", "font:LargeBoldSystemFont")
 
     m.rowList.rowItemSize = [[t.size("component.moviePoster.width", 376), t.size("component.moviePoster.height", 220)]]
+
+    m.rowList.rowLabelColor = t.color("component.rowList.rowLabelColor", "0x8E949DFF")
+    m.rowList.rowLabelFont = t.font("component.rowList.rowLabelTypography", "font:SmallSystemFont")
 end sub
 
 sub viewDidLoad(params as object)
@@ -93,6 +97,8 @@ end function
 sub onMovieFocused()
     movie = movieAt(m.rowList.rowItemFocused)
     if movie = invalid then return
+
+    m.decor.summaryText = movie.title
 
     m.pendingMovie = movie
     m.heroDebounce.control = "stop"
