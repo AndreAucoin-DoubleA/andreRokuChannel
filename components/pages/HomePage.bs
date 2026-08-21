@@ -65,6 +65,8 @@ sub refreshFavorites()
         row.AppendChildren(movies)
     end if
 
+    print "[HomePage] TEMP rebuild rows=" ; root.getChildCount() ; " order=" ; signature
+
     m.rootContent = root
     m.rowList.content = root
     m.rowList.visible = (movies.Count() > 0)
