@@ -21,6 +21,7 @@ sub init()
     m.pendingMovie = invalid
     m.inputLocked = true
     m.heroShown = false
+    m.focusClock = CreateObject("roTimespan")
 
     m.rowList.observeField("rowItemSelected", "onMovieSelected")
     m.rowList.observeField("rowItemFocused", "onMovieFocused")
@@ -102,8 +103,26 @@ sub onMovieFocused()
 
     m.pendingMovie = movie
     m.heroDebounce.control = "stop"
+    m.heroDebounce.duration = nextHeroDelay()
     m.heroDebounce.control = "start"
 end sub
+
+function nextHeroDelay() as float
+    baseDelay = 0.3
+    maxDelay = 1.0
+    repeatCutoffMs = 900
+
+    gapMs = m.focusClock.TotalMilliseconds()
+    m.focusClock.Mark()
+
+    if gapMs <= 0 or gapMs > repeatCutoffMs then return baseDelay
+
+    delay = (gapMs * 1.4) / 1000.0
+    if delay < baseDelay then return baseDelay
+    if delay > maxDelay then return maxDelay
+
+    return delay
+end function
 
 sub onHeroDebounceFired()
     if m.pendingMovie = invalid then return
