@@ -1,3 +1,5 @@
+import "pkg:/source/a11y.bs"
+
 sub init()
     m.favIcon = m.top.findNode("favIcon")
 
@@ -25,6 +27,7 @@ sub onFocusChanged()
     if m.top.hasFocus()
         m.favIcon.opacity = 1.0
         m.top.scale = [1.15, 1.15]
+        announceState()
     else
         m.okHeld = false
         m.favIcon.opacity = 0.6
@@ -46,5 +49,23 @@ function onKeyEvent(key as string, press as boolean) as boolean
     m.okHeld = true
     m.top.favorited = not m.top.favorited
 
+    announceChange()
+
     return true
 end function
+
+sub announceState()
+    if m.top.favorited
+        a11y.focus("Favorite, button, in your favorites")
+    else
+        a11y.focus("Favorite, button, not in your favorites")
+    end if
+end sub
+
+sub announceChange()
+    if m.top.favorited
+        a11y.focus("Added to favorites")
+    else
+        a11y.focus("Removed from favorites")
+    end if
+end sub

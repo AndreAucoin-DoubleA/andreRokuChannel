@@ -1,4 +1,5 @@
 import "pkg:/source/theme.bs"
+import "pkg:/source/a11y.bs"
 
 sub init()
     m.customButton = m.top.findNode("customButton")
@@ -39,10 +40,21 @@ sub onFocusChanged()
     if m.top.hasFocus()
         m.customButton.color = m.bgFocused
         m.label.color = m.labelColorFocused
+        announce()
     else
         m.customButton.color = m.bg
         m.label.color = m.labelColor
     end if
+end sub
+
+sub announce()
+    spoken = m.top.audioGuideText
+
+    if spoken = "" then spoken = m.top.text
+
+    if spoken = "" then return
+
+    a11y.focus(spoken + ", button")
 end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean

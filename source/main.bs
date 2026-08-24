@@ -43,10 +43,10 @@ sub Main(args as object)
         if type(msg) = "roSGScreenEvent"
             if msg.isScreenClosed() then return
         else if type(msg) = "roDeviceInfoEvent"
-            info = msg.getInfo
+            info = msg.getInfo()
 
-            if info.IsAudioGuideEnabled <> invalid
-                m.global.screenReaderOn = info.audioGuideEnabled
+            if info.audioGuideEnabled <> invalid
+                globals.screenReaderOn = info.audioGuideEnabled
 
                 print "[a11y] screen reader enabled: "; info.audioGuideEnabled
             end if
