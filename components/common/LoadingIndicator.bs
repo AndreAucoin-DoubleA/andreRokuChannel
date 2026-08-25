@@ -1,4 +1,5 @@
 import "pkg:/source/theme.bs"
+import "pkg:/source/a11y.bs"
 
 sub init()
     m.content = m.top.findNode("content")
@@ -47,6 +48,7 @@ end sub
 sub onDelayFired()
     m.content.visible = true
     m.spinner.control = "start"
+    a11y.context(m.top.message)
 end sub
 
 sub hide()
@@ -67,6 +69,8 @@ sub showError(text = "" as string)
     m.statusLabel.text = message
     m.spinner.visible = false
     m.content.visible = true
+
+    a11y.context(message)
 end sub
 
 sub onTimeoutFired()

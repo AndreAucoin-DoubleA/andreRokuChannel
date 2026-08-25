@@ -9,6 +9,7 @@ sub Main(args as object)
     deviceInfo = CreateObject("roDeviceInfo")
     deviceInfo.SetMessagePort(m.port)
     deviceInfo.EnableLowGeneralMemoryEvent(true)
+    deviceInfo.EnableAudioGuideChangedEvent(true)
 
     m.appMemoryMonitor = CreateObject("roAppMemoryMonitor")
     m.appMemoryMonitor.SetMessagePort(m.port)
@@ -22,6 +23,7 @@ sub Main(args as object)
 
     globals.addFields({
         navCollapsed: true,
+        screenReaderOn: deviceInfo.IsAudioGuideEnabled(),
         designTokens: tokens.loadTokens("pkg:/tokens/tokens.json"),
         catalog: CreateObject("roSGNode", "ContentNode"),
         catalogVersion: 0,
@@ -41,7 +43,15 @@ sub Main(args as object)
         if type(msg) = "roSGScreenEvent"
             if msg.isScreenClosed() then return
         else if type(msg) = "roDeviceInfoEvent"
-            if msg.isStatusMessage() and msg.GetInfo().generalMemoryLevel <> "normal"
+            info = msg.getInfo()
+
+            if info.audioGuideEnabled <> invalid
+                globals.screenReaderOn = info.audioGuideEnabled
+
+                print "[a11y] screen reader enabled: "; info.audioGuideEnabled
+            end if
+
+            if info.generalMemoryLevel <> invalid and info.generalMemoryLevel <> "normal"
                 'Free caches, release unused ContentNodes, etc.
             end if
         else if type(msg) = "roAppMemoryNotificationEvent"

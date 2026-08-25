@@ -25,6 +25,7 @@ sub init()
 
     applyTheme()
     startAnalytics()
+    startSpeech()
 
     m.global.observeField("navCollapsed", "onNavCollapsedChanged")
 
@@ -44,6 +45,12 @@ sub init()
     focusContentArea()
 
     startCatalogLoad()
+end sub
+
+
+sub startSpeech()
+    m.speechTask = CreateObject("roSGNode", "SpeechTask")
+    m.global.addFields({ speechTask: m.speechTask })
 end sub
 
 

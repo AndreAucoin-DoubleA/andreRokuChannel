@@ -1,0 +1,50 @@
+namespace a11y
+    function enabled() as boolean
+        if m.global = invalid then return false
+
+        return m.global.screenReaderOn = true
+    end function
+
+    sub focus(text as dynamic)
+        send({ focus: clean(text) })
+    end sub
+
+    sub context(text as dynamic)
+        send({ context: clean(text) })
+    end sub
+
+    sub flush()
+        send({ flush: true })
+    end sub
+
+    function clean(text as dynamic) as string
+
+        if text = invalid then return ""
+
+        if type(text) <> "String" and type(text) <> "roString" then return ""
+
+        return text
+
+    end function
+
+    sub send(request as object)
+
+        if request.flush <> true
+
+            if request.focus = "" and request.context = "" then return
+
+            print "[a11y] queue: "; FormatJson(request)
+
+        end if
+
+
+        task = m.global.speechTask
+
+        if task = invalid then return
+
+
+        task.request = request
+
+    end sub
+
+end namespace

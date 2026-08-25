@@ -106,5 +106,33 @@ sub addMovieRow(root as object, title as string, json as object)
         end if
         item.SetField("rating", movie.vote_average.ToStr())
         item.SetField("releaseDate", movie.release_date)
+        setAudioGuide(item, spokenLabel(movie))
     end for
 end sub
+
+function spokenLabel(movie as object) as string
+    parts = []
+
+    if movie.title <> invalid and movie.title <> "" then parts.Push(movie.title)
+
+    if movie.release_date <> invalid and Len(movie.release_date) >= 4
+        parts.Push("released " + Left(movie.release_date, 4))
+    end if
+
+    if movie.vote_average <> invalid and movie.vote_average > 0
+        parts.Push("rated " + Int(movie.vote_average).ToStr() + " out of 10")
+    end if
+
+    return parts.Join(", ")
+end function
+
+sub setAudioGuide(item as object, text as string)
+    if text = "" then return
+
+    if item.hasField("audioGuideText")
+        item.SetField("audioGuideText", text)
+    else
+        item.AddFields({ audioGuideText: text })
+    end if
+end sub
+

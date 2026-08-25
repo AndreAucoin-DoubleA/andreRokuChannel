@@ -1,6 +1,7 @@
 import "pkg:/source/theme.bs"
 import "pkg:/source/favorites.bs"
 import "pkg:/source/bookmarks.bs"
+import "pkg:/source/a11y.bs"
 
 sub init()
     m.meta = m.top.findNode("meta")
@@ -109,6 +110,7 @@ sub viewDidLoad(params as object)
     m.autoPlay = (params.autoPlay = true)
     applyMovie(params.movie)
     m.nextButton.visible = (nextSibling() <> invalid)
+    announceScreen()
 end sub
 sub viewWillAppear()
     beginAmbientCountdown()
@@ -231,6 +233,7 @@ sub startTrailer(fullscreen as boolean)
     end if
 
     m.video.suppressCaptions = not fullscreen
+    m.video.mute = not fullscreen
     m.video.content = content
     m.video.visible = true
     m.video.control = "play"
@@ -259,6 +262,7 @@ sub onButtonPressed()
     m.bgPlayed = true
 
     m.video.setFocus(true)
+    a11y.focus("Playing")
 
     showDetailsChrome(false)
     fadeBackdrop(0)
@@ -338,6 +342,7 @@ sub restoreDetails()
 
     m.bgPlayed = false
     m.bgTimer.control = "start"
+    a11y.context("Movie details")
 end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
@@ -447,4 +452,14 @@ sub clearPosition()
 
     m.lastPosition = 0
     m.trackPosition = false
+end sub
+
+sub announceScreen()
+    parts = ["Movie Details"]
+
+    if m.meta.text <> "" then parts.Push(m.meta.text)
+
+    if m.desc.text <> "" then parts.Push(m.desc.text)
+
+    a11y.context(parts.Join(". "))
 end sub

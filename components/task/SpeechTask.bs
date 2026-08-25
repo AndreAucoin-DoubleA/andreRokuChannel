@@ -1,0 +1,67 @@
+sub init()
+    m.top.functionName = "runLoop"
+
+    m.top.control = "RUN"
+end sub
+
+sub runLoop()
+
+    guide = CreateObject("roAudioGuide")
+
+    if guide = invalid
+        print "[a11y] roAudioGuide unavailable - console only"
+    end if
+
+    port = CreateObject("roMessagePort")
+
+    m.top.observeField("request", port)
+
+    pendingContext = ""
+
+    pendingFocus = ""
+
+    waitMs = 0
+
+    while true
+        msg = wait(waitMs, port)
+
+        if msg = invalid
+            speak(guide, pendingContext, pendingFocus)
+            pendingContext = ""
+            pendingFocus = ""
+            waitMs = 0
+        else if type(msg) = "roSGNodeEvent" and msg.GetField() = "request"
+            request = msg.GetData()'
+            if request <> invalid
+                if request.flush = true
+                    if guide <> invalid then guide.Flush()
+                    pendingContext = ""
+                    pendingFocus = ""
+                    waitMs = 0
+                else
+                    if request.context <> invalid then pendingContext = request.context
+                    if request.focus <> invalid then pendingFocus = request.focus
+                    waitMs = 200
+                end if
+            end if
+        end if
+    end while
+end sub
+
+sub speak(guide as object, context as string, focus as string)
+    parts = []
+
+    if context <> "" then parts.Push(context)
+
+    if focus <> "" then parts.Push(focus)
+
+    if parts.Count() = 0 then return
+
+    text = parts.Join(". ")
+
+    print "[a11y] speak: "; text'
+
+    if guide = invalid then return
+
+    guide.Say(text, true, true)
+end sub

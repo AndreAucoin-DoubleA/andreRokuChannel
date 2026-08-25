@@ -4,6 +4,7 @@
 
     <interface>
         <field id="text" type="string" onChange="onTextChanged"/>
+        <field id="audioGuideText" type="string"/>
         <field id="width" type="float" value="280" onChange="onWidthChanged"/>
         <field id="selected" type="boolean" alwaysNotify="true"/>
     </interface>
