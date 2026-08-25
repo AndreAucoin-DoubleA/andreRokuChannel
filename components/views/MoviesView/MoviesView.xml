@@ -48,22 +48,10 @@
 
         <Timer id="inputGateTimeout" duration="8" repeat="false"/>
 
-        <RowList
-            id="rowList"
-            showRowLabel="true"
+        <MovieRowList
+            id="movieRows"
             translation="[40, 500]"
-            itemComponentName="MoviePosterItem"
-            numRows="3"
-            rowFocusAnimationStyle="fixedFocus"
-            vertFocusAnimationStyle="fixedFocus"
-            drawFocusFeedback="false"
-            itemSize="[1880,290]"
-            itemSpacing="[0,115]"
-            rowItemSize="[[376,220]]"
-            rowLabelOffset="[[25,25]]"
-            rowItemSpacing="[[30,0]]"/>
-
-        <RowListChrome id="decor"/>
+            rowSpacing="115"/>
 
         <LoadingIndicator
             id="loader"

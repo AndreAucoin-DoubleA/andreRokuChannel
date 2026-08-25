@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="MovieRowList" extends="Group">
+    <script type="text/brightscript" uri="pkg:/components/widgets/MovieRowList/MovieRowList.bs"/>
+
+    <interface>
+        <field id="content" type="node" onChange="onContentChanged"/>
+        <field id="rowSpacing" type="float" value="40" onChange="onRowSpacingChanged"/>
+
+        <field id="focusedMovie" type="node" alwaysNotify="true"/>
+        <field id="selectedMovie" type="node" alwaysNotify="true"/>
+        <field id="selectedRow" type="node"/>
+        <field id="selectedIndex" type="integer" value="-1"/>
+        
+        <function name="hasRows"/>
+        <function name="focusRows"/>
+    </interface>
+
+    <children>
+        <RowList
+                id="rowList"
+                showRowLabel="true"
+                itemComponentName="MoviePosterItem"
+                numRows="3"
+                rowFocusAnimationStyle="fixedFocus"
+                vertFocusAnimationStyle="fixedFocus"
+                drawFocusFeedback="false"
+                itemSize="[1880,290]"
+                itemSpacing="[0,40]"
+                rowItemSize="[[376,220]]"
+                rowLabelOffset="[[25,25]]"
+                rowItemSpacing="[[30,0]]"/>
+        
+        <RowListChrome id="decor"/>
+    </children>
+    
+</component>

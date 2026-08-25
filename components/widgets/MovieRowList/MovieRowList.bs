@@ -1,0 +1,98 @@
+import "pkg:/source/theme/theme.bs"
+import "pkg:/source/services/a11y.bs"
+
+sub init()
+    m.rowList = m.top.findNode("rowList")
+    m.decor = m.top.findNode("decor")
+
+    m.lastAnnouncedRow = -1
+
+    m.rowList.observeField("rowItemFocused", "onRowItemFocused")
+    m.rowList.observeField("rowItemSelected", "onRowItemSelected")
+
+    applyTheme()
+    onRowSpacingChanged()
+
+    m.decor.rowList = m.rowList
+end sub
+
+
+sub applyTheme()
+    t = theme.Theme()
+
+    m.rowList.rowItemSize = [[t.size("component.moviePoster.width", 376), t.size("component.moviePoster.height", 220)]]
+    m.rowList.rowLabelColor = t.color("component.rowList.rowLabelColor", "0x8E949DFF")
+    m.rowList.rowLabelFont = t.font("component.rowList.rowLabelTypography", "font:SmallSystemFont")
+end sub
+
+sub onRowSpacingChanged()
+    if m.rowList = invalid then return
+
+    m.rowList.itemSpacing = [0, m.top.rowSpacing]
+end sub
+
+sub onContentChanged()
+    if m.rowList = invalid then return
+
+    m.rowList.content = m.top.content
+    m.lastAnnouncedRow = -1
+end sub
+
+function hasRows() as boolean
+    content = m.top.content
+    if content = invalid then return false
+    return content.getChildCount() > 0
+end function
+
+function movieAt(sel as object) as object
+    if sel = invalid or sel.Count() < 2 then return invalid
+
+    content = m.top.content
+    if content = invalid then return invalid
+
+    row = content.getChild(sel[0])
+    if row = invalid then return invalid
+
+    return row.getChild(sel[1])
+end function
+
+sub onRowItemFocused()
+    movie = movieAt(m.rowList.rowItemFocused)
+    if movie = invalid then return
+
+    m.decor.summaryText = movie.title
+
+    announceFocus()
+
+    m.top.focusedMovie = movie
+end sub
+
+sub announceFocus()
+    if not m.rowList.isInFocusChain() then return
+
+    sel = m.rowList.rowItemFocused
+    if sel = invalid or sel.Count() < 2 then return
+
+    newRow = (sel[0] <> m.lastAnnouncedRow)
+    m.lastAnnouncedRow = sel[0]
+
+    a11y.announceRowItem(m.rowList, m.top.content, newRow)
+end sub
+
+sub onRowItemSelected()
+    sel = m.rowList.rowItemSelected
+
+    movie = movieAt(sel)
+    if movie = invalid then return
+
+    m.top.selectedRow = m.top.content.getChild(sel[0])
+    m.top.selectedIndex = sel[1]
+    m.top.selectedMovie = movie
+end sub
+
+function focusRows() as boolean
+    result = m.rowList.setFocus(true)
+    m.lastAnnouncedRow = -1
+    announceFocus()
+    return result
+end function
