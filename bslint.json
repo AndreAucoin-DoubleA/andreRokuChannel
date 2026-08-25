@@ -1,3 +1,40 @@
 {
-  "rules": {}
+  "rules": {
+    "assign-all-paths": "error",
+    "unsafe-path-loop": "error",
+    "unsafe-iterators": "error",
+    "unreachable-code": "error",
+    "case-sensitivity": "error",
+    "consistent-return": "error",
+    "no-stop": "error",
+    "unused-variable": "warn",
+    "unused-parameter": "off",
+
+    "inline-if-style": "then",
+    "block-if-style": "no-then",
+    "condition-style": "no-group",
+    "named-function-style": "auto",
+    "anon-function-style": "off",
+    "aa-comma-style": "no-dangling",
+    "for-terminator-style": "end-for",
+    "type-annotations": "all",
+    "eol-last": "always",
+
+    "no-print": "warn",
+    "no-todo": "warn",
+    "todo-pattern": "(TODO|FIXME|TEMP|HACK)",
+
+    "no-array-component-field-type": "error",
+    "no-assocarray-component-field-type": "warn",
+    "no-regex-duplicates": "error",
+
+    "color-format": "off",
+    "color-case": "off",
+    "color-alpha": "off",
+    "color-alpha-defaults": "off",
+    "color-cert": "off"
+  },
+  "ignores": [
+    "build/**/*"
+  ]
 }

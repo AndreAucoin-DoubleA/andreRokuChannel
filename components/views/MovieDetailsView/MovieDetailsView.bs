@@ -1,7 +1,7 @@
-import "pkg:/source/theme.bs"
-import "pkg:/source/favorites.bs"
-import "pkg:/source/bookmarks.bs"
-import "pkg:/source/a11y.bs"
+import "pkg:/source/theme/theme.bs"
+import "pkg:/source/services/favorites.bs"
+import "pkg:/source/services/bookmarks.bs"
+import "pkg:/source/services/a11y.bs"
 
 sub init()
     m.meta = m.top.findNode("meta")
@@ -83,7 +83,6 @@ sub showDetailsChrome(show as boolean)
         m.restartButton.visible = false
     end if
 end sub
-
 
 sub onRestartPress()
     bookmarks.clear(m.currentMovieId)
@@ -170,7 +169,7 @@ sub onNextPressed()
     nextMovie = nextSibling()
     if nextMovie = invalid then return
 
-    pushView("MovieDetails", {
+    pushView("MovieDetailsView", {
         movie: nextMovie,
         row: m.params.row,
         index: m.params.index + 1

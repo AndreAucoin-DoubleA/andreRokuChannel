@@ -1,6 +1,6 @@
-import "pkg:/source/theme.bs"
-import "pkg:/source/favorites.bs"
-import "pkg:/source/a11y.bs"
+import "pkg:/source/theme/theme.bs"
+import "pkg:/source/services/favorites.bs"
+import "pkg:/source/services/a11y.bs"
 
 sub init()
     m.titleLabel = m.top.findNode("titleLabel")
@@ -202,7 +202,7 @@ sub onFavoriteSelected()
     movie = row.getChild(sel[1])
     if movie = invalid then return
 
-    pushView("MovieDetails", { movie: movie, row: row, index: sel[1] })
+    pushView("MovieDetailsView", { movie: movie, row: row, index: sel[1] })
 end sub
 
 function setViewFocus() as boolean

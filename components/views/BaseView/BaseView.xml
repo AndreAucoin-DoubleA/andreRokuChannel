@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="BaseView" extends="Group">
-    <script type="text/brightscript" uri="pkg:/components/pages/BaseView.bs" />
+    <script type="text/brightscript" uri="pkg:/components/views/BaseView/BaseView.bs"/>
 
     <interface>
         <function name="viewDidLoad"/>
@@ -10,5 +10,4 @@
         <function name="setViewFocus"/>
         <field id="navRequest" type="assocarray" alwaysNotify="true"/>
     </interface>
-    
 </component>

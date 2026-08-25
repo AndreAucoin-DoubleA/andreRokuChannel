@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<component name="MoviesPage" extends="BaseView">
-    <script type="text/brightscript" uri="pkg:/components/pages/MoviesPage.bs"/>
+<component name="MoviesView" extends="BaseView">
+    <script type="text/brightscript" uri="pkg:/components/views/MoviesView/MoviesView.bs"/>
     <children>
         <Group id="heroGroup" opacity="0">
             <MaskGroup
@@ -63,7 +63,7 @@
             rowLabelOffset="[[25,25]]"
             rowItemSpacing="[[30,0]]"/>
 
-        <RowListDecor id="decor"/>
+        <RowListChrome id="decor"/>
 
         <LoadingIndicator
             id="loader"

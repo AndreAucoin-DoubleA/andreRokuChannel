@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="ViewStack" extends="Group">
-    <script type="text/brightscript" uri="pkg:/components/nav/ViewStack.bs" />
+    <script type="text/brightscript" uri="pkg:/components/navigation/ViewStack/ViewStack.bs"/>
 
     <interface>
         <function name="setRoot"/>

@@ -3,7 +3,7 @@
     <customization suspendhandler="customSuspend" />
     <customization resumehandler="customResume" />
 
-    <script type="text/brightscript" uri="pkg:/components/MainScene.bs" />
+    <script type="text/brightscript" uri="pkg:/components/scene/MainScene/MainScene.bs"/>
 
     <interface>
         <field id="deepLink" type="assocarray" alwaysNotify="true"/>

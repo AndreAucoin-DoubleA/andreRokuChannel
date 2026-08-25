@@ -8,8 +8,6 @@ namespace config
         }
     end function
 
-
-
     function getMoviePaths(baseUrl as string, apiKey as string) as object
         return [
             { title: "Movie - Popular", path: baseUrl + "/movie/popular?api_key=" + apiKey + "&page=1" }
@@ -63,9 +61,9 @@ namespace config
 
     function PageRegistry() as object
         return [
-            { id: "home", label: "Home", icon: "pkg:/images/home_icon.png", component: "HomePage", type: "nav" }
-            { id: "movies", label: "Movies", icon: "pkg:/images/settings_icon.png", component: "MoviesPage", type: "nav" }
-            { id: "games", label: "Games", icon: "pkg:/images/menu_icon.png", component: "GamesPage", type: "nav" }
+            { id: "home", label: "Home", icon: "pkg:/images/home_icon.png", component: "HomeView", type: "nav" }
+            { id: "movies", label: "Movies", icon: "pkg:/images/settings_icon.png", component: "MoviesView", type: "nav" }
+            { id: "games", label: "Games", icon: "pkg:/images/menu_icon.png", component: "GamesView", type: "nav" }
         ]
     end function
 

@@ -135,4 +135,3 @@ sub setAudioGuide(item as object, text as string)
         item.AddFields({ audioGuideText: text })
     end if
 end sub
-

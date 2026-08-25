@@ -37,6 +37,4 @@ namespace bookmarks
         registry.Flush()
     end sub
 
-
-
 end namespace

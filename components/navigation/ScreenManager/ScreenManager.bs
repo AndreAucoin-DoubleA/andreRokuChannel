@@ -5,7 +5,6 @@ sub init()
     m.activeStack = invalid
 end sub
 
-
 function showStack(id as string) as object
     if m.top.activeStackId = id then return m.activeStack
 

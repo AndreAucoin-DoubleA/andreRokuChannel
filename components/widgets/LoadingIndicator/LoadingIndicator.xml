@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="LoadingIndicator" extends="Group">
-    <script type="text/brightscript" uri="pkg:/components/common/LoadingIndicator.bs"/>
+    <script type="text/brightscript" uri="pkg:/components/widgets/LoadingIndicator/LoadingIndicator.bs"/>
 
     <interface>
         <field id="message"      type="string" value="Loading..."/>

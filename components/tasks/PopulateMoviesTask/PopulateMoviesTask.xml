@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="PopulateMoviesTask" extends="Task">
+    <script type="text/brightscript" uri="pkg:/components/tasks/PopulateMoviesTask/PopulateMoviesTask.bs"/>
+
     <interface>
         <field id="rowBatch" type="node" alwaysNotify="true"/>
         <field id="batchSize" type="integer" value="5"/>
         <field id="loadComplete" type="boolean" value="false"/>
     </interface>
-    <script type="text/brightscript" uri="pkg:/components/task/PopulateMoviesTask.bs" />
 </component>

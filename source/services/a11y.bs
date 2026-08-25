@@ -55,11 +55,9 @@ namespace a11y
 
         end if
 
-
         task = m.global.speechTask
 
         if task = invalid then return
-
 
         task.request = request
 

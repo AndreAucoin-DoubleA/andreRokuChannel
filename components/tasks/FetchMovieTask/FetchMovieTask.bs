@@ -5,7 +5,7 @@ sub init()
 end sub
 
 sub fetchMovie()
-    movieId = m.top.movieId 
+    movieId = m.top.movieId
 
     if movieId = invalid or movieId = ""
         m.top.status = "failed"
@@ -39,7 +39,7 @@ sub fetchMovie()
     if type(msg) <> "roUrlEvent" or msg.GetResponseCode() <> 200
         m.top.status = "failed"
         return
-    end if 
+    end if
 
     json = ParseJson(msg.GetString())
 

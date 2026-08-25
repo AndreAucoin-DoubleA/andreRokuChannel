@@ -1,4 +1,4 @@
-import "pkg:/source/analytics.bs"
+import "pkg:/source/services/analytics.bs"
 
 namespace favorites
 

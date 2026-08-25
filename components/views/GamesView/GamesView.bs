@@ -1,4 +1,4 @@
-import "pkg:/source/theme.bs"
+import "pkg:/source/theme/theme.bs"
 
 sub init()
     m.titleLabel = m.top.findNode("titleLabel")

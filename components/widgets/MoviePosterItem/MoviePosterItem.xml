@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="MoviePosterItem" extends="Group">
-    <script type="text/brightscript" uri="pkg:/components/rowList/MoviePosterItem.bs" />
+    <script type="text/brightscript" uri="pkg:/components/widgets/MoviePosterItem/MoviePosterItem.bs"/>
 
     <interface>
         <field id="itemContent" type="node" onChange="onContentChanged"/>

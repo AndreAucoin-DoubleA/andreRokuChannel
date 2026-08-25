@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="ScreenManager" extends="Group">
-    <script type="text/brightscript" uri="pkg:/components/nav/ScreenManager.bs" />
+    <script type="text/brightscript" uri="pkg:/components/navigation/ScreenManager/ScreenManager.bs"/>
 
     <interface>
         <function name="showStack"/>
@@ -12,5 +12,4 @@
         <field id="activeStackId" type="string" alwaysNotify="true"/>
         <field id="activeDepth" type="integer" value="0" alwaysNotify="true"/>
     </interface>
-    
 </component>

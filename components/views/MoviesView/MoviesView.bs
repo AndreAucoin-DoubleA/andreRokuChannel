@@ -1,5 +1,5 @@
-import "pkg:/source/theme.bs"
-import "pkg:/source/a11y.bs"
+import "pkg:/source/theme/theme.bs"
+import "pkg:/source/services/a11y.bs"
 
 sub init()
     m.rowList = m.top.findNode("rowList")
@@ -241,7 +241,6 @@ sub onLogoFetched(msg as object)
     if movieId = m.currentMovieId then applyLogo(logoUrl)
 end sub
 
-
 function setViewFocus() as boolean
     if m.inputLocked then return m.top.setFocus(true)
 
@@ -276,7 +275,7 @@ sub onMovieSelected()
     movie = movieAt(sel)
     if movie = invalid then return
 
-    pushView("MovieDetails", { movie: movie, row: m.rootContent.getChild(sel[0]), index: sel[1] })
+    pushView("MovieDetailsView", { movie: movie, row: m.rootContent.getChild(sel[0]), index: sel[1] })
 end sub
 
 sub viewWillDisappear()
@@ -287,4 +286,3 @@ sub viewWillDisappear()
 
     cancelLogoFetch()
 end sub
-

@@ -1,6 +1,6 @@
-import "pkg:/source/theme.bs"
+import "pkg:/source/theme/theme.bs"
 import "pkg:/source/config.bs"
-import "pkg:/source/deeplink.bs"
+import "pkg:/source/services/deeplink.bs"
 
 sub init()
     m.sideBar = m.top.findNode("sideBar")
@@ -47,12 +47,10 @@ sub init()
     startCatalogLoad()
 end sub
 
-
 sub startSpeech()
     m.speechTask = CreateObject("roSGNode", "SpeechTask")
     m.global.addFields({ speechTask: m.speechTask })
 end sub
-
 
 sub onDeepLinkChanged(msg as object)
     handleDeepLink(msg.GetData())
@@ -108,7 +106,7 @@ sub onDeepLinkResolved(msg as object)
     end if
 
     m.screens.callFunc("pushOnActive", {
-        view: "MovieDetails",
+        view: "MovieDetailsView",
         params: { movie: task.movie, autoPlay: link.autoPlay }
     })
 
@@ -236,7 +234,6 @@ sub customResume(arg as dynamic)
 
     m.top.signalBeacon("AppResumeComplete")
 end sub
-
 
 function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false

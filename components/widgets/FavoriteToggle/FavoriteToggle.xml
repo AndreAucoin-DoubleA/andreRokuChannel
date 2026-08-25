@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<component name="FaveIcon" extends="Group">
-    <script type="text/brightscript" uri="pkg:/components/favorites/FaveIcon.bs" />
+<component name="FavoriteToggle" extends="Group">
+    <script type="text/brightscript" uri="pkg:/components/widgets/FavoriteToggle/FavoriteToggle.bs"/>
 
     <interface>
         <field id="favorited" type="boolean" value="false" onChange="onFavoritedChanged"/>
