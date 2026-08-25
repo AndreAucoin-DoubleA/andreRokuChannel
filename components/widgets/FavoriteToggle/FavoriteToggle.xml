@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="FavoriteToggle" extends="Group">
+    <script type="text/brightscript" uri="pkg:/components/widgets/FavoriteToggle/FavoriteToggle.bs"/>
+
+    <interface>
+        <field id="favorited" type="boolean" value="false" onChange="onFavoritedChanged"/>
+    </interface>
+
+    <children>
+        <Poster
+            id="favIcon"
+            width="64"
+            height="64"
+            opacity="0.6"/>
+    </children>
+</component>

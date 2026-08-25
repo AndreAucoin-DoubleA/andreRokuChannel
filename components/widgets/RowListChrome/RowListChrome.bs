@@ -1,0 +1,131 @@
+import "pkg:/source/theme/theme.bs"
+
+sub init()
+    m.rowList = invalid
+    m.capLayer = m.top.findNode("capLayer")
+    m.ring = m.top.findNode("ring")
+    m.summaryTitle = m.top.findNode("summaryTitle")
+
+    m.geometryFields = ["itemSize", "rowItemSize", "itemSpacing", "numRows", "translation"]
+    m.visibilityFields = ["visible", "content", "focusedChild"]
+    m.motionFields = ["currFocusRow"]
+
+    t = theme.Theme()
+    m.ring.uri = "pkg:/images/item_focus_ring.png"
+    m.ring.blendColor = t.color("component.moviePoster.focusRingColor", "0x8B5CD6FF")
+    m.capColor = t.color("component.scene.backgroundColor", "0x202226FF")
+
+    m.summaryTitle.color = t.color("component.rowList.summaryTitleColor", "0xFFFFFFFF")
+    m.summaryTitle.font = t.font("component.rowList.summaryTitleTypography", "font:MediumBoldSystemFont")
+    m.summaryTitle.ellipsizeOnBoundary = true
+end sub
+
+sub onRowListChanged()
+    detach()
+
+    m.rowList = m.top.rowList
+    if m.rowList = invalid then return
+
+    for each field in m.geometryFields
+        m.rowList.observeField(field, "onGeometryChanged")
+    end for
+    for each field in m.visibilityFields
+        m.rowList.observeField(field, "onVisibilityChanged")
+    end for
+    for each field in m.motionFields
+        m.rowList.observeField(field, "onVertScroll")
+    end for
+
+    onGeometryChanged()
+    onVisibilityChanged()
+    onVertScroll()
+end sub
+
+sub detach()
+    if m.rowList = invalid then return
+
+    for each field in m.geometryFields
+        m.rowList.unobserveField(field)
+    end for
+    for each field in m.visibilityFields
+        m.rowList.unobserveField(field)
+    end for
+    for each field in m.motionFields
+        m.rowList.unobserveField(field)
+    end for
+
+    m.rowList = invalid
+end sub
+
+sub onGeometryChanged()
+    if m.rowList = invalid then return
+
+    sizes = m.rowList.rowItemSize
+    if sizes.Count() = 0 then return
+
+    itemWidth = sizes[0][0]
+    itemHeight = sizes[0][1]
+    rowHeight = m.rowList.itemSize[1]
+    rowPitch = rowHeight + m.rowList.itemSpacing[1]
+
+    left = m.rowList.translation[0]
+    posterTop = m.rowList.translation[1] + (rowHeight - itemHeight)
+    baseTop = posterTop - m.top.offsetY
+
+    m.ring.width = itemWidth
+    m.ring.height = itemHeight
+    m.ring.translation = [left, baseTop]
+
+    hSpacing = m.rowList.rowItemSpacing[0][0]
+    columns = m.top.summaryColumns
+    m.summaryTitle.width = (columns * itemWidth) + ((columns - 1) * hSpacing)
+    m.summaryTitle.translation = [left, posterTop + itemHeight + m.top.summaryGap]
+
+    capWidth = 27
+
+    m.capLayer.removeChildrenIndex(m.capLayer.getChildCount(), 0)
+
+    for row = 0 to m.rowList.numRows - 1
+        cap = m.capLayer.createChild("Poster")
+        cap.uri = "pkg:/images/row_corner_cap.png"
+        cap.blendColor = m.capColor
+        cap.width = capWidth
+        cap.height = itemHeight
+        cap.translation = [left, baseTop + (row * rowPitch)]
+    end for
+end sub
+
+sub onVertScroll()
+    if m.rowList = invalid then return
+
+    if not canScrollVertically()
+        m.capLayer.visible = true
+        return
+    end if
+
+    row = m.rowList.currFocusRow
+    m.capLayer.visible = (Abs(row - Int(row)) < 0.01)
+end sub
+
+function canScrollVertically() as boolean
+    if not m.rowList.isInFocusChain() then return false
+
+    content = m.rowList.content
+    if content = invalid then return false
+
+    return content.getChildCount() > 1
+end function
+
+sub onVisibilityChanged()
+    if m.rowList = invalid then return
+
+    content = m.rowList.content
+    hasRows = (content <> invalid and content.getChildCount() > 0)
+    shown = m.rowList.visible and hasRows
+
+    m.top.visible = shown
+    m.ring.visible = shown and m.rowList.isInFocusChain()
+    m.summaryTitle.visible = m.ring.visible
+
+    onVertScroll()
+end sub

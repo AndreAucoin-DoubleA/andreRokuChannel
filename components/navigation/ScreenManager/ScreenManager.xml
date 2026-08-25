@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="ScreenManager" extends="Group">
+    <script type="text/brightscript" uri="pkg:/components/navigation/ScreenManager/ScreenManager.bs"/>
+
+    <interface>
+        <function name="showStack"/>
+        <function name="focusActive"/>
+        <function name="suspendActive"/>
+        <function name="resumeActive"/>
+        <function name="pushOnActive"/>
+
+        <field id="activeStackId" type="string" alwaysNotify="true"/>
+        <field id="activeDepth" type="integer" value="0" alwaysNotify="true"/>
+    </interface>
+</component>

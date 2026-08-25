@@ -1,0 +1,288 @@
+import "pkg:/source/theme/theme.bs"
+import "pkg:/source/services/a11y.bs"
+
+sub init()
+    m.rowList = m.top.findNode("rowList")
+    m.loader = m.top.findNode("loader")
+    m.heroGroup = m.top.findNode("heroGroup")
+    m.backdrop = m.top.findNode("itemSelectBackground")
+    m.movieLogo = m.top.findNode("movieLogo")
+    m.movieTitleLabel = m.top.findNode("movieTitleLabel")
+    m.heroFadeAnim = m.top.findNode("heroFadeAnim")
+    m.heroDebounce = m.top.findNode("heroDebounce")
+    m.inputGateTimeout = m.top.findNode("inputGateTimeout")
+    m.rightFade = m.top.findNode("rightFade")
+
+    m.rootContent = m.global.catalog
+    m.rowList.content = m.rootContent
+
+    m.logoCache = {}
+    m.logoTask = invalid
+    m.currentMovieId = ""
+    m.pendingMovie = invalid
+    m.inputLocked = true
+    m.heroShown = false
+    m.lastAnnouncedRow = -1
+    m.focusClock = CreateObject("roTimespan")
+
+    m.rowList.observeField("rowItemSelected", "onMovieSelected")
+    m.rowList.observeField("rowItemFocused", "onMovieFocused")
+    m.heroDebounce.observeField("fire", "onHeroDebounceFired")
+    m.inputGateTimeout.observeField("fire", "releaseInputGate")
+    m.backdrop.observeField("loadStatus", "onBackdropLoadStatus")
+    m.movieLogo.observeField("loadStatus", "onLogoLoadStatus")
+
+    applyTheme()
+
+    m.decor = m.top.findNode("decor")
+    m.decor.rowList = m.rowList
+end sub
+
+sub applyTheme()
+    t = theme.Theme()
+
+    m.rightFade.blendColor = t.color("component.moviesPage.rightFadeBlendColor", "0x461915FF")
+
+    m.movieTitleLabel.color = t.color("component.page.heroTitleColor", "0xFFFFFFFF")
+    m.movieTitleLabel.font = t.font("component.page.heroTitleTypography", "font:LargeBoldSystemFont")
+
+    m.rowList.rowItemSize = [[t.size("component.moviePoster.width", 376), t.size("component.moviePoster.height", 220)]]
+
+    m.rowList.rowLabelColor = t.color("component.rowList.rowLabelColor", "0x8E949DFF")
+    m.rowList.rowLabelFont = t.font("component.rowList.rowLabelTypography", "font:SmallSystemFont")
+end sub
+
+sub viewDidLoad(params as object)
+    m.inputGateTimeout.control = "start"
+
+    if m.rootContent.getChildCount() > 0
+        onCatalogArrived()
+        return
+    end if
+
+    m.loader.callFunc("show")
+
+    m.global.observeField("catalogVersion", "onCatalogVersionChanged")
+    m.global.observeField("catalogReady", "onCatalogFinished")
+end sub
+
+sub onCatalogVersionChanged()
+    if m.heroShown then return
+    if m.rootContent.getChildCount() = 0 then return
+
+    onCatalogArrived()
+end sub
+
+sub onCatalogArrived()
+    m.heroShown = true
+    m.loader.callFunc("hide")
+
+    firstRow = m.rootContent.getChild(0)
+    if firstRow <> invalid then showHero(firstRow.getChild(0))
+end sub
+
+sub onCatalogFinished()
+    if m.rootContent.getChildCount() > 0 then return
+
+    m.loader.callFunc("showError", "Couldn't load movies")
+    releaseInputGate()
+end sub
+
+function movieAt(sel as object) as object
+    if sel = invalid or sel.Count() < 2 then return invalid
+
+    row = m.rootContent.getChild(sel[0])
+    if row = invalid then return invalid
+
+    return row.getChild(sel[1])
+end function
+
+sub onMovieFocused()
+    movie = movieAt(m.rowList.rowItemFocused)
+    if movie = invalid then return
+
+    m.decor.summaryText = movie.title
+
+    announceFocus()
+
+    m.pendingMovie = movie
+    m.heroDebounce.control = "stop"
+    m.heroDebounce.duration = nextHeroDelay()
+    m.heroDebounce.control = "start"
+end sub
+
+sub announceFocus()
+    if not m.rowList.isInFocusChain() then return
+
+    sel = m.rowList.rowItemFocused
+    if sel = invalid or sel.Count() < 2 then return
+
+    newRow = (sel[0] <> m.lastAnnouncedRow)
+    m.lastAnnouncedRow = sel[0]
+
+    a11y.announceRowItem(m.rowList, m.rootContent, newRow)
+end sub
+
+function nextHeroDelay() as float
+    baseDelay = 0.3
+    maxDelay = 1.0
+    repeatCutoffMs = 900
+
+    gapMs = m.focusClock.TotalMilliseconds()
+    m.focusClock.Mark()
+
+    if gapMs <= 0 or gapMs > repeatCutoffMs then return baseDelay
+
+    delay = (gapMs * 1.4) / 1000.0
+    if delay < baseDelay then return baseDelay
+    if delay > maxDelay then return maxDelay
+
+    return delay
+end function
+
+sub onHeroDebounceFired()
+    if m.pendingMovie = invalid then return
+
+    movie = m.pendingMovie
+    m.pendingMovie = invalid
+    showHero(movie)
+end sub
+
+sub showHero(movie as object)
+    if movie = invalid then return
+
+    movieId = movie.movieId
+    if movieId = invalid then movieId = ""
+    if movieId <> "" and movieId = m.currentMovieId then return
+    m.currentMovieId = movieId
+
+    uri = movie.HDBackgroundImageUrl
+    if uri = invalid then uri = ""
+
+    m.heroFadeAnim.control = "stop"
+    m.heroGroup.opacity = 0
+    m.backdrop.uri = uri
+
+    showLogo(movie, movieId)
+
+    if uri = "" then revealHero()
+end sub
+
+sub onBackdropLoadStatus()
+    status = m.backdrop.loadStatus
+    if status <> "ready" and status <> "failed" then return
+
+    revealHero()
+end sub
+
+sub revealHero()
+    m.heroFadeAnim.control = "start"
+    releaseInputGate()
+end sub
+
+sub showLogo(movie as object, movieId as string)
+    m.movieTitleLabel.text = movie.title
+
+    if movieId = ""
+        applyLogo(invalid)
+        return
+    end if
+
+    cached = m.logoCache[movieId]
+    if cached <> invalid
+        applyLogo(cached)
+        return
+    end if
+
+    m.movieLogo.visible = false
+    m.movieTitleLabel.visible = false
+    startLogoFetch(movieId)
+end sub
+
+sub applyLogo(logoUrl as dynamic)
+    hasLogo = (logoUrl <> invalid and logoUrl <> "")
+
+    if hasLogo then m.movieLogo.uri = logoUrl
+    m.movieLogo.visible = hasLogo
+    m.movieTitleLabel.visible = not hasLogo
+end sub
+
+sub onLogoLoadStatus()
+    if m.movieLogo.loadStatus <> "failed" then return
+
+    m.movieLogo.visible = false
+    m.movieTitleLabel.visible = true
+end sub
+
+sub startLogoFetch(movieId as string)
+    cancelLogoFetch()
+
+    task = CreateObject("roSGNode", "FetchMovieLogoTask")
+    task.movieId = movieId
+    task.observeField("logoUrl", "onLogoFetched")
+    m.logoTask = task
+    task.control = "RUN"
+end sub
+
+sub cancelLogoFetch()
+    if m.logoTask = invalid then return
+
+    m.logoTask.unobserveField("logoUrl")
+    m.logoTask.control = "stop"
+    m.logoTask = invalid
+end sub
+
+sub onLogoFetched(msg as object)
+    movieId = msg.GetRoSGNode().movieId
+    logoUrl = msg.GetData()
+
+    m.logoCache[movieId] = logoUrl
+
+    if movieId = m.currentMovieId then applyLogo(logoUrl)
+end sub
+
+function setViewFocus() as boolean
+    if m.inputLocked then return m.top.setFocus(true)
+
+    result = m.rowList.setFocus(true)
+    m.lastAnnouncedRow = -1
+    announceFocus()
+
+    return result
+end function
+
+function onKeyEvent(key as string, press as boolean) as boolean
+    if not m.inputLocked or not press then return false
+
+    return key = "up" or key = "down" or key = "right" or key = "OK"
+end function
+
+sub releaseInputGate()
+    if not m.inputLocked then return
+
+    m.inputLocked = false
+    m.inputGateTimeout.control = "stop"
+
+    if m.top.isInFocusChain()
+        m.rowList.setFocus(true)
+        m.lastAnnouncedRow = -1
+        announceFocus()
+    end if
+end sub
+
+sub onMovieSelected()
+    sel = m.rowList.rowItemSelected
+    movie = movieAt(sel)
+    if movie = invalid then return
+
+    pushView("MovieDetailsView", { movie: movie, row: m.rootContent.getChild(sel[0]), index: sel[1] })
+end sub
+
+sub viewWillDisappear()
+    m.loader.callFunc("hide")
+    m.heroDebounce.control = "stop"
+    m.inputGateTimeout.control = "stop"
+    m.pendingMovie = invalid
+
+    cancelLogoFetch()
+end sub

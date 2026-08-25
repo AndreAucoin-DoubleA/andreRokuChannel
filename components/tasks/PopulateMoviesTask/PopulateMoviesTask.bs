@@ -1,0 +1,137 @@
+import "pkg:/source/config.bs"
+
+sub init()
+    m.top.functionName = "fetchMovies"
+end sub
+
+sub fetchMovies()
+
+    cfg = config.getMovieConfig()
+    rows = config.getMoviePaths(cfg.baseUrl, cfg.apiKey)
+
+    batchSize = m.top.batchSize
+    if batchSize < 1 then batchSize = 5
+
+    start = 0
+    batchNum = 0
+
+    while start < rows.Count()
+        batchNum = batchNum + 1
+        batch = []
+        i = start
+        while i < rows.Count() and batch.Count() < batchSize
+            batch.Push(rows[i])
+            i = i + 1
+        end while
+
+        results = fetchBatch(batch)
+
+        batchNode = CreateObject("roSGNode", "ContentNode")
+
+        for each row in batch
+            addMovieRow(batchNode, row.title, results[row.title])
+        end for
+
+        m.top.rowBatch = batchNode
+        start = i
+    end while
+
+    m.top.loadComplete = true
+end sub
+
+function fetchBatch(batch as object) as object
+    port = CreateObject("roMessagePort")
+    pending = {}
+    results = {}
+
+    for each row in batch
+        request = CreateObject("roUrlTransfer")
+        request.SetMessagePort(port)
+        request.SetCertificatesFile("common:/certs/ca-bundle.crt")
+        request.InitClientCertificates()
+        request.SetUrl(row.path)
+
+        if request.AsyncGetToString()
+            id = request.GetIdentity().ToStr()
+            pending[id] = { request: request, title: row.title }
+        end if
+    end for
+
+    while pending.Count() > 0
+        msg = wait(10000, port)
+        if type(msg) = "roUrlEvent"
+            id = msg.GetSourceIdentity().ToStr()
+            entry = pending[id]
+            if entry <> invalid
+                code = msg.GetResponseCode()
+                if code = 200
+                    results[entry.title] = ParseJson(msg.GetString())
+                end if
+                pending.Delete(id)
+            end if
+        else if msg = invalid
+            for each id in pending
+                pending[id].request.AsyncCancel()
+            end for
+            pending.Clear()
+        end if
+    end while
+
+    return results
+end function
+
+sub addMovieRow(root as object, title as string, json as object)
+    if json = invalid or json.results = invalid or json.results.Count() = 0
+        return
+    end if
+
+    row = root.CreateChild("ContentNode")
+    row.title = title
+
+    for each movie in json.results
+        item = row.CreateChild("ContentNode")
+        item.title = movie.title
+
+        movieId = ""
+        if movie.id <> invalid then movieId = movie.id.ToStr()
+        item.AddFields({ movieId: movieId })
+
+        item.SetField("description", movie.overview)
+        if movie.backdrop_path <> invalid
+            item.SetField("HDPosterUrl", "https://image.tmdb.org/t/p/w300" + movie.backdrop_path)
+            item.SetField("HDBackgroundImageUrl", "https://image.tmdb.org/t/p/w1280" + movie.backdrop_path)
+        else if movie.poster_path <> invalid
+            item.SetField("HDPosterUrl", "https://image.tmdb.org/t/p/w342" + movie.poster_path)
+            item.SetField("HDBackgroundImageUrl", "https://image.tmdb.org/t/p/w780" + movie.poster_path)
+        end if
+        item.SetField("rating", movie.vote_average.ToStr())
+        item.SetField("releaseDate", movie.release_date)
+        setAudioGuide(item, spokenLabel(movie))
+    end for
+end sub
+
+function spokenLabel(movie as object) as string
+    parts = []
+
+    if movie.title <> invalid and movie.title <> "" then parts.Push(movie.title)
+
+    if movie.release_date <> invalid and Len(movie.release_date) >= 4
+        parts.Push("released " + Left(movie.release_date, 4))
+    end if
+
+    if movie.vote_average <> invalid and movie.vote_average > 0
+        parts.Push("rated " + Int(movie.vote_average).ToStr() + " out of 10")
+    end if
+
+    return parts.Join(", ")
+end function
+
+sub setAudioGuide(item as object, text as string)
+    if text = "" then return
+
+    if item.hasField("audioGuideText")
+        item.SetField("audioGuideText", text)
+    else
+        item.AddFields({ audioGuideText: text })
+    end if
+end sub

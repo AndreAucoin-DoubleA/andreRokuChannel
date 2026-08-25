@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="SiteNav" extends="Group" >
+    <script type="text/brightscript" uri="pkg:/components/widgets/SiteNav/SiteNav.bs"/>
+
+    <interface>
+        <field id="itemFocused" type="integer" alias="menuList.itemFocused"/>
+        <function name="setFocusToList"/>
+        <function name="setSelectedIndex"/>
+    </interface>
+
+    <children>
+        <MarkupList
+            id="menuList"
+            itemComponentName="NavItem"
+            translation="[0,0]"
+            itemSize="[250,70]"
+            drawFocusFeedback="false"
+            vertFocusAnimationStyle="floatingFocus"/>
+    </children>
+</component>

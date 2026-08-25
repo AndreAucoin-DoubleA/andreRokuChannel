@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="MainScene" extends="Scene">
+    <customization suspendhandler="customSuspend" />
+    <customization resumehandler="customResume" />
+
+    <script type="text/brightscript" uri="pkg:/components/scene/MainScene/MainScene.bs"/>
+
+    <interface>
+        <field id="deepLink" type="assocarray" alwaysNotify="true"/>
+        <function name="signalLaunchComplete"/>
+    </interface>
+
+    <children>
+        <ScreenManager id="screens"/>
+        <Timer id="launchTimeout" duration="8" repeat="false"/>
+
+        <Group id="chrome">
+            <Poster
+                id="navFade"
+                translation="[0,0]"
+                width="140"
+                height="1080"
+                opacity="0"
+                loadDisplayMode="scaleToFill"
+                uri="pkg:/images/nav_fade.png"/>
+
+            <Animation id="navFadeAnim" duration="0.2" easeFunction="outQuad">
+                <FloatFieldInterpolator
+                    id="navFadeWidthInterp"
+                    key="[0,1]"
+                    keyValue="[140,140]"
+                    fieldToInterp="navFade.width"/>
+                <FloatFieldInterpolator
+                    id="navFadeOpacityInterp"
+                    key="[0,1]"
+                    keyValue="[0,0]"
+                    fieldToInterp="navFade.opacity"/>
+            </Animation>
+
+            <SiteNav id="sideBar" translation="[40,100]"/>
+
+            <Poster
+                id="bottomFade"
+                translation="[0,880]"
+                width="1920"
+                height="200"
+                loadDisplayMode="scaleToFill"
+                uri="pkg:/images/bottom_fade.png"/>
+        </Group>
+
+        <LoadingIndicator
+            id="deepLinkLoader"
+            translation="[912,492]"
+            message="Opening..."
+            errorMessage="We couldn't open that link."/>
+
+        <LoadingIndicator
+            id="launchError"
+            translation="[912,492]"
+            timeout="0"
+            errorMessage="Couldn't load content"/>
+    </children>
+</component>

@@ -1,0 +1,66 @@
+import "pkg:/source/theme/theme.bs"
+import "pkg:/source/services/a11y.bs"
+
+sub init()
+    m.customButton = m.top.findNode("customButton")
+    m.label = m.top.findNode("label")
+
+    applyTheme()
+
+    m.top.observeField("focusedChild", "onFocusChanged")
+end sub
+
+sub applyTheme()
+    t = theme.Theme()
+
+    m.bg = t.color("component.button.bgColor", "0x2A2D32FF")
+    m.bgFocused = t.color("component.button.bgColorFocused", "0x6C3FA0FF")
+    m.labelColor = t.color("component.button.labelColor", "0xB7BDC5FF")
+    m.labelColorFocused = t.color("component.button.labelColorFocused", "0xFFFFFFFF")
+
+    m.customButton.height = t.size("component.button.height", 70)
+    m.label.font = t.font("component.button.labelTypography", "font:MediumBoldSystemFont")
+
+    m.top.width = t.size("component.button.width", 280)
+
+    onFocusChanged()
+end sub
+
+sub onTextChanged()
+    m.label.text = m.top.text
+end sub
+
+sub onWidthChanged()
+    if m.label = invalid then return
+    m.customButton.width = m.top.width
+    m.label.width = m.top.width
+end sub
+
+sub onFocusChanged()
+    if m.top.hasFocus()
+        m.customButton.color = m.bgFocused
+        m.label.color = m.labelColorFocused
+        announce()
+    else
+        m.customButton.color = m.bg
+        m.label.color = m.labelColor
+    end if
+end sub
+
+sub announce()
+    spoken = m.top.audioGuideText
+
+    if spoken = "" then spoken = m.top.text
+
+    if spoken = "" then return
+
+    a11y.focus(spoken + ", button")
+end sub
+
+function onKeyEvent(key as string, press as boolean) as boolean
+    if press and key = "OK"
+        m.top.selected = true
+        return true
+    end if
+    return false
+end function

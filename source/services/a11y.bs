@@ -1,0 +1,66 @@
+namespace a11y
+    function enabled() as boolean
+        if m.global = invalid then return false
+
+        return m.global.screenReaderOn = true
+    end function
+
+    sub focus(text as dynamic)
+        send({ focus: clean(text) })
+    end sub
+
+    sub context(text as dynamic)
+        send({ context: clean(text) })
+    end sub
+
+    sub flush()
+        send({ flush: true })
+    end sub
+
+    sub announceRowItem(rowList as object, content as object, includeRowTitle as boolean)
+        sel = rowList.rowItemFocused
+        if sel = invalid or sel.Count() < 2 then return
+
+        row = content.getChild(sel[0])
+        if row = invalid then return
+
+        item = row.getChild(sel[1])
+        if item = invalid then return
+
+        total = row.getChildCount()
+        if total = 0 then return
+
+        if includeRowTitle and clean(row.title) <> "" then context(row.title)
+
+        focus(clean(item.title) + ", " + (sel[1] + 1).ToStr() + " of " + total.ToStr())
+    end sub
+
+    function clean(text as dynamic) as string
+
+        if text = invalid then return ""
+
+        if type(text) <> "String" and type(text) <> "roString" then return ""
+
+        return text
+
+    end function
+
+    sub send(request as object)
+
+        if request.flush <> true
+
+            if request.focus = "" and request.context = "" then return
+
+            print "[a11y] queue: "; FormatJson(request)
+
+        end if
+
+        task = m.global.speechTask
+
+        if task = invalid then return
+
+        task.request = request
+
+    end sub
+
+end namespace
