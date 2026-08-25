@@ -1,6 +1,7 @@
 import "pkg:/source/theme/theme.bs"
-import "pkg:/source/config.bs"
 import "pkg:/source/services/deeplink.bs"
+import "pkg:/source/navigation/routes.bs"
+import "pkg:/source/utils/logger.bs"
 
 sub init()
     m.sideBar = m.top.findNode("sideBar")
@@ -29,10 +30,7 @@ sub init()
 
     m.global.observeField("navCollapsed", "onNavCollapsedChanged")
 
-    m.navPages = []
-    for each entry in config.PageRegistry()
-        if entry.type = "nav" then m.navPages.push(entry)
-    end for
+    m.navPages = routes.all()
 
     m.pendingDeepLink = invalid
     m.deepLinkTask = invalid
@@ -153,7 +151,6 @@ sub onCatalogBatch(msg as object)
 
     if m.launchReason = "timeout-failed"
         m.launchError.callFunc("hide")
-        m.launchReason = "timeout-recovered"
     end if
 end sub
 
@@ -267,12 +264,8 @@ sub startAnalytics()
 end sub
 
 sub goToPage(id as string)
-    for idx = 0 to m.navPages.Count() - 1
-        if m.navPages[idx].id = id
-            m.sideBar.callFunc("setSelectedIndex", idx)
-            exit for
-        end if
-    end for
+    index = routes.indexOf(id)
+    if index >= 0 then m.sideBar.callFunc("setSelectedIndex", index)
 
     m.screens.callFunc("showStack", id)
     focusContentArea()
@@ -280,7 +273,7 @@ end sub
 
 sub onLaunchTimeout()
     if m.pendingDeepLink <> invalid
-        print "[MainScene] launch TIMEOUT with deep link unresolved"
+        logger.warn("MainScene", "launch timeout with deep link unresolved")
         m.launchReason = "timeout-deeplink"
         cancelDeepLinkFetch()
         showDeepLinkError()
@@ -288,13 +281,13 @@ sub onLaunchTimeout()
     end if
 
     if m.global.catalog.getChildCount() > 0
-        print "[MainScene] launch TIMEOUT - content present, reporting degraded"
+        logger.warn("MainScene", "launch timeout - content present, reporting degraded")
         m.launchReason = "timeout-degraded"
         signalLaunchComplete()
         return
     end if
 
-    print "[MainScene] launch TIMEOUT with no content - showing error state"
+    logger.warn("MainScene", "launch timeout with no content - showing error state")
     m.launchReason = "timeout-failed"
     m.launchError.callFunc("showError", "Couldn't load content")
     signalLaunchComplete()
@@ -307,6 +300,6 @@ sub signalLaunchComplete()
     m.launchTimeout.unobserveField("fire")
     reason = m.launchReason
     if reason = invalid then reason = "content-ready"
-    print "[MainScene] signalling AppLaunchComplete (" ; reason ; ")"
+    logger.info("MainScene", `signalling AppLaunchComplete (${reason})`)
     m.top.signalBeacon("AppLaunchComplete")
 end sub

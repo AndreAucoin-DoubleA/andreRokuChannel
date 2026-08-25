@@ -1,10 +1,12 @@
+import "pkg:/source/utils/logger.bs"
+
 namespace analytics
 
     sub trackEvent(name as string, props = {} as object)
         task = m.global.analyticsTask
 
         if task = invalid
-            print "[analytics] DROPPED: "; name
+            logger.warn("analytics", `dropped event, task not ready: ${name}`)
             return
         end if
 

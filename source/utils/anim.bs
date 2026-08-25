@@ -1,0 +1,16 @@
+namespace anim
+    sub retarget(interpolator as object, from as float, target as float)
+        interpolator.keyValue = [from, target]
+    end sub
+
+    sub restart(animation as object)
+        animation.control = "stop"
+        animation.control = "start"
+    end sub
+
+    sub tweenTo(animation as object, interpolator as object, from as float, target as float)
+        animation.control = "stop"
+        retarget(interpolator, from, target)
+        animation.control = "start"
+    end sub
+end namespace

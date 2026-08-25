@@ -1,0 +1,60 @@
+import "pkg:/source/api/tmdb.bs"
+import "pkg:/source/utils/strings.bs"
+
+namespace movieContent
+    function fromJson(json as object) as object
+        item = CreateObject("roSGNode", "ContentNode")
+
+        item.AddFields({ movieId: strings.fromValue(json.id) })
+
+        item.title = strings.fromValue(json.title)
+        item.SetField("description", strings.fromValue(json.overview))
+        item.SetField("rating", strings.fromValue(json.vote_average))
+        item.SetField("releaseDate", strings.fromValue(json.release_date))
+
+        applyArtwork(item, json)
+        applyAudioGuide(item, spokenLabel(json))
+
+        return item
+    end function
+
+    sub applyArtwork(item as object, json as object)
+        if json.backdrop_path <> invalid
+            item.SetField("HDPosterUrl", tmdb.imageUrl(tmdb.BACKDROP_THUMB, json.backdrop_path))
+            item.SetField("HDBackgroundImageUrl", tmdb.imageUrl(tmdb.BACKDROP_FULL, json.backdrop_path))
+            return
+        end if
+
+        if json.poster_path <> invalid
+            item.SetField("HDPosterUrl", tmdb.imageUrl(tmdb.POSTER_THUMB, json.poster_path))
+            item.SetField("HDBackgroundImageUrl", tmdb.imageUrl(tmdb.POSTER_FULL, json.poster_path))
+        end if
+    end sub
+
+    function spokenLabel(json as object) as string
+        parts = []
+
+        title = strings.fromValue(json.title)
+        if title <> "" then parts.Push(title)
+
+        releaseDate = strings.fromValue(json.release_date)
+        if Len(releaseDate) >= 4 then parts.Push("released " + Left(releaseDate, 4))
+
+        if json.vote_average <> invalid and json.vote_average > 0
+            parts.Push("rated " + Int(json.vote_average).ToStr() + " out of 10")
+        end if
+
+        return parts.Join(", ")
+    end function
+
+    sub applyAudioGuide(item as object, text as string)
+        if text = "" then return
+
+        if item.hasField("audioGuideText")
+            item.SetField("audioGuideText", text)
+        else
+            item.AddFields({ audioGuideText: text })
+        end if
+    end sub
+
+end namespace

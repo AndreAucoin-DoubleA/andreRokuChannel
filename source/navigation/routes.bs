@@ -1,0 +1,39 @@
+import "pkg:/source/utils/logger.bs"
+
+namespace routes
+
+    enum RouteId
+        home = "home"
+        movies = "movies"
+        games = "games"
+    end enum
+
+    function all() as object
+        return [
+            { id: RouteId.home, label: "Home", icon: "pkg:/images/home_icon.png", component: "HomeView" }
+            { id: RouteId.movies, label: "Movies", icon: "pkg:/images/settings_icon.png", component: "MoviesView" }
+            { id: RouteId.games, label: "Games", icon: "pkg:/images/menu_icon.png", component: "GamesView" }
+        ]
+    end function
+
+    function byId(id as string) as object
+        for each route in all()
+            if route.id = id then return route
+        end for
+
+        logger.warn("routes", `no route with id ${id}`)
+
+        return invalid
+    end function
+
+    function indexOf(id as string) as integer
+        all = all()
+
+        for index = 0 to all.Count() - 1
+            if all[index].id = id then return index
+        end for
+
+        return -1
+    end function
+
+end namespace

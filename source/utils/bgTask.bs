@@ -1,0 +1,10 @@
+namespace bgTask
+    function cancel(node as object, field as string) as dynamic
+        if node = invalid then return invalid
+
+        node.unobserveField(field)
+        node.control = "stop"
+
+        return invalid
+    end function
+end namespace

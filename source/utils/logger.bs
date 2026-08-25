@@ -1,0 +1,22 @@
+namespace logger
+    sub write(label as string, tag as string, message as string)
+        print "[" + label + "][" + tag + "] " + message
+    end sub
+
+    sub error(tag as string, message as string)
+        write("ERROR", tag, message)
+    end sub
+
+    sub warn(tag as string, message as string)
+        write("WARN", tag, message)
+    end sub
+
+    sub info(tag as string, message as string)
+        write("INFO", tag, message)
+    end sub
+
+    sub debug(tag as string, message as string)
+        write("DEBUG", tag, message)
+    end sub
+
+end namespace

@@ -1,0 +1,35 @@
+namespace tmdb
+    const API_KEY = "488f756dc5932e8f8725809c68f6bf9d"
+
+    const BASE_URL = "https://api.themoviedb.org/3"
+    const IMAGE_URL = "https://image.tmdb.org/t/p"
+
+    const BACKDROP_THUMB = "w300"
+    const BACKDROP_FULL = "w1280"
+    const POSTER_THUMB = "w342"
+    const POSTER_FULL = "w780"
+    const LOGO = "w500"
+
+    function imageUrl(size as string, path as string) as string
+        if path = "" then return ""
+
+        return IMAGE_URL + "/" + size + path
+    end function
+
+    function movieUrl(movieId as string) as string
+        return `${BASE_URL}/movie/${movieId}?api_key=${API_KEY}`
+    end function
+
+    function movieImagesUrl(movieId as string) as string
+        return `${BASE_URL}/movie/${movieId}/images?api_key=${API_KEY}`
+    end function
+
+    function listUrl(listName as string, page as integer) as string
+        return `${BASE_URL}/movie/${listName}?api_key=${API_KEY}&page=${page}`
+    end function
+
+    function discoverUrl(genreId as integer, page as integer) as string
+        return `${BASE_URL}/discover/movie?with_genres=${genreId}&api_key=${API_KEY}&page=${page}`
+    end function
+
+end namespace

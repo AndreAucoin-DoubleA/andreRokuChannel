@@ -1,0 +1,62 @@
+import "pkg:/source/api/tmdb.bs"
+
+namespace catalog
+
+    const PAGES = 2
+
+    function lists() as object
+        return [
+            { title: "Popular", listName: "popular" }
+            { title: "Top Rated", listName: "top_rated" }
+            { title: "Now Playing", listName: "now_playing" }
+            { title: "Upcoming", listName: "upcoming" }
+        ]
+    end function
+
+    function genres() as object
+        return [
+            { title: "Action", genreId: 28 }
+            { title: "Adventure", genreId: 12 }
+            { title: "Animation", genreId: 16 }
+            { title: "Comedy", genreId: 35 }
+            { title: "Crime", genreId: 80 }
+            { title: "Documentary", genreId: 99 }
+            { title: "Drama", genreId: 18 }
+            { title: "Family", genreId: 10751 }
+            { title: "Fantasy", genreId: 14 }
+            { title: "History", genreId: 36 }
+            { title: "Horror", genreId: 27 }
+            { title: "Music", genreId: 10402 }
+            { title: "Mystery", genreId: 9648 }
+            { title: "Romance", genreId: 10749 }
+            { title: "Science Fiction", genreId: 878 }
+            { title: "TV Movie", genreId: 10770 }
+            { title: "Thriller", genreId: 53 }
+            { title: "War", genreId: 10752 }
+            { title: "Western", genreId: 37 }
+        ]
+    end function
+
+    function rows() as object
+        entries = []
+
+        for page = 1 to PAGES
+            for each list in lists()
+                entries.Push({ title: rowTitle(list.title, page), url: tmdb.listUrl(list.listName, page) })
+            end for
+
+            for each genre in genres()
+                entries.Push({ title: rowTitle(genre.title, page), url: tmdb.discoverUrl(genre.genreId, page) })
+            end for
+        end for
+
+        return entries
+    end function
+
+    function rowTitle(name as string, page as integer) as string
+        if page = 1 then return "Movie - " + name
+
+        return "Movie - " + name + " (" + page.ToStr() + ")"
+    end function
+
+end namespace

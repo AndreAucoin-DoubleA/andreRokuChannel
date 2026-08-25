@@ -1,0 +1,84 @@
+import "pkg:/source/utils/logger.bs"
+
+namespace http
+    const TIMEOUT_MS = 8000
+    const CERTIFICATES = "common:/certs/ca-bundle.crt"
+
+    function transfer(url as string, port as object) as object
+        request = CreateObject("roUrlTransfer")
+        request.SetMessagePort(port)
+        request.SetCertificatesFile(CERTIFICATES)
+        request.InitClientCertificates()
+        request.SetUrl(url)
+
+        return request
+    end function
+
+    function getJson(url as string, timeoutMs = TIMEOUT_MS as integer) as dynamic
+        port = CreateObject("roMessagePort")
+        request = transfer(url, port)
+
+        if not request.AsyncGetToString()
+            logger.warn("http", `could not start GET ${url}`)
+            return invalid
+        end if
+
+        message = wait(timeoutMs, port)
+
+        if message = invalid
+            request.AsyncCancel()
+            logger.warn("http", `GET timed out after ${timeoutMs}ms: ${url}`)
+            return invalid
+        end if
+
+        if type(message) <> "roUrlEvent" then return invalid
+
+        code = message.GetResponseCode()
+
+        if code <> 200
+            logger.warn("http", `GET returned ${code}: ${url}`)
+            return invalid
+        end if
+
+        return ParseJson(message.GetString())
+    end function
+
+
+    function getJsonBatch(urls as object, timeoutMs = TIMEOUT_MS as integer) as object
+        port = CreateObject("roMessagePort")
+        results = []
+        pending = {}
+
+        for index = 0 to urls.Count() - 1
+            results.Push(invalid)
+            request = transfer(urls[index], port)
+            if request.AsyncGetToString()
+                pending[request.GetIdentity().ToStr()] = { request: request, index: index }
+            end if
+        end for
+
+        while pending.Count() > 0
+            message = wait(timeoutMs, port)
+            if message = invalid
+                logger.warn("http", `batch timed out, ${pending.Count()} request(s) abandoned`)
+                for each identity in pending
+                    pending[identity].request.AsyncCancel()
+                end for
+                pending.Clear()
+                exit while
+            end if
+            if type(message) = "roUrlEvent"
+                identity = message.GetSourceIdentity().ToStr()
+                entry = pending[identity]
+                if entry <> invalid
+                    if message.GetResponseCode() = 200
+                        results[entry.index] = ParseJson(message.GetString())
+                    end if
+                    pending.Delete(identity)
+                end if
+            end if
+        end while
+
+        return results
+    end function
+end namespace

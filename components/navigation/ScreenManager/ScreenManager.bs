@@ -1,4 +1,4 @@
-import "pkg:/source/config.bs"
+import "pkg:/source/navigation/routes.bs"
 
 sub init()
     m.stacks = {}
@@ -8,7 +8,7 @@ end sub
 function showStack(id as string) as object
     if m.top.activeStackId = id then return m.activeStack
 
-    entry = config.pageById(id)
+    entry = routes.byId(id)
     if entry = invalid then return invalid
 
     if m.activeStack <> invalid
