@@ -8,23 +8,8 @@ sub onContentChanged()
 
     if content = invalid
         m.poster.uri = ""
-    else
-        m.poster.uri = content.HDPosterUrl
+        return
     end if
 
-    ' TEMP DIAGNOSTIC
-    if content = invalid
-        print "[PosterItem] assign CLEARED"
-    else
-        print "[PosterItem] assign id=" ; content.movieId ; " title=" ; content.title
-    end if
-end sub
-
-' TEMP DIAGNOSTIC
-sub onPosterLoadStatus()
-    content = m.top.itemContent
-    id = "none"
-    if content <> invalid then id = content.movieId
-
-    print "[PosterItem] " ; m.poster.loadStatus ; " id=" ; id
+    m.poster.uri = content.HDPosterUrl
 end sub

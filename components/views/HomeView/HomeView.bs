@@ -72,8 +72,6 @@ sub refreshFavorites()
         row.AppendChildren(movies)
     end if
 
-    print "[HomePage] TEMP rebuild rows=" ; root.getChildCount() ; " order=" ; signature
-
     m.rootContent = root
     m.rowList.content = root
     m.rowList.visible = (movies.Count() > 0)
@@ -220,7 +218,6 @@ sub reportLaunchContentReady(movies as object)
 
     if m.global.catalog.getChildCount() = 0 and not m.global.catalogReady then return
 
-    print "[HomePage] readyCheck: favIds=" ; cachedFavoriteIds().Count() ; " resolved=" ; movies.Count() ; " catalogVersion=" ; m.global.catalogVersion
     if cachedFavoriteIds().Count() > 0 and movies.Count() = 0 then return
 
     m.launchReported = true

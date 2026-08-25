@@ -153,7 +153,6 @@ sub onCatalogBatch(msg as object)
 
     if m.launchReason = "timeout-failed"
         m.launchError.callFunc("hide")
-        m.launchReason = "timeout-recovered"
     end if
 end sub
 

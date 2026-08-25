@@ -444,15 +444,6 @@ sub persistPosition()
     m.trackPosition = false
 end sub
 
-sub clearPosition()
-    if not m.trackPosition then return
-
-    bookmarks.clear(m.currentMovieId)
-
-    m.lastPosition = 0
-    m.trackPosition = false
-end sub
-
 sub announceScreen()
     parts = ["Movie Details"]
 

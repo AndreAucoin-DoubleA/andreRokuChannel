@@ -1,10 +1,4 @@
 namespace a11y
-    function enabled() as boolean
-        if m.global = invalid then return false
-
-        return m.global.screenReaderOn = true
-    end function
-
     sub focus(text as dynamic)
         send({ focus: clean(text) })
     end sub
