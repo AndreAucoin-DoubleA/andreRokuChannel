@@ -17,22 +17,10 @@
             width="800"
             wrap="true"/>
 
-        <RowList
-            id="rowList"
-            showRowLabel="true"
+        <MovieRowList
+            id="movieRows"
             translation="[40, 530]"
-            itemComponentName="MoviePosterItem"
-            numRows="3"
-            rowFocusAnimationStyle="fixedFocus"
-            vertFocusAnimationStyle="fixedFocus"
-            drawFocusFeedback="false"
-            itemSize="[1880,290]"
-            itemSpacing="[0,40]"
-            rowItemSize="[[376,220]]"
-            rowLabelOffset="[[25,25]]"
-            rowItemSpacing="[[30,0]]"/>
-
-        <RowListChrome id="decor"/>
+            rowSpacing="40"/>
 
         <LoadingIndicator
             id="loader"

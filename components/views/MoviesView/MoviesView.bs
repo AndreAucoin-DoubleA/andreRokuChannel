@@ -2,7 +2,7 @@ import "pkg:/source/theme/theme.bs"
 import "pkg:/source/services/a11y.bs"
 
 sub init()
-    m.rowList = m.top.findNode("rowList")
+    m.movieRows = m.top.findNode("movieRows")
     m.loader = m.top.findNode("loader")
     m.heroGroup = m.top.findNode("heroGroup")
     m.backdrop = m.top.findNode("itemSelectBackground")
@@ -14,7 +14,7 @@ sub init()
     m.rightFade = m.top.findNode("rightFade")
 
     m.rootContent = m.global.catalog
-    m.rowList.content = m.rootContent
+    m.movieRows.content = m.rootContent
 
     m.logoCache = {}
     m.logoTask = invalid
@@ -22,20 +22,16 @@ sub init()
     m.pendingMovie = invalid
     m.inputLocked = true
     m.heroShown = false
-    m.lastAnnouncedRow = -1
     m.focusClock = CreateObject("roTimespan")
 
-    m.rowList.observeField("rowItemSelected", "onMovieSelected")
-    m.rowList.observeField("rowItemFocused", "onMovieFocused")
+    m.movieRows.observeField("selectedMovie", "onMovieSelected")
+    m.movieRows.observeField("focusedMovie", "onMovieFocused")
     m.heroDebounce.observeField("fire", "onHeroDebounceFired")
     m.inputGateTimeout.observeField("fire", "releaseInputGate")
     m.backdrop.observeField("loadStatus", "onBackdropLoadStatus")
     m.movieLogo.observeField("loadStatus", "onLogoLoadStatus")
 
     applyTheme()
-
-    m.decor = m.top.findNode("decor")
-    m.decor.rowList = m.rowList
 end sub
 
 sub applyTheme()
@@ -45,11 +41,6 @@ sub applyTheme()
 
     m.movieTitleLabel.color = t.color("component.page.heroTitleColor", "0xFFFFFFFF")
     m.movieTitleLabel.font = t.font("component.page.heroTitleTypography", "font:LargeBoldSystemFont")
-
-    m.rowList.rowItemSize = [[t.size("component.moviePoster.width", 376), t.size("component.moviePoster.height", 220)]]
-
-    m.rowList.rowLabelColor = t.color("component.rowList.rowLabelColor", "0x8E949DFF")
-    m.rowList.rowLabelFont = t.font("component.rowList.rowLabelTypography", "font:SmallSystemFont")
 end sub
 
 sub viewDidLoad(params as object)
@@ -88,39 +79,14 @@ sub onCatalogFinished()
     releaseInputGate()
 end sub
 
-function movieAt(sel as object) as object
-    if sel = invalid or sel.Count() < 2 then return invalid
-
-    row = m.rootContent.getChild(sel[0])
-    if row = invalid then return invalid
-
-    return row.getChild(sel[1])
-end function
-
 sub onMovieFocused()
-    movie = movieAt(m.rowList.rowItemFocused)
+    movie = m.movieRows.focusedMovie
     if movie = invalid then return
-
-    m.decor.summaryText = movie.title
-
-    announceFocus()
 
     m.pendingMovie = movie
     m.heroDebounce.control = "stop"
     m.heroDebounce.duration = nextHeroDelay()
     m.heroDebounce.control = "start"
-end sub
-
-sub announceFocus()
-    if not m.rowList.isInFocusChain() then return
-
-    sel = m.rowList.rowItemFocused
-    if sel = invalid or sel.Count() < 2 then return
-
-    newRow = (sel[0] <> m.lastAnnouncedRow)
-    m.lastAnnouncedRow = sel[0]
-
-    a11y.announceRowItem(m.rowList, m.rootContent, newRow)
 end sub
 
 function nextHeroDelay() as float
@@ -244,11 +210,7 @@ end sub
 function setViewFocus() as boolean
     if m.inputLocked then return m.top.setFocus(true)
 
-    result = m.rowList.setFocus(true)
-    m.lastAnnouncedRow = -1
-    announceFocus()
-
-    return result
+    return m.movieRows.callFunc("focusRows")
 end function
 
 function onKeyEvent(key as string, press as boolean) as boolean
@@ -263,19 +225,11 @@ sub releaseInputGate()
     m.inputLocked = false
     m.inputGateTimeout.control = "stop"
 
-    if m.top.isInFocusChain()
-        m.rowList.setFocus(true)
-        m.lastAnnouncedRow = -1
-        announceFocus()
-    end if
+    if m.top.isInFocusChain() then m.movieRows.callFunc("focusRows")
 end sub
 
 sub onMovieSelected()
-    sel = m.rowList.rowItemSelected
-    movie = movieAt(sel)
-    if movie = invalid then return
-
-    pushView("MovieDetailsView", { movie: movie, row: m.rootContent.getChild(sel[0]), index: sel[1] })
+    pushMovieDetails(m.movieRows)
 end sub
 
 sub viewWillDisappear()

@@ -1,16 +1,15 @@
 import "pkg:/source/theme/theme.bs"
 import "pkg:/source/services/favorites.bs"
-import "pkg:/source/services/a11y.bs"
 
 sub init()
     m.titleLabel = m.top.findNode("titleLabel")
     m.bodyLabel = m.top.findNode("bodyLabel")
-    m.rowList = m.top.findNode("rowList")
+    m.movieRows = m.top.findNode("movieRows")
     m.loader = m.top.findNode("loader")
 
     m.rootContent = CreateObject("roSGNode", "ContentNode")
-    m.rowList.content = m.rootContent
-    m.rowList.visible = false
+    m.movieRows.content = m.rootContent
+    m.movieRows.visible = false
 
     m.signature = ""
     m.catalogIndex = invalid
@@ -19,18 +18,13 @@ sub init()
     m.cachedIdsVersion = -1
 
     m.launchReported = false
-    m.lastAnnouncedRow = -1
 
-    m.rowList.observeField("rowItemSelected", "onFavoriteSelected")
-    m.rowList.observeField("rowItemFocused", "onFavoriteFocused")
+    m.movieRows.observeField("selectedMovie", "onFavoriteSelected")
     m.global.observeField("catalogVersion", "refreshFavorites")
     m.global.observeField("favoritesVersion", "refreshFavorites")
     m.global.observeField("catalogReady", "onCatalogReady")
 
     applyTheme()
-
-    m.decor = m.top.findNode("decor")
-    m.decor.rowList = m.rowList
 end sub
 
 sub applyTheme()
@@ -41,11 +35,6 @@ sub applyTheme()
 
     m.bodyLabel.color = t.color("component.page.bodyColor", "0xB7BDC5FF")
     m.bodyLabel.font = t.font("component.page.bodyTypography", "font:MediumSystemFont")
-
-    m.rowList.rowItemSize = [[t.size("component.moviePoster.width", 376), t.size("component.moviePoster.height", 220)]]
-
-    m.rowList.rowLabelColor = t.color("component.rowList.rowLabelColor", "0x8E949DFF")
-    m.rowList.rowLabelFont = t.font("component.rowList.rowLabelTypography", "font:SmallSystemFont")
 end sub
 
 sub viewWillAppear()
@@ -73,14 +62,10 @@ sub refreshFavorites()
     end if
 
     m.rootContent = root
-    m.rowList.content = root
-    m.rowList.visible = (movies.Count() > 0)
+    m.movieRows.content = root
+    m.movieRows.visible = (movies.Count() > 0)
 
-    if movies.Count() > 0
-        m.lastAnnouncedRow = -1
-        claimFocusForRow()
-        announceFocus()
-    end if
+    if movies.Count() > 0 then claimFocusForRow()
 end sub
 
 sub updateLoader()
@@ -105,11 +90,13 @@ sub viewWillHide()
     m.loader.callFunc("hide")
 end sub
 
+' Grab focus only when this view already owns it but the rows do not -- the case
+' where favorites arrive while the empty state is on screen.
 sub claimFocusForRow()
     if not m.top.isInFocusChain() then return
-    if m.rowList.isInFocusChain() then return
+    if m.movieRows.isInFocusChain() then return
 
-    m.rowList.setFocus(true)
+    m.movieRows.callFunc("focusRows")
 end sub
 
 function favoriteMovies(index as object) as object
@@ -164,53 +151,14 @@ function favoritesSignature(movies as object) as string
     return ids.Join(",")
 end function
 
-sub onFavoriteFocused()
-    sel = m.rowList.rowItemFocused
-    if sel = invalid or sel.Count() < 2 then return
-
-    row = m.rootContent.getChild(sel[0])
-    if row = invalid then return
-
-    movie = row.getChild(sel[1])
-    if movie = invalid then return
-
-    m.decor.summaryText = movie.title
-
-    announceFocus()
-end sub
-
-sub announceFocus()
-    if not m.rowList.isInFocusChain() then return
-
-    sel = m.rowList.rowItemFocused
-    if sel = invalid or sel.Count() < 2 then return
-
-    newRow = (sel[0] <> m.lastAnnouncedRow)
-    m.lastAnnouncedRow = sel[0]
-
-    a11y.announceRowItem(m.rowList, m.rootContent, newRow)
-end sub
-
 sub onFavoriteSelected()
-    sel = m.rowList.rowItemSelected
-
-    row = m.rootContent.getChild(sel[0])
-    if row = invalid then return
-
-    movie = row.getChild(sel[1])
-    if movie = invalid then return
-
-    pushView("MovieDetailsView", { movie: movie, row: row, index: sel[1] })
+    pushMovieDetails(m.movieRows)
 end sub
 
 function setViewFocus() as boolean
     if m.rootContent.getChildCount() = 0 then return m.top.setFocus(true)
 
-    result = m.rowList.setFocus(true)
-    m.lastAnnouncedRow = -1
-    announceFocus()
-
-    return result
+    return m.movieRows.callFunc("focusRows")
 end function
 
 sub reportLaunchContentReady(movies as object)
