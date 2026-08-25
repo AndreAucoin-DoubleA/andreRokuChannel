@@ -17,6 +17,24 @@ namespace a11y
         send({ flush: true })
     end sub
 
+    sub announceRowItem(rowList as object, content as object, includeRowTitle as boolean)
+        sel = rowList.rowItemFocused
+        if sel = invalid or sel.Count() < 2 then return
+
+        row = content.getChild(sel[0])
+        if row = invalid then return
+
+        item = row.getChild(sel[1])
+        if item = invalid then return
+
+        total = row.getChildCount()
+        if total = 0 then return
+
+        if includeRowTitle and clean(row.title) <> "" then context(row.title)
+
+        focus(clean(item.title) + ", " + (sel[1] + 1).ToStr() + " of " + total.ToStr())
+    end sub
+
     function clean(text as dynamic) as string
 
         if text = invalid then return ""

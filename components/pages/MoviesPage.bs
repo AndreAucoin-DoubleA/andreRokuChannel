@@ -1,4 +1,5 @@
 import "pkg:/source/theme.bs"
+import "pkg:/source/a11y.bs"
 
 sub init()
     m.rowList = m.top.findNode("rowList")
@@ -21,6 +22,7 @@ sub init()
     m.pendingMovie = invalid
     m.inputLocked = true
     m.heroShown = false
+    m.lastAnnouncedRow = -1
     m.focusClock = CreateObject("roTimespan")
 
     m.rowList.observeField("rowItemSelected", "onMovieSelected")
@@ -101,10 +103,24 @@ sub onMovieFocused()
 
     m.decor.summaryText = movie.title
 
+    announceFocus()
+
     m.pendingMovie = movie
     m.heroDebounce.control = "stop"
     m.heroDebounce.duration = nextHeroDelay()
     m.heroDebounce.control = "start"
+end sub
+
+sub announceFocus()
+    if not m.rowList.isInFocusChain() then return
+
+    sel = m.rowList.rowItemFocused
+    if sel = invalid or sel.Count() < 2 then return
+
+    newRow = (sel[0] <> m.lastAnnouncedRow)
+    m.lastAnnouncedRow = sel[0]
+
+    a11y.announceRowItem(m.rowList, m.rootContent, newRow)
 end sub
 
 function nextHeroDelay() as float
@@ -229,7 +245,11 @@ end sub
 function setViewFocus() as boolean
     if m.inputLocked then return m.top.setFocus(true)
 
-    return m.rowList.setFocus(true)
+    result = m.rowList.setFocus(true)
+    m.lastAnnouncedRow = -1
+    announceFocus()
+
+    return result
 end function
 
 function onKeyEvent(key as string, press as boolean) as boolean
@@ -244,7 +264,11 @@ sub releaseInputGate()
     m.inputLocked = false
     m.inputGateTimeout.control = "stop"
 
-    if m.top.isInFocusChain() then m.rowList.setFocus(true)
+    if m.top.isInFocusChain()
+        m.rowList.setFocus(true)
+        m.lastAnnouncedRow = -1
+        announceFocus()
+    end if
 end sub
 
 sub onMovieSelected()
