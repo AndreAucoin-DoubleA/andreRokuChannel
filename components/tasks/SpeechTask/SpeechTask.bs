@@ -1,3 +1,5 @@
+import "pkg:/source/utils/logger.bs"
+
 sub init()
     m.top.functionName = "runLoop"
 
@@ -9,7 +11,7 @@ sub runLoop()
     guide = CreateObject("roAudioGuide")
 
     if guide = invalid
-        print "[a11y] roAudioGuide unavailable - console only"
+        logger.warn("SpeechTask", "roAudioGuide unavailable - console only")
     end if
 
     port = CreateObject("roMessagePort")
@@ -31,7 +33,7 @@ sub runLoop()
             pendingFocus = ""
             waitMs = 0
         else if type(msg) = "roSGNodeEvent" and msg.GetField() = "request"
-            request = msg.GetData()'
+            request = msg.GetData()
             if request <> invalid
                 if request.flush = true
                     if guide <> invalid then guide.Flush()
@@ -59,7 +61,7 @@ sub speak(guide as object, context as string, focus as string)
 
     text = parts.Join(". ")
 
-    print "[a11y] speak: "; text'
+    logger.debug("SpeechTask", `speak: ${text}`)
 
     if guide = invalid then return
 

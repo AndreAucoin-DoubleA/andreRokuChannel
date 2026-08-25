@@ -1,0 +1,14 @@
+namespace strings
+    function fromValue(value as dynamic) as string
+        if value = invalid then return ""
+
+        boxed = box(value)
+
+        if GetInterface(boxed, "ifString") <> invalid then return value
+
+        if GetInterface(boxed, "ifToStr") <> invalid then return boxed.ToStr()
+
+        return ""
+    end function
+end namespace
+

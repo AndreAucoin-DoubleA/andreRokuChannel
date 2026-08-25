@@ -1,15 +1,17 @@
+import "pkg:/source/utils/logger.bs"
+
 namespace tokens
 
     function loadTokens(path as string) as object
         raw = ReadAsciiFile(path)
         if raw = ""
-            print "[tokens] file missing or empty: "; path
+            logger.error("tokens", `file missing or empty: ${path}`)
             return {}
         end if
 
         tree = ParseJson(raw)
         if tree = invalid
-            print "[tokens] malformed JSON: "; path
+            logger.error("tokens", `malformed JSON: ${path}`)
             return {}
         end if
 
@@ -70,7 +72,7 @@ namespace tokens
             if IsAlias(value)
                 target = flat[AliasKey(value)]
                 if target = invalid
-                    print "[tokens] unresolved alias: "; value
+                    logger.warn("tokens", `unresolved alias: ${value}`)
                     return value
                 end if
                 return ResolveValue(target.value, flat, depth + 1)
@@ -131,7 +133,7 @@ namespace tokens
         badColor = "0xFF00FFFF"
 
         if type(value) <> "roString" and type(value) <> "String"
-            print "[tokens] non-string color value"
+            logger.warn("tokens", "non-string color value")
             return badColor
         end if
 
@@ -145,7 +147,7 @@ namespace tokens
         if Len(s) = 6 then s = s + "FF"
 
         if Len(s) <> 8
-            print "[tokens] malformed color: "; value
+            logger.warn("tokens", `malformed color: ${value}`)
             return badColor
         end if
 

@@ -1,3 +1,5 @@
+import "pkg:/source/utils/logger.bs"
+
 namespace theme
 
     function Theme() as object
@@ -20,7 +22,7 @@ namespace theme
         value = m.tokens[LCase(name)]
 
         if value = invalid
-            print "[theme] MISSING token: "; name
+            logger.warn("theme", `missing token: ${name}`)
             return fallback
         end if
 
@@ -31,7 +33,7 @@ namespace theme
         spec = m.tokens[LCase(name)]
 
         if spec = invalid or type(spec) <> "roAssociativeArray"
-            print "[theme] MISSING typography token: "; name
+            logger.warn("theme", `missing typography token: ${name}`)
             return fallback
         end if
 
@@ -52,7 +54,7 @@ namespace theme
 
         uri = registry[LCase(family)]
         if uri = invalid
-            print "[theme] no font asset shipped for family: "; family; " (using system font)"
+            logger.warn("theme", `no font asset shipped for family ${family} - using system font`)
             return ""
         end if
         return uri

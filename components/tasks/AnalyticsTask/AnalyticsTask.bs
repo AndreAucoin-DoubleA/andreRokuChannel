@@ -1,3 +1,5 @@
+import "pkg:/source/utils/logger.bs"
+
 sub init()
     m.top.functionName = "runLoop"
     m.top.control = "RUN"
@@ -21,5 +23,5 @@ sub sendEvent(event as object)
 
     body = FormatJson(event)
 
-    print "[analytics]"; body
+    logger.info("analytics", body)
 end sub

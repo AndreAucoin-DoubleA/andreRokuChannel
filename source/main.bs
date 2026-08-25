@@ -1,3 +1,5 @@
+import "pkg:/source/utils/logger.bs"
+
 sub Main(args as object)
     screen = CreateObject("roSGScreen")
     m.port = CreateObject("roMessagePort")
@@ -16,8 +18,8 @@ sub Main(args as object)
     m.appMemoryMonitor.EnableMemoryWarningEvent(true)
 
     channelMemoryLimit = m.appMemoryMonitor.GetChannelMemoryLimit()
-    print "Channel memory limit (KB) - foreground: "; channelMemoryLimit.maxForegroundMemory; " background: "; channelMemoryLimit.maxBackgroundMemory; " Roku-managed heap: "; channelMemoryLimit.maxRokuManagedHeapMemory
-    print "Channel available memory (KB): "; m.appMemoryMonitor.GetChannelAvailableMemory()
+    logger.info("main", `memory limit KB - foreground: ${channelMemoryLimit.maxForegroundMemory} background: ${channelMemoryLimit.maxBackgroundMemory} Roku-managed heap: ${channelMemoryLimit.maxRokuManagedHeapMemory}`)
+    logger.info("main", `available memory KB: ${m.appMemoryMonitor.GetChannelAvailableMemory()}`)
 
     globals = screen.getGlobalNode()
 
@@ -48,7 +50,7 @@ sub Main(args as object)
             if info.audioGuideEnabled <> invalid
                 globals.screenReaderOn = info.audioGuideEnabled
 
-                print "[a11y] screen reader enabled: "; info.audioGuideEnabled
+                logger.info("a11y", `screen reader enabled: ${info.audioGuideEnabled}`)
             end if
 
             if info.generalMemoryLevel <> invalid and info.generalMemoryLevel <> "normal"
@@ -56,11 +58,11 @@ sub Main(args as object)
             end if
         else if type(msg) = "roAppMemoryNotificationEvent"
             'App memory usage crossed a warning threshold (80/85/90/95%); free caches, release unused ContentNodes, etc.
-            print "App memory usage: "; m.appMemoryMonitor.GetMemoryLimitPercent(); "%"
+            logger.warn("main", `app memory usage: ${m.appMemoryMonitor.GetMemoryLimitPercent()}%`)
         else if type(msg) = "roInputEvent"
             if msg.IsInput()
                 info = msg.getInfo()
-                print "[Main] roInput: "; FormatJson(info)
+                logger.debug("main", `roInput: ${FormatJson(info)}`)
                 if deeplink.hasLink(info) then m.scene.deepLink = deeplink.parse(info)
             end if
         end if

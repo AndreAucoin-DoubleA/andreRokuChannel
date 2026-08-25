@@ -1,4 +1,7 @@
-import "pkg:/source/config.bs"
+import "pkg:/source/api/http.bs"
+import "pkg:/source/api/tmdb.bs"
+import "pkg:/source/data/movieContent.bs"
+import "pkg:/source/utils/logger.bs"
 
 sub init()
     m.top.functionName = "fetchMovie"
@@ -7,75 +10,20 @@ end sub
 sub fetchMovie()
     movieId = m.top.movieId
 
-    if movieId = invalid or movieId = ""
+    if movieId = ""
         m.top.status = "failed"
         return
     end if
 
-    cfg = config.getMovieConfig()
-    url = cfg.baseUrl + "/movie/" + movieId + "?api_key=" + cfg.apiKey
-
-    request = CreateObject("roUrlTransfer")
-    port = CreateObject("roMessagePort")
-
-    request.SetMessagePort(port)
-    request.SetCertificatesFile("common:/certs/ca-bundle.crt")
-    request.InitClientCertificates()
-    request.SetUrl(url)
-
-    if not request.AsyncGetToString()
-        m.top.status = "failed"
-        return
-    end if
-
-    msg = wait(8000, port)
-
-    if msg = invalid
-        request.AsyncCancel()
-        m.top.status = "failed"
-        return
-    end if
-
-    if type(msg) <> "roUrlEvent" or msg.GetResponseCode() <> 200
-        m.top.status = "failed"
-        return
-    end if
-
-    json = ParseJson(msg.GetString())
+    json = http.getJson(tmdb.movieUrl(movieId))
 
     if json = invalid or json.id = invalid
+        logger.warn("FetchMovieTask", `no movie for id ${movieId}`)
         m.top.status = "failed"
         return
     end if
 
-    m.top.movie = buildMovieNode(json,movieId)
+    m.top.movie = movieContent.fromJson(json)
     m.top.status = "ok"
 end sub
 
-function buildMovieNode(json as object, movieId as string) as object
-    item = CreateObject("roSGNode", "ContentNode")
-    item.AddFields({ movieId: movieId })
-
-    item.title = safeText(json.title)
-    item.SetField("description", safeText(json.overview))
-    item.SetField("rating", safeText(json.vote_average))
-    item.SetField("releaseDate", safeText(json.release_date))
-
-    if json.backdrop_path <> invalid
-        item.SetField("HDPosterUrl", "https://image.tmdb.org/t/p/w300" + json.backdrop_path)
-        item.SetField("HDBackgroundImageUrl", "https://image.tmdb.org/t/p/w1280" + json.backdrop_path)
-
-    else if json.poster_path <> invalid
-        item.SetField("HDPosterUrl", "https://image.tmdb.org/t/p/w342" + json.poster_path)
-        item.SetField("HDBackgroundImageUrl", "https://image.tmdb.org/t/p/w780" + json.poster_path)
-
-    end if
-
-    return item
-end function
-
-function safeText(value as dynamic) as string
-    if value = invalid then return ""
-    if type(value) = "String" or type(value) = "roString" then return value
-    return value.ToStr()
-end function

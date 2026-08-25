@@ -1,3 +1,5 @@
+import "pkg:/source/utils/logger.bs"
+
 namespace a11y
     sub focus(text as dynamic)
         send({ focus: clean(text) })
@@ -45,7 +47,7 @@ namespace a11y
 
             if request.focus = "" and request.context = "" then return
 
-            print "[a11y] queue: "; FormatJson(request)
+            logger.debug("a11y", `queue: ${FormatJson(request)}`)
 
         end if
 

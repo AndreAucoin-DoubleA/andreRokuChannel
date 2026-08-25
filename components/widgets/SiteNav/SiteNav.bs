@@ -1,4 +1,4 @@
-import "pkg:/source/config.bs"
+import "pkg:/source/navigation/routes.bs"
 import "pkg:/source/theme/theme.bs"
 
 sub init()
@@ -6,12 +6,12 @@ sub init()
     applyTheme()
 
     content = CreateObject("roSGNode", "ContentNode")
-    for each page in config.PageRegistry()
-        if page.type = "nav"
-            item = content.createChild("ContentNode")
-            item.setFields({ title: page.label, hdPosterUrl: page.icon })
-        end if
+
+    for each route in routes.all()
+        item = content.createChild("ContentNode")
+        item.setFields({ title: route.label, hdPosterUrl: route.icon })
     end for
+
     m.menuList.content = content
 end sub
 

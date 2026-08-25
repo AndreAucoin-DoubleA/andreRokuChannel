@@ -1,3 +1,5 @@
+import "pkg:/source/utils/logger.bs"
+
 function depth() as integer
     return m.top.getChildCount()
 end function
@@ -20,7 +22,7 @@ end function
 
 function push(request as object) as object
     if depth() >= m.top.maxDepth
-        print "[ViewStack] push rejected: maxDepth " ; m.top.maxDepth ; " reached"
+        logger.error("ViewStack", `push rejected, maxDepth ${m.top.maxDepth} reached`)
         return invalid
     end if
 
@@ -54,7 +56,7 @@ function pushEntry(request as object) as object
     view = m.top.createChild(request.view)
 
     if not view.isSubtype("BaseView")
-        print "[ViewStack] " ; request.view ; " must extend BaseView"
+        logger.error("ViewStack", `${request.view} must extend BaseView`)
         m.top.removeChild(view)
         return invalid
     end if
