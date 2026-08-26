@@ -2,7 +2,7 @@ import "pkg:/source/utils/logger.bs"
 
 namespace theme
 
-    function Theme() as object
+    function current() as object
         if m._theme <> invalid then return m._theme
 
         tokenMap = m.global.designTokens

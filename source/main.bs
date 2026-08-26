@@ -48,7 +48,7 @@ sub Main(args as object)
             info = msg.getInfo()
 
             if info.audioGuideEnabled <> invalid
-                globals.screenReaderOn = info.audioGuideEnabled
+                globals.setField("screenReaderOn", info.audioGuideEnabled)
 
                 logger.info("a11y", `screen reader enabled: ${info.audioGuideEnabled}`)
             end if

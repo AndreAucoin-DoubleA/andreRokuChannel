@@ -1,0 +1,24 @@
+namespace movieContent
+
+    interface Movie
+        movieId as string
+        title as string
+        description as string
+        rating as string
+        releaseDate as string
+        optional HDPosterUrl as string
+        optional HDBackgroundImageUrl as string
+        optional audioGuideText as string
+    end interface
+
+    interface TmdbResult
+        optional id as dynamic
+        optional title as dynamic
+        optional overview as dynamic
+        optional vote_average as dynamic
+        optional release_date as dynamic
+        optional backdrop_path as dynamic
+        optional poster_path as dynamic
+    end interface
+
+end namespace

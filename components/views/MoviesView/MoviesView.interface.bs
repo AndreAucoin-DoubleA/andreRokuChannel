@@ -1,0 +1,9 @@
+namespace moviesView
+    const HERO_DELAY_MIN = 0.3
+    const HERO_DELAY_MAX = 1.0
+
+    const HERO_REPEAT_CUTOFF_MS = 900
+
+    const HERO_DELAY_FACTOR = 1.4
+
+end namespace

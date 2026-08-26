@@ -1,0 +1,21 @@
+namespace deeplink
+
+    enum MediaKind
+        movie = "movie"
+        series = "series"
+        season = "season"
+        episode = "episode"
+        shortFormVideo = "shortformvideo"
+        tvSpecial = "tvspecial"
+        live = "live"
+        special = "special"
+    end enum
+
+    interface Link
+        contentId as string
+        mediaType as string
+        isMovie as boolean
+        autoPlay as boolean
+    end interface
+
+end namespace

@@ -18,7 +18,7 @@ end sub
 
 
 sub applyTheme()
-    t = theme.Theme()
+    t = theme.current()
 
     m.rowList.rowItemSize = [[t.size("component.moviePoster.width", 376), t.size("component.moviePoster.height", 220)]]
     m.rowList.rowLabelColor = t.color("component.rowList.rowLabelColor", "0x8E949DFF")

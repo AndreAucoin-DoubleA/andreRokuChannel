@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "npx bsc",
-    "build:watch": "npx bsc --watch",
-    "deploy": "npx bsc --deploy",
+    "build": "npx bsc --outDir ./build/staging",
+    "build:watch": "npx bsc --outDir ./build/staging --watch",
+    "deploy": "npm run build && npx roku-deploy",
     "lint": "npx bslint",
     "lint:fix": "npx bslint --fix",
     "lint:usage": "npx bslint --checkUsage"
@@ -16,7 +16,7 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "@rokucommunity/bslint": "^0.8.44",
-    "brighterscript": "^0.73.0"
+    "@rokucommunity/bslint": "^1.0.0-alpha.52",
+    "brighterscript": "^1.0.0-alpha.52"
   }
 }

@@ -23,7 +23,7 @@ sub init()
 end sub
 
 sub applyTheme()
-    t = theme.Theme()
+    t = theme.current()
 
     m.statusLabel.color = t.color("component.page.statusTextColor", "0xB7BDC5FF")
     m.statusLabel.font = t.font("component.page.statusTextTypography", "font:MediumSystemFont")

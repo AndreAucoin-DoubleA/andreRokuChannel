@@ -1,0 +1,11 @@
+import "pkg:/source/navigation/nav.interface.bs"
+
+namespace viewStack
+
+    interface PushRequest
+        view as nav.ViewId
+        optional params as object
+        optional inset as object
+    end interface
+
+end namespace

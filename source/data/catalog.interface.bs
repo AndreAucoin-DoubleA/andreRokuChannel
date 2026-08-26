@@ -1,0 +1,18 @@
+namespace catalog
+
+    interface Row
+        title as string
+        url as string
+    end interface
+
+    interface ListSource
+        title as string
+        listName as string
+    end interface
+
+    interface GenreSource
+        title as string
+        genreID as integer
+    end interface
+
+end namespace

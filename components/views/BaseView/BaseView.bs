@@ -1,3 +1,5 @@
+import "pkg:/source/navigation/nav.interface.bs"
+
 sub viewDidLoad(params as object)
 end sub
 
@@ -14,14 +16,14 @@ function setViewFocus() as boolean
     return m.top.setFocus(true)
 end function
 
-sub pushView(viewName as string, params as object)
-    m.top.navRequest = { action: "push", view: viewName, params: params }
+sub pushView(viewName as nav.ViewId, params as object)
+    m.top.navRequest = { action: nav.Action.push, view: viewName, params: params }
 end sub
 
 sub pushMovieDetails(movieRows as object)
     movie = movieRows.selectedMovie
     if movie = invalid then return
-    pushView("MovieDetailsView", {
+    pushView(nav.ViewId.movieDetails, {
         movie: movie,
         row: movieRows.selectedRow,
         index: movieRows.selectedIndex

@@ -1,0 +1,5 @@
+namespace rowListChrome
+
+    const CAP_WIDTH = 27
+
+end namespace

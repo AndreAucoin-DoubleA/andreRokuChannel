@@ -3,6 +3,9 @@ import "pkg:/source/services/deeplink.bs"
 import "pkg:/source/navigation/routes.bs"
 import "pkg:/source/utils/logger.bs"
 
+import "pkg:/source/navigation/nav.interface.bs"
+import "pkg:/components/tasks/FetchMovieTask/FetchMovieTask.interface.bs"
+
 sub init()
     m.sideBar = m.top.findNode("sideBar")
     m.chrome = m.top.findNode("chrome")
@@ -98,13 +101,13 @@ sub onDeepLinkResolved(msg as object)
     m.pendingDeepLink = invalid
     m.deepLinkTask = invalid
 
-    if status <> "ok" or link = invalid
+    if status <> tasks.Status.ok or link = invalid
         showDeepLinkError()
         return
     end if
 
     m.screens.callFunc("pushOnActive", {
-        view: "MovieDetailsView",
+        view: nav.ViewId.movieDetails,
         params: { movie: task.movie, autoPlay: link.autoPlay }
     })
 
@@ -159,7 +162,7 @@ sub onCatalogComplete()
 end sub
 
 sub applyTheme()
-    t = theme.Theme()
+    t = theme.current()
 
     m.top.backgroundURI = ""
     m.top.backgroundColor = t.color("component.scene.backgroundColor", "0x202226FF")
