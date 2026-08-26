@@ -2,6 +2,7 @@ import "pkg:/source/api/http.bs"
 import "pkg:/source/data/catalog.bs"
 import "pkg:/source/data/movieContent.bs"
 import "pkg:/source/utils/logger.bs"
+import "pkg:/source/data/catalog.interface.bs"
 
 sub init()
     m.top.functionName = "fetchMovies"
@@ -27,7 +28,7 @@ sub fetchMovies()
     m.top.loadComplete = true
 end sub
 
-function slice(rows as object, start as integer, count as integer) as object
+function slice(rows as catalog.Row[], start as integer, count as integer) as catalog.Row[]
     part = []
     index = start
 
@@ -39,7 +40,7 @@ function slice(rows as object, start as integer, count as integer) as object
     return part
 end function
 
-function urlsOf(batch as object) as object
+function urlsOf(batch as catalog.Row[]) as object
     urls = []
 
     for each row in batch
@@ -49,7 +50,7 @@ function urlsOf(batch as object) as object
     return urls
 end function
 
-function buildBatchNode(batch as object, responses as object) as object
+function buildBatchNode(batch as catalog.Row[], responses as object) as object
     batchNode = CreateObject("roSGNode", "ContentNode")
 
     for index = 0 to batch.Count() - 1

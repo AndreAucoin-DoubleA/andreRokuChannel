@@ -1,4 +1,5 @@
 import "pkg:/source/theme/theme.bs"
+import "pkg:/components/widgets/RowListChrome/RowListChrome.interface.bs"
 
 sub init()
     m.rowList = invalid
@@ -10,7 +11,7 @@ sub init()
     m.visibilityFields = ["visible", "content", "focusedChild"]
     m.motionFields = ["currFocusRow"]
 
-    t = theme.Theme()
+    t = theme.current()
     m.ring.uri = "pkg:/images/item_focus_ring.png"
     m.ring.blendColor = t.color("component.moviePoster.focusRingColor", "0x8B5CD6FF")
     m.capColor = t.color("component.scene.backgroundColor", "0x202226FF")
@@ -81,15 +82,13 @@ sub onGeometryChanged()
     m.summaryTitle.width = (columns * itemWidth) + ((columns - 1) * hSpacing)
     m.summaryTitle.translation = [left, posterTop + itemHeight + m.top.summaryGap]
 
-    capWidth = 27
-
     m.capLayer.removeChildrenIndex(m.capLayer.getChildCount(), 0)
 
     for row = 0 to m.rowList.numRows - 1
         cap = m.capLayer.createChild("Poster")
         cap.uri = "pkg:/images/row_corner_cap.png"
         cap.blendColor = m.capColor
-        cap.width = capWidth
+        cap.width = rowListChrome.CAP_WIDTH
         cap.height = itemHeight
         cap.translation = [left, baseTop + (row * rowPitch)]
     end for

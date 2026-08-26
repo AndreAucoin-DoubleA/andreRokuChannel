@@ -1,5 +1,6 @@
 import "pkg:/source/theme/theme.bs"
 import "pkg:/source/services/a11y.bs"
+import "pkg:/components/views/MoviesView/MoviesView.interface.bs"
 
 sub init()
     m.movieRows = m.top.findNode("movieRows")
@@ -35,7 +36,7 @@ sub init()
 end sub
 
 sub applyTheme()
-    t = theme.Theme()
+    t = theme.current()
 
     m.rightFade.blendColor = t.color("component.moviesPage.rightFadeBlendColor", "0x461915FF")
 
@@ -90,19 +91,12 @@ sub onMovieFocused()
 end sub
 
 function nextHeroDelay() as float
-    baseDelay = 0.3
-    maxDelay = 1.0
-    repeatCutoffMs = 900
-
     gapMs = m.focusClock.TotalMilliseconds()
     m.focusClock.Mark()
-
-    if gapMs <= 0 or gapMs > repeatCutoffMs then return baseDelay
-
-    delay = (gapMs * 1.4) / 1000.0
-    if delay < baseDelay then return baseDelay
-    if delay > maxDelay then return maxDelay
-
+    if gapMs <= 0 or gapMs > moviesView.HERO_REPEAT_CUTOFF_MS then return moviesView.HERO_DELAY_MIN
+    delay = (gapMs * moviesView.HERO_DELAY_FACTOR) / 1000.0
+    if delay < moviesView.HERO_DELAY_MIN then return moviesView.HERO_DELAY_MIN
+    if delay > moviesView.HERO_DELAY_MAX then return moviesView.HERO_DELAY_MAX
     return delay
 end function
 

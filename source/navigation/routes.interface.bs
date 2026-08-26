@@ -1,0 +1,12 @@
+import "pkg:/source/navigation/nav.interface.bs"
+
+namespace routes
+
+    interface Route
+        id as string
+        label as string
+        icon as string
+        component as nav.ViewId
+    end interface
+
+end namespace

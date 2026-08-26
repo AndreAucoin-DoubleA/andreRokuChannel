@@ -1,4 +1,6 @@
 import "pkg:/source/utils/logger.bs"
+import "pkg:/source/navigation/nav.interface.bs"
+import "pkg:/components/navigation/ViewStack/ViewStack.interface.bs"
 
 function depth() as integer
     return m.top.getChildCount()
@@ -9,7 +11,7 @@ function peek() as object
     return m.top.getChild(depth() - 1)
 end function
 
-function setRoot(request as object) as object
+function setRoot(request as viewStack.PushRequest) as object
     while depth() > 0
         destroyTop()
     end while
@@ -20,7 +22,7 @@ function setRoot(request as object) as object
     return view
 end function
 
-function push(request as object) as object
+function push(request as viewStack.PushRequest) as object
     if depth() >= m.top.maxDepth
         logger.error("ViewStack", `push rejected, maxDepth ${m.top.maxDepth} reached`)
         return invalid
@@ -50,7 +52,7 @@ function pop() as boolean
     return true
 end function
 
-function pushEntry(request as object) as object
+function pushEntry(request as ViewStack.PushRequest) as object
     if request = invalid or request.view = invalid then return invalid
 
     view = m.top.createChild(request.view)
@@ -126,7 +128,7 @@ sub onNavRequest(msg as object)
 
     if req = invalid or req.action = invalid then return
 
-    if req.action = "push" then push(req)
+    if req.action = nav.Action.push then push(req)
 end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean

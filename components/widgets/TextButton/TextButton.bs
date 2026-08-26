@@ -11,7 +11,7 @@ sub init()
 end sub
 
 sub applyTheme()
-    t = theme.Theme()
+    t = theme.current()
 
     m.bg = t.color("component.button.bgColor", "0x2A2D32FF")
     m.bgFocused = t.color("component.button.bgColorFocused", "0x6C3FA0FF")

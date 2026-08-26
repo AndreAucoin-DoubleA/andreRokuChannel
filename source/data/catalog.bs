@@ -1,10 +1,11 @@
 import "pkg:/source/api/tmdb.bs"
+import "pkg:/source/data/catalog.interface.bs"
 
 namespace catalog
 
     const PAGES = 2
 
-    function lists() as object
+    function lists() as catalog.ListSource[]
         return [
             { title: "Popular", listName: "popular" }
             { title: "Top Rated", listName: "top_rated" }
@@ -13,7 +14,7 @@ namespace catalog
         ]
     end function
 
-    function genres() as object
+    function genres() as catalog.GenreSource[]
         return [
             { title: "Action", genreId: 28 }
             { title: "Adventure", genreId: 12 }
@@ -37,7 +38,7 @@ namespace catalog
         ]
     end function
 
-    function rows() as object
+    function rows() as catalog.Row[]
         entries = []
 
         for page = 1 to PAGES

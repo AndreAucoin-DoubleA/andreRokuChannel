@@ -1,4 +1,6 @@
 import "pkg:/source/utils/logger.bs"
+import "pkg:/source/navigation/routes.interface.bs"
+import "pkg:/source/navigation/nav.interface.bs"
 
 namespace routes
 
@@ -8,15 +10,15 @@ namespace routes
         games = "games"
     end enum
 
-    function all() as object
+    function all() as routes.Route[]
         return [
-            { id: RouteId.home, label: "Home", icon: "pkg:/images/home_icon.png", component: "HomeView" }
-            { id: RouteId.movies, label: "Movies", icon: "pkg:/images/settings_icon.png", component: "MoviesView" }
-            { id: RouteId.games, label: "Games", icon: "pkg:/images/menu_icon.png", component: "GamesView" }
+            { id: RouteId.home, label: "Home", icon: "pkg:/images/home_icon.png", component: nav.ViewId.home }
+            { id: RouteId.movies, label: "Movies", icon: "pkg:/images/settings_icon.png", component: nav.ViewId.movies }
+            { id: RouteId.games, label: "Games", icon: "pkg:/images/menu_icon.png", component: nav.ViewId.games }
         ]
     end function
 
-    function byId(id as string) as object
+    function byId(id as string) as routes.Route
         for each route in all()
             if route.id = id then return route
         end for

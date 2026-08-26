@@ -1,3 +1,5 @@
+import "pkg:/source/services/deeplink.interface.bs"
+
 namespace deeplink
 
     function payload(args as dynamic) as dynamic
@@ -13,36 +15,39 @@ namespace deeplink
         return link.contentId <> ""
     end function
 
-    function parse(args as dynamic) as object
+    function parse(args as dynamic) as deeplink.Link
         args = payload(args)
-
         mediaType = args.mediaType
-        if mediaType = invalid then mediaType = " "
-
+        if mediaType = invalid then mediaType = ""
         return {
             contentId: args.contentId,
             mediaType: LCase(mediaType),
             isMovie: isMovie(mediaType),
-            autoPLay: isPlayable(mediaType)
+            autoPlay: isPlayable(mediaType)
         }
     end function
 
     function isMovie(mediaType as string) as boolean
         kind = LCase(mediaType)
-
-        if kind = "series" or kind = "season" or kind = "episode" then return false
-
+        if kind = deeplink.MediaKind.series then return false
+        if kind = deeplink.MediaKind.season then return false
+        if kind = deeplink.MediaKind.episode then return false
         return true
     end function
 
     function isPlayable(mediaType as string) as boolean
-        playable = ["movie", "episode", "shortformvideo", "tvspecial", "live", "special"]
+        playable = [
+            deeplink.MediaKind.movie,
+            deeplink.MediaKind.episode,
+            deeplink.MediaKind.shortFormVideo,
+            deeplink.MediaKind.tvSpecial,
+            deeplink.MediaKind.live,
+            deeplink.MediaKind.special
+        ]
         needle = LCase(mediaType)
-
         for each entry in playable
             if entry = needle then return true
         end for
-
         return false
     end function
 

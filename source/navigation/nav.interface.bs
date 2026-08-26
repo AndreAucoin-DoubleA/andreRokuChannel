@@ -1,0 +1,20 @@
+namespace nav
+    enum Action
+        push = "push"
+    end enum
+
+    enum ViewId
+        home = "HomeView"
+        movies = "MoviesView"
+        games = "GamesView"
+        movieDetails = "MovieDetailsView"
+    end enum
+
+    interface Request
+        action as nav.Action
+        view as nav.ViewId
+        params as object
+    end interface
+end namespace
+
+

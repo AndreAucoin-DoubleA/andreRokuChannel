@@ -2,6 +2,7 @@ import "pkg:/source/api/http.bs"
 import "pkg:/source/api/tmdb.bs"
 import "pkg:/source/data/movieContent.bs"
 import "pkg:/source/utils/logger.bs"
+import "pkg:/components/tasks/FetchMovieTask/FetchMovieTask.interface.bs"
 
 sub init()
     m.top.functionName = "fetchMovie"
@@ -11,7 +12,7 @@ sub fetchMovie()
     movieId = m.top.movieId
 
     if movieId = ""
-        m.top.status = "failed"
+        m.top.status = tasks.Status.failed
         return
     end if
 
@@ -19,11 +20,11 @@ sub fetchMovie()
 
     if json = invalid or json.id = invalid
         logger.warn("FetchMovieTask", `no movie for id ${movieId}`)
-        m.top.status = "failed"
+        m.top.status = tasks.Status.failed
         return
     end if
 
     m.top.movie = movieContent.fromJson(json)
-    m.top.status = "ok"
+    m.top.status = tasks.Status.ok
 end sub
 

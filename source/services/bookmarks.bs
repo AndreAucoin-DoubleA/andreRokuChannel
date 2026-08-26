@@ -1,5 +1,8 @@
 namespace bookmarks
 
+    const MIN_RESUME_SECONDS = 5
+    const END_THRESHOLD_SECONDS = 10
+
     function section() as object
         return CreateObject("roRegistrySection", "bookmarks")
     end function
@@ -20,7 +23,7 @@ namespace bookmarks
 
         registry = section()
 
-        if position < 5 or position > duration - 10
+        if position < MIN_RESUME_SECONDS or position > duration - END_THRESHOLD_SECONDS
             registry.Delete(movieId)
         else
             registry.Write(movieId, Int(position).ToStr())

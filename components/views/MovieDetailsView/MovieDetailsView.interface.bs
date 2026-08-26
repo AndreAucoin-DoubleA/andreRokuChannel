@@ -1,0 +1,11 @@
+namespace movieDetails
+    const SAVE_EVERY_TICKS = 15
+
+    interface Params
+        movie as roSGNodeContentNode
+        optional row as roSGNodeContentNode
+        optional index as integer
+        optional autoPlay as boolean
+    end interface
+
+end namespace

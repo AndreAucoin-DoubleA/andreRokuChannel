@@ -2,6 +2,8 @@ import "pkg:/source/theme/theme.bs"
 import "pkg:/source/services/favorites.bs"
 import "pkg:/source/services/bookmarks.bs"
 import "pkg:/source/services/a11y.bs"
+import "pkg:/source/navigation/nav.interface.bs"
+import "pkg:/components/views/MovieDetailsView/MovieDetailsView.interface.bs"
 
 sub init()
     m.meta = m.top.findNode("meta")
@@ -90,7 +92,7 @@ sub onRestartPress()
 end sub
 
 sub applyTheme()
-    t = theme.Theme()
+    t = theme.current()
 
     m.scrim.color = t.color("component.movieDetails.scrimColor", "0x202226FF")
     m.scrim.opacity = t.number("component.movieDetails.scrimOpacity", 0.96)
@@ -104,7 +106,7 @@ sub applyTheme()
     m.desc.font = t.font("component.movieDetails.descriptionTypography", "font:MediumSystemFont")
 end sub
 
-sub viewDidLoad(params as object)
+sub viewDidLoad(params as movieDetails.Params)
     m.params = params
     m.autoPlay = (params.autoPlay = true)
     applyMovie(params.movie)
@@ -169,7 +171,7 @@ sub onNextPressed()
     nextMovie = nextSibling()
     if nextMovie = invalid then return
 
-    pushView("MovieDetailsView", {
+    pushView(nav.ViewId.movieDetails, {
         movie: nextMovie,
         row: m.params.row,
         index: m.params.index + 1
@@ -416,7 +418,7 @@ sub onVideoPositionChanged()
     m.videoDuration = m.video.duration
 
     m.ticksSinceSave = m.ticksSinceSave + 1
-    if m.ticksSinceSave < 15 then return
+    if m.ticksSinceSave < movieDetails.SAVE_EVERY_TICKS then return
 
     m.ticksSinceSave = 0
     savePositionNow()

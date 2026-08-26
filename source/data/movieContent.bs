@@ -1,8 +1,9 @@
 import "pkg:/source/api/tmdb.bs"
 import "pkg:/source/utils/strings.bs"
+import "pkg:/source/data/movieContent.interface.bs"
 
 namespace movieContent
-    function fromJson(json as object) as object
+    function fromJson(json as movieContent.TmdbResult) as object
         item = CreateObject("roSGNode", "ContentNode")
 
         item.AddFields({ movieId: strings.fromValue(json.id) })
@@ -18,7 +19,7 @@ namespace movieContent
         return item
     end function
 
-    sub applyArtwork(item as object, json as object)
+    sub applyArtwork(item as object, json as movieContent.TmdbResult)
         if json.backdrop_path <> invalid
             item.SetField("HDPosterUrl", tmdb.imageUrl(tmdb.BACKDROP_THUMB, json.backdrop_path))
             item.SetField("HDBackgroundImageUrl", tmdb.imageUrl(tmdb.BACKDROP_FULL, json.backdrop_path))
@@ -31,7 +32,7 @@ namespace movieContent
         end if
     end sub
 
-    function spokenLabel(json as object) as string
+    function spokenLabel(json as movieContent.TmdbResult) as string
         parts = []
 
         title = strings.fromValue(json.title)
