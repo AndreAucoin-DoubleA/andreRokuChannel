@@ -26,9 +26,7 @@
                 id="statusLabel"
                 translation="[-120,110]"
                 width="336"
-                horizAlign="center"
-                font="font:MediumSystemFont"
-                color="#B7BDC5"/>
+                horizAlign="center"/>
         </Group>
     </children>
 </component>

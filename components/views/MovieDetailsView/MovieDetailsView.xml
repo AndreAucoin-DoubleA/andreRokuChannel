@@ -3,7 +3,7 @@
     <script type="text/brightscript" uri="pkg:/components/views/MovieDetailsView/MovieDetailsView.bs"/>
 
     <children>
-        <Rectangle id="scrim" width="1920" height="1080" color="#202226" opacity="0.96"/>
+        <Rectangle id="scrim" width="1920" height="1080"/>
 
         <Video
             id="videoPlayer"
@@ -44,17 +44,13 @@
 
         <Label
             id="meta"
-            translation="[430,550]"
-            font="font:MediumSystemFont"
-            color="#B7BDC5"/>
+            translation="[430,550]"/>
 
         <Label
             id="desc"
             translation="[430,650]"
             width="1100"
-            wrap="true"
-            font="font:MediumSystemFont"
-            color="#DDE0E4"/>
+            wrap="true"/>
 
         <TextButton
             id="playButton"

@@ -48,8 +48,8 @@ namespace theme
 
     function FontUri(family as string) as string
         registry = {
-            ' "inter regular": "pkg:/fonts/Inter-Regular.ttf",
-            ' "inter bold":    "pkg:/fonts/Inter-Bold.ttf"
+            "inter regular": "pkg:/fonts/Inter-Regular.ttf",
+            "inter bold": "pkg:/fonts/Inter-Bold.ttf"
         }
 
         uri = registry[LCase(family)]

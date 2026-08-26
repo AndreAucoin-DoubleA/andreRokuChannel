@@ -29,8 +29,6 @@
                 translation="[100, 140]"
                 width="420"
                 height="140"
-                font="font:LargeBoldSystemFont"
-                color="#FFFFFF"
                 vertAlign="top"
                 wrap="true"
                 visible="false"/>

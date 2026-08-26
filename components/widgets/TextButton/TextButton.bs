@@ -21,7 +21,7 @@ sub applyTheme()
     m.customButton.height = t.size("component.button.height", 70)
     m.label.font = t.font("component.button.labelTypography", "font:MediumBoldSystemFont")
 
-    m.top.width = t.size("component.button.width", 280)
+    t.size("component.button.width", 280)
 
     onFocusChanged()
 end sub
