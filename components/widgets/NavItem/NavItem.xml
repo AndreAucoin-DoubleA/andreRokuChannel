@@ -12,7 +12,6 @@
         <Poster
             id="highlight"
             uri="pkg:/images/highlight_rounded.9.png"
-            blendColor="#6C3FA0"
             width="250"
             height="70"
             opacity="0.0"/>
@@ -25,9 +24,7 @@
             id="label"
             translation="[90,2]"
             height="70"
-            vertAlign="center"
-            color="#8E949D"
-            font="font:MediumSystemFont"/>
+            vertAlign="center"/>
 
         <Animation id="collapseAnim" duration="0.2" easeFunction="outQuad" optional="true">
             <FloatFieldInterpolator

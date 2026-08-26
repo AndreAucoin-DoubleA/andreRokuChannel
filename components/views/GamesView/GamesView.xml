@@ -5,15 +5,13 @@
         <Label
             id="titleLabel"
             translation="[40,80]"
-            text="Games"
-            font="font:LargeBoldSystemFont"
-            color="#FFFFFF"/>
+            text="Games"/>
         <LayoutGroup
             id="gamesList"
             translation="[40, 160]"
             layoutDirection="vert"
             itemSpacings="[15]">
-            <Label id="game1Label" text="1. Mario Kart World Tour" font="font:MediumSystemFont" color="#B7BDC5" />
+            <Label id="game1Label" text="1. Mario Kart World Tour"/>
         </LayoutGroup>
     </children>
 </component>
