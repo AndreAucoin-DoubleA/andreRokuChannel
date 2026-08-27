@@ -35,6 +35,7 @@
     "color-cert": "off"
   },
   "ignores": [
-    "build/**/*"
+    "build/**/*",
+    "**/roku_modules/**/*"
   ]
 }

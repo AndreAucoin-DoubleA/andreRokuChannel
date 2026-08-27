@@ -3,7 +3,6 @@
     <script type="text/brightscript" uri="pkg:/components/tasks/FetchMovieTask/FetchMovieTask.bs"/>
     <interface>
         <field id="movieId" type="string"/>
-        <field id="movie" type="node"/>
-        <field id="status" type="string" alwaysNotify="true"/>
+        <field id="promise" type="node"/>
     </interface>
 </component>

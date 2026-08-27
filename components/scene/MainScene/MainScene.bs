@@ -2,9 +2,9 @@ import "pkg:/source/theme/theme.bs"
 import "pkg:/source/services/deeplink.bs"
 import "pkg:/source/navigation/routes.bs"
 import "pkg:/source/utils/logger.bs"
+import "pkg:/source/roku_modules/promises/promises.brs"
 
 import "pkg:/source/navigation/nav.interface.bs"
-import "pkg:/components/tasks/FetchMovieTask/FetchMovieTask.interface.bs"
 
 sub init()
     m.sideBar = m.top.findNode("sideBar")
@@ -35,8 +35,7 @@ sub init()
 
     m.navPages = routes.all()
 
-    m.pendingDeepLink = invalid
-    m.deepLinkTask = invalid
+    m.deepLinkRequest = invalid
     m.top.observeField("deepLink", "onDeepLinkChanged")
 
     m.focusOnSidebar = true
@@ -69,49 +68,66 @@ sub handleDeepLink(link as object)
 
     cancelDeepLinkFetch()
 
-    m.pendingDeepLink = link
+    promise = promises.create()
 
     task = CreateObject("roSGNode", "FetchMovieTask")
     task.movieId = link.contentId
-    task.observeField("status", "onDeepLinkResolved")
-    m.deepLinkTask = task
+    task.promise = promise
+
+    m.deepLinkRequest = { link: link, task: task, cancelled: false }
+
     task.control = "RUN"
 
     m.deepLinkLoader.callFunc("show")
+
+    promises.chain(promise, m.deepLinkRequest).then(sub(movie as dynamic, request as object)
+        onDeepLinkResolved(movie, request)
+    end sub).catch(sub(error as dynamic, request as object)
+        onDeepLinkFailed(error, request)
+    end sub).finally(sub(request as object)
+        if not request.cancelled then m.deepLinkLoader.callFunc("hide")
+    end sub)
 end sub
 
 sub cancelDeepLinkFetch()
-    if m.deepLinkTask = invalid then return
+    if m.deepLinkRequest = invalid then return
 
-    m.deepLinkTask.unobserveField("status")
-    m.deepLinkTask.control = "stop"
-    m.deepLinkTask = invalid
-    m.pendingDeepLink = invalid
+    m.deepLinkRequest.cancelled = true
+    m.deepLinkRequest.task.control = "stop"
+
+    promises.reject("cancelled", m.deepLinkRequest.task.promise)
+
+    m.deepLinkRequest = invalid
 
     m.deepLinkLoader.callFunc("hide")
 end sub
 
-sub onDeepLinkResolved(msg as object)
-    m.deepLinkLoader.callFunc("hide")
+sub onDeepLinkResolved(movie as dynamic, request as object)
+    if request.cancelled then return
 
-    task = msg.GetRoSGNode()
-    status = msg.GetData()
+    m.deepLinkRequest = invalid
 
-    link = m.pendingDeepLink
-    m.pendingDeepLink = invalid
-    m.deepLinkTask = invalid
-
-    if status <> tasks.Status.ok or link = invalid
+    if movie = invalid
         showDeepLinkError()
         return
     end if
 
     m.screens.callFunc("pushOnActive", {
         view: nav.ViewId.movieDetails,
-        params: { movie: task.movie, autoPlay: link.autoPlay }
+        params: { movie: movie, autoPlay: request.link.autoPlay }
     })
 
     signalLaunchComplete()
+end sub
+
+sub onDeepLinkFailed(error as dynamic, request as object)
+    if request.cancelled then return
+
+    m.deepLinkRequest = invalid
+
+    logger.warn("MainScene", "deep link could not be resolved")
+
+    showDeepLinkError()
 end sub
 
 sub showDeepLinkError()
@@ -275,7 +291,7 @@ sub goToPage(id as string)
 end sub
 
 sub onLaunchTimeout()
-    if m.pendingDeepLink <> invalid
+    if m.deepLinkRequest <> invalid
         logger.warn("MainScene", "launch timeout with deep link unresolved")
         m.launchReason = "timeout-deeplink"
         cancelDeepLinkFetch()

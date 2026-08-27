@@ -2,7 +2,7 @@ import "pkg:/source/api/http.bs"
 import "pkg:/source/api/tmdb.bs"
 import "pkg:/source/data/movieContent.bs"
 import "pkg:/source/utils/logger.bs"
-import "pkg:/components/tasks/FetchMovieTask/FetchMovieTask.interface.bs"
+import "pkg:/source/roku_modules/promises/promises.brs"
 
 sub init()
     m.top.functionName = "fetchMovie"
@@ -12,7 +12,7 @@ sub fetchMovie()
     movieId = m.top.movieId
 
     if movieId = ""
-        m.top.status = tasks.Status.failed
+        promises.reject("missing movie id", m.top.promise)
         return
     end if
 
@@ -20,11 +20,9 @@ sub fetchMovie()
 
     if json = invalid or json.id = invalid
         logger.warn("FetchMovieTask", `no movie for id ${movieId}`)
-        m.top.status = tasks.Status.failed
+        promises.reject(`no movie for id ${movieId}`, m.top.promise)
         return
     end if
 
-    m.top.movie = movieContent.fromJson(json)
-    m.top.status = tasks.Status.ok
+    promises.resolve(movieContent.fromJson(json), m.top.promise)
 end sub
-

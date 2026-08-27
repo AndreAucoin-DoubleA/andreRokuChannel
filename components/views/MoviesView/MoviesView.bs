@@ -1,5 +1,8 @@
 import "pkg:/source/theme/theme.bs"
 import "pkg:/source/services/a11y.bs"
+import "pkg:/source/utils/logger.bs"
+import "pkg:/source/utils/strings.bs"
+import "pkg:/source/roku_modules/promises/promises.brs"
 import "pkg:/components/views/MoviesView/MoviesView.interface.bs"
 
 sub init()
@@ -18,7 +21,7 @@ sub init()
     m.movieRows.content = m.rootContent
 
     m.logoCache = {}
-    m.logoTask = invalid
+    m.logoRequest = invalid
     m.currentMovieId = ""
     m.pendingMovie = invalid
     m.inputLocked = true
@@ -177,28 +180,48 @@ end sub
 sub startLogoFetch(movieId as string)
     cancelLogoFetch()
 
+    promise = promises.create()
+
     task = CreateObject("roSGNode", "FetchMovieLogoTask")
     task.movieId = movieId
-    task.observeField("logoUrl", "onLogoFetched")
-    m.logoTask = task
+    task.promise = promise
+
+    m.logoRequest = { movieId: movieId, task: task, cancelled: false }
+
     task.control = "RUN"
+
+    promises.chain(promise, m.logoRequest).then(sub(logoUrl as dynamic, request as object)
+        onLogoFetched(strings.fromValue(logoUrl), request)
+    end sub).catch(sub(error as dynamic, request as object)
+        onLogoFailed(error, request)
+    end sub)
 end sub
 
 sub cancelLogoFetch()
-    if m.logoTask = invalid then return
+    if m.logoRequest = invalid then return
 
-    m.logoTask.unobserveField("logoUrl")
-    m.logoTask.control = "stop"
-    m.logoTask = invalid
+    m.logoRequest.cancelled = true
+    m.logoRequest.task.control = "stop"
+
+    promises.reject("cancelled", m.logoRequest.task.promise)
+
+    m.logoRequest = invalid
 end sub
 
-sub onLogoFetched(msg as object)
-    movieId = msg.GetRoSGNode().movieId
-    logoUrl = msg.GetData()
+sub onLogoFetched(logoUrl as string, request as object)
+    if request.cancelled then return
 
-    m.logoCache[movieId] = logoUrl
+    m.logoCache[request.movieId] = logoUrl
 
-    if movieId = m.currentMovieId then applyLogo(logoUrl)
+    if request.movieId = m.currentMovieId then applyLogo(logoUrl)
+end sub
+
+sub onLogoFailed(error as dynamic, request as object)
+    if request.cancelled then return
+
+    logger.warn("MoviesView", `logo fetch rejected for ${request.movieId}`)
+
+    if request.movieId = m.currentMovieId then applyLogo("")
 end sub
 
 function setViewFocus() as boolean

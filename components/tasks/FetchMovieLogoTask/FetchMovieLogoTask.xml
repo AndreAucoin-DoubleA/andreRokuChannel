@@ -4,6 +4,6 @@
 
     <interface>
         <field id="movieId" type="string"/>
-        <field id="logoUrl" type="string" alwaysNotify="true"/>
+        <field id="promise" type="node"/>
     </interface>
 </component>

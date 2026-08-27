@@ -1,3 +1,4 @@
+import "pkg:/source/roku_modules/promises/promises.brs"
 import "pkg:/source/api/http.bs"
 import "pkg:/source/api/tmdb.bs"
 import "pkg:/source/utils/strings.bs"
@@ -7,19 +8,28 @@ sub init()
 end sub
 
 sub fetchLogo()
-    m.top.logoUrl = resolveLogoUrl(m.top.movieId)
-end sub
+    movieId = m.top.movieId
 
-function resolveLogoUrl(movieId as string) as string
-    if movieId = "" then return ""
+    if movieId = ""
+        promises.resolve("", m.top.promise)
+        return
+    end if
 
     json = http.getJson(tmdb.movieImagesUrl(movieId))
 
-    if json = invalid or json.logos = invalid or json.logos.Count() = 0 then return ""
+    if json = invalid
+        promises.reject(`logo request failed for ${movieId}`, m.top.promise)
+        return
+    end if
+
+    promises.resolve(logoUrlFrom(json), m.top.promise)
+end sub
+
+function logoUrlFrom(json as object) as string
+    if json.logos = invalid or json.logos.Count() = 0 then return ""
 
     return tmdb.imageUrl(tmdb.LOGO, strings.fromValue(preferredLogo(json.logos).file_path))
 end function
-
 
 function preferredLogo(logos as object) as object
     for each logo in logos

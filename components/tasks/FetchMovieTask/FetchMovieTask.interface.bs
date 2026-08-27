@@ -1,8 +1,0 @@
-namespace tasks
-
-    enum Status
-        ok = "ok"
-        failed = "failed"
-    end enum
-
-end namespace
