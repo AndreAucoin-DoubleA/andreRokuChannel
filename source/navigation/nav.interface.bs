@@ -1,6 +1,7 @@
 namespace nav
     enum Action
         push = "push"
+        pop = "pop"
     end enum
 
     enum ViewId
@@ -14,8 +15,8 @@ namespace nav
 
     interface Request
         action as nav.Action
-        view as nav.ViewId
-        params as object
+        optional view as nav.ViewId
+        optional params as object
     end interface
 end namespace
 

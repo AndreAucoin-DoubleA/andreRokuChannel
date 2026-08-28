@@ -129,6 +129,7 @@ sub onNavRequest(msg as object)
     if req = invalid or req.action = invalid then return
 
     if req.action = nav.Action.push then push(req)
+    if req.action = nav.Action.pop then pop()
 end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean

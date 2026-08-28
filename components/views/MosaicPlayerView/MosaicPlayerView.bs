@@ -7,28 +7,26 @@ sub init()
     m.player = m.top.findNode("player")
     m.focusRing = m.top.findNode("focusRing")
     m.audioBadge = m.top.findNode("audioBadge")
-    m.statusLabel = m.top.findNode("statusLabel")
+
+    m.loader = m.top.findNode("loader")
+    m.chrome = m.top.findNode("chrome")
 
     m.scrim = m.top.findNode("scrim")
     m.scrimAnim = m.top.findNode("scrimAnim")
     m.scrimInterp = m.top.findNode("scrimInterp")
 
-    ' Focus moves are fast; stream re-opens are not. This timer holds the
-    ' audio switch until the user stops moving.
     m.audioDebounce = m.top.findNode("audioDebounce")
     m.audioDebounce.observeField("fire", "onAudioDebounce")
     m.pendingAudio = -1
 
-    m.scrimWatchdog = m.top.findNode("scrimWatchdog")
-    m.scrimWatchdog.observeField("fire", "onScrimWatchdog")
+    m.connectWatchdog = m.top.findNode("connectWatchdog")
+    m.connectWatchdog.observeField("fire", "onConnectWatchdog")
 
     m.names = []
     for i = 0 to 3
         m.names.Push(m.top.findNode(`name${i}`))
     end for
 
-    ' Screen-space origin of each quadrant in the 1920x1080 grid.
-    ' Order matches the ffmpeg layout: 0=TL 1=TR 2=BL 3=BR
     m.quadOrigin = [[0, 0], [960, 0], [0, 540], [960, 540]]
 
     m.labels = multiview.titleLabels()
@@ -39,24 +37,18 @@ sub init()
     m.selected = 0
     m.tracks = invalid
     m.failed = false
+    m.errorDialog = invalid
 
-    ' Where to jump back to after an audio switch re-opens the stream.
-    ' 0 means "nothing to restore".
+    m.ready = false
+
     m.resumeAt = 0
 
-    ' One 1920x1080 decode. Read when the media player is created, so it
-    ' must be set before any content is assigned.
     m.player.maxVideoDecodeResolution = [1920, 1080]
 
-    ' Makes control="stop" return immediately instead of blocking on
-    ' decoder teardown.
     m.player.asyncStopSemantics = true
 
-    ' position only refreshes on a notification tick. Without this, reading
-    ' m.player.position returns a stale or zero value.
     m.player.notificationInterval = 1
 
-    ' Resume playing after a seek rather than sitting paused.
     m.player.autoplayAfterSeek = true
 
     m.player.observeField("state", "onPlayerState")
@@ -78,13 +70,9 @@ sub applyTheme()
 
     m.audioBadge.color = labelColor
     m.audioBadge.font = labelFont
-    m.statusLabel.color = t.color("component.page.bodyColor", "0xB7BDC5FF")
-    m.statusLabel.font = labelFont
 end sub
 
 sub viewWillAppear()
-    ' Fires on push, on returning to this tab, and on Instant Resume.
-    ' After a stop the state is "none", so restart rather than resume.
     if m.player.state <> "playing" and m.player.state <> "buffering"
         startMosaic()
     end if
@@ -93,50 +81,111 @@ sub viewWillAppear()
 end sub
 
 sub viewWillHide()
-    ' Release the decoder -- Movies needs it if the user heads back there.
+    m.connectWatchdog.control = "stop"
     m.player.control = "stop"
 end sub
 
 sub viewWillDisappear()
-    ' Kill the pending switch too -- the timer must not fire into a view
-    ' that is being removed.
+    closeErrorDialog()
+
     m.audioDebounce.control = "stop"
-    m.scrimWatchdog.control = "stop"
+    m.connectWatchdog.control = "stop"
     m.pendingAudio = -1
 
     m.player.unobserveField("state")
     m.player.control = "stop"
 end sub
 
-' Raise the scrim instantly, drop it smoothly. Fading IN would let the
-' first black frames of the re-open show through, which is the flicker.
 sub raiseScrim()
     m.scrimAnim.control = "stop"
     m.scrim.opacity = 1.0
-
-    ' Arm the failsafe every time we cover the screen.
-    m.scrimWatchdog.control = "stop"
-    m.scrimWatchdog.control = "start"
 end sub
 
 sub fadeScrim()
-    m.scrimWatchdog.control = "stop"
+    m.connectWatchdog.control = "stop"
+    m.loader.callFunc("hide")
+    setReady(true)
 
     m.scrimInterp.keyValue = [m.scrim.opacity, 0.0]
     m.scrimAnim.control = "stop"
     m.scrimAnim.control = "start"
 end sub
 
-sub onScrimWatchdog()
-    ' No "playing" ever arrived to uncover the video. Show it regardless --
-    ' a visible stall beats an opaque black screen.
-    logger.warn("MosaicPlayerView", "scrim watchdog fired, uncovering anyway")
-    fadeScrim()
+sub setReady(value as boolean)
+    m.ready = value
+    m.chrome.visible = value
+end sub
+
+sub beginConnecting()
+    m.failed = false
+    setReady(false)
+    m.loader.callFunc("show")
+
+    m.connectWatchdog.control = "stop"
+    m.connectWatchdog.control = "start"
+end sub
+
+sub showFailure(detail as string)
+    m.failed = true
+
+    m.connectWatchdog.control = "stop"
+    m.audioDebounce.control = "stop"
+    m.pendingAudio = -1
+    m.resumeAt = 0
+
+    raiseScrim()
+    setReady(false)
+
+    m.loader.callFunc("hide")
+    m.player.control = "stop"
+
+    showErrorDialog(detail)
+end sub
+
+' The Dialog is a Scene-level node -- assigning it to scene.dialog is what
+' makes it modal and hands it the focus, so nothing below it can be keyed.
+sub showErrorDialog(detail as string)
+    if m.errorDialog <> invalid then return
+
+    dialog = CreateObject("roSGNode", "Dialog")
+    dialog.title = "Multiview unavailable"
+    dialog.message = detail
+    dialog.buttons = ["OK"]
+
+    ' wasClosed as well as buttonSelected -- Back dismisses the dialog
+    ' without ever selecting a button, and that must exit too.
+    dialog.observeField("buttonSelected", "onErrorDismissed")
+    dialog.observeField("wasClosed", "onErrorDismissed")
+
+    m.errorDialog = dialog
+    m.top.getScene().dialog = dialog
+end sub
+
+sub closeErrorDialog()
+    if m.errorDialog = invalid then return
+
+    ' Unobserve BEFORE closing, or close = true re-enters onErrorDismissed
+    ' through the wasClosed observer.
+    m.errorDialog.unobserveField("buttonSelected")
+    m.errorDialog.unobserveField("wasClosed")
+    m.errorDialog.close = true
+    m.errorDialog = invalid
+end sub
+
+sub onErrorDismissed()
+    closeErrorDialog()
+    popView()
+end sub
+
+sub onConnectWatchdog()
+    logger.warn("MosaicPlayerView", "connect watchdog fired, no playable stream")
+    showFailure("The stream never started.")
 end sub
 
 sub startMosaic()
-    ' Also covers the black frames of the very first load.
     raiseScrim()
+    beginConnecting()
+
     m.player.control = "stop"
 
     content = CreateObject("roSGNode", "ContentNode")
@@ -147,12 +196,7 @@ sub startMosaic()
 
     m.tracks = invalid
     m.failed = false
-
-    ' Clear any half-finished transition, e.g. the user switched tabs
-    ' between the audio change and the seek.
     m.resumeAt = 0
-
-    m.statusLabel.text = "Connecting..."
 
     m.player.content = content
     m.player.control = "play"
@@ -162,55 +206,32 @@ sub onPlayerState()
     state = m.player.state
     logger.info("MosaicPlayerView", `player state ${state}`)
 
-    ' Handle error FIRST and return. Roku emits "error" then "finished", so
-    ' without this flag the finished branch replays a stream that just
-    ' failed -- which errors, finishes, replays, forever.
     if state = "error"
-        m.failed = true
-        m.statusLabel.text = `Playback error: ${m.player.errorMsg}`
         logger.error("MosaicPlayerView", `errorCode ${m.player.errorCode} - ${m.player.errorMsg}`)
+        showFailure(`Playback error: ${m.player.errorMsg}.`)
         return
     end if
 
     if state = "playing"
         m.failed = false
-        m.statusLabel.text = ""
 
-        ' Restore position after an audio-switch re-open. Clear the flag
-        ' BEFORE seeking -- seek fires another buffering/playing cycle, and a
-        ' still-set flag would seek again, forever. The > 1 guard means a
-        ' genuine fresh start never triggers a seek.
         if m.resumeAt > 1
             target = m.resumeAt
             m.resumeAt = 0
             logger.info("MosaicPlayerView", `seeking back to ${target}`)
             m.player.seek = target
         else
-            ' Nothing left to restore, so the whole transition is done --
-            ' this is the second "playing" after an audio switch, or the
-            ' first after a fresh load. Only now is it safe to uncover.
             fadeScrim()
         end if
 
-        ' availableAudioTracks is filled from the manifest, so it is empty
-        ' until playback begins. This is the earliest safe read.
         if m.tracks = invalid
             m.tracks = m.player.availableAudioTracks
             logger.info("MosaicPlayerView", `audio tracks: ${m.tracks.Count()}`)
 
-            ' Dump the list so a mismatch between track order and tile
-            ' order is visible in the console rather than guessed at.
             for i = 0 to m.tracks.Count() - 1
                 logger.info("MosaicPlayerView", `track ${i}: ${FormatJson(m.tracks[i])}`)
             end for
 
-            ' The stream's DEFAULT=YES rendition is already playing and
-            ' corresponds to tile 0, so normally there is nothing to switch
-            ' -- just label it. Calling selectAudio here would raise the
-            ' scrim for a transition that never happens, leaving the video
-            ' covered until the first focus move.
-            ' The exception is focus having already moved during initial
-            ' buffering, when selectAudio bailed on an invalid track list.
             if m.selected = 0
                 m.audioBadge.text = `AUDIO: ${m.labels[m.selected]}`
             else
@@ -219,7 +240,6 @@ sub onPlayerState()
         end if
     end if
 
-    ' Loop only on a genuine end of content.
     if state = "finished" and not m.failed
         m.player.control = "replay"
     end if
@@ -227,17 +247,10 @@ end sub
 
 sub highlight(index as integer)
     m.selected = index
-
-    ' translation is a vector2d -- reading it returns a copy, so assign a
-    ' whole new array rather than mutating it.
     o = m.quadOrigin[index]
     m.focusRing.translation = [o[0], o[1]]
 end sub
 
-' The highlight moves instantly; the audio switch waits. Roku re-opens the
-' presentation for every audioTrack change, so arrowing across three tiles
-' would otherwise cost three back-to-back re-opens. Restarting the timer on
-' each press collapses a burst of moves into a single switch at the end.
 sub requestAudio(index as integer)
     m.pendingAudio = index
     m.audioDebounce.control = "stop"
@@ -257,25 +270,16 @@ sub selectAudio(index as integer)
     if m.tracks.Count() <= index then return
 
     wanted = m.tracks[index].Track
-
-    ' Keep the badge honest even when no switch is needed.
     m.audioBadge.text = `AUDIO: ${m.labels[index]}`
 
-    ' Assigning the track that is already playing produces NO state change,
-    ' so no "playing" event would arrive to bring the scrim back down. This
-    ' is the initial-load case: m.selected is 0 and CAM1 is DEFAULT=YES.
     if wanted = m.player.audioTrack
         logger.info("MosaicPlayerView", `audioTrack already ${wanted}, no switch needed`)
         return
     end if
 
-    ' The audio tracks are demuxed HLS renditions, so changing audioTrack
-    ' re-opens the presentation and restarts from zero. Stash the position
-    ' first so onPlayerState can put us back where we were.
     m.resumeAt = m.player.position
-
-    ' Cover the video before the tear-down starts, not after.
     raiseScrim()
+    beginConnecting()
 
     m.player.audioTrack = wanted
     logger.info("MosaicPlayerView", `audioTrack ${wanted}, resumeAt ${m.resumeAt}`)
@@ -286,10 +290,13 @@ function onKeyEvent(key as string, press as boolean) as boolean
     ' Fires twice per button -- press then release. Ignore release.
     if not press then return false
 
-    ' Do NOT name this "next" -- that's a BrightScript keyword.
+    if not m.ready
+        if key = "back" then return false
+        return true
+    end if
+
     target = m.selected
 
-    ' Grid is 0 1 / 2 3. Even indices are the left column, odd the right.
     if key = "right" and m.selected mod 2 = 0 then target = m.selected + 1
     if key = "left" and m.selected mod 2 = 1 then target = m.selected - 1
     if key = "down" and m.selected < 2 then target = m.selected + 2
@@ -301,8 +308,6 @@ function onKeyEvent(key as string, press as boolean) as boolean
         return true
     end if
 
-    ' Let "back" fall through -- ViewStack.onKeyEvent pops this view and
-    ' returns you to the Multiview tab.
     return false
 end function
 
