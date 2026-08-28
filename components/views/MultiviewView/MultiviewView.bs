@@ -1,0 +1,39 @@
+import "pkg:/source/theme/theme.bs"
+import "pkg:/source/data/multiview.bs"
+import "pkg:/source/navigation/nav.interface.bs"
+
+sub init()
+    m.titleLabel = m.top.findNode("titleLabel")
+    m.bodyLabel = m.top.findNode("bodyLabel")
+    m.statusLabel = m.top.findNode("statusLabel")
+    m.startButton = m.top.findNode("startButton")
+
+    m.startButton.observeField("selected", "onStartPressed")
+
+    m.statusLabel.text = `Source: ${multiview.mosaicUrl()}`
+    applyTheme()
+end sub
+
+sub applyTheme()
+    t = theme.current()
+
+    m.titleLabel.color = t.color("component.page.titleColor", "0xFFFFFFFF")
+    m.titleLabel.font = t.font("component.page.titleTypography", "font:LargeBoldSystemFont")
+
+    bodyColor = t.color("component.page.bodyColor", "0xB7BDC5FF")
+    bodyFont = t.font("component.page.bodyTypography", "font:MediumSystemFont")
+
+    m.bodyLabel.color = bodyColor
+    m.bodyLabel.font = bodyFont
+    m.statusLabel.color = bodyColor
+    m.statusLabel.font = bodyFont
+
+end sub
+
+sub onStartPressed()
+    pushView(nav.ViewId.mosaicPlayer, {})
+end sub
+
+function setViewFocus() as boolean
+    return m.startButton.setFocus(true)
+end function

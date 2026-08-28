@@ -1,0 +1,21 @@
+namespace multiview
+
+    function host() as string
+        return "http://172.16.12.7:8000"
+    end function
+
+    function mosaicUrl() as string
+        return `${host()}/hls/master.m3u8`
+    end function
+
+    function titleLabels() as string[]
+        return [
+            "CAM 1 / PIT LANE"
+            "CAM 2 / TURN 3"
+            "CAM 3 / ONBOARD"
+            "CAM 4 / GRANDSTAND"
+        ]
+    end function
+
+end namespace
+

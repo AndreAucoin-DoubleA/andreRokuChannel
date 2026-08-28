@@ -20,6 +20,10 @@ sub pushView(viewName as nav.ViewId, params as object)
     m.top.navRequest = { action: nav.Action.push, view: viewName, params: params }
 end sub
 
+sub popView()
+    m.top.navRequest = { action: nav.Action.pop }
+end sub
+
 sub pushMovieDetails(movieRows as object)
     movie = movieRows.selectedMovie
     if movie = invalid then return

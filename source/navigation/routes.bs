@@ -8,6 +8,7 @@ namespace routes
         home = "home"
         movies = "movies"
         games = "games"
+        multiview = "multiview"
     end enum
 
     function all() as routes.Route[]
@@ -15,6 +16,7 @@ namespace routes
             { id: RouteId.home, label: "Home", icon: "pkg:/images/home_icon.png", component: nav.ViewId.home }
             { id: RouteId.movies, label: "Movies", icon: "pkg:/images/settings_icon.png", component: nav.ViewId.movies }
             { id: RouteId.games, label: "Games", icon: "pkg:/images/menu_icon.png", component: nav.ViewId.games }
+            { id: RouteId.multiview, label: "Multiview", icon: "pkg:/images/menu_icon.png", component: nav.ViewId.multiview }
         ]
     end function
 

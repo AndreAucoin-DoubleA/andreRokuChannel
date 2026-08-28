@@ -1,0 +1,306 @@
+import "pkg:/source/theme/theme.bs"
+import "pkg:/source/data/multiview.bs"
+import "pkg:/source/services/a11y.bs"
+import "pkg:/source/utils/logger.bs"
+
+sub init()
+    m.player = m.top.findNode("player")
+    m.focusRing = m.top.findNode("focusRing")
+    m.audioBadge = m.top.findNode("audioBadge")
+
+    m.loader = m.top.findNode("loader")
+    m.chrome = m.top.findNode("chrome")
+
+    m.scrim = m.top.findNode("scrim")
+    m.scrimAnim = m.top.findNode("scrimAnim")
+    m.scrimInterp = m.top.findNode("scrimInterp")
+
+    m.audioDebounce = m.top.findNode("audioDebounce")
+    m.audioDebounce.observeField("fire", "onAudioDebounce")
+    m.pendingAudio = -1
+
+    m.connectWatchdog = m.top.findNode("connectWatchdog")
+    m.connectWatchdog.observeField("fire", "onConnectWatchdog")
+
+    m.names = []
+    for i = 0 to 3
+        m.names.Push(m.top.findNode(`name${i}`))
+    end for
+
+    m.quadOrigin = [[0, 0], [960, 0], [0, 540], [960, 540]]
+
+    m.labels = multiview.titleLabels()
+    for i = 0 to 3
+        m.names[i].text = m.labels[i]
+    end for
+
+    m.selected = 0
+    m.tracks = invalid
+    m.failed = false
+    m.errorDialog = invalid
+
+    m.ready = false
+
+    m.resumeAt = 0
+
+    m.player.maxVideoDecodeResolution = [1920, 1080]
+
+    m.player.asyncStopSemantics = true
+
+    m.player.notificationInterval = 1
+
+    m.player.autoplayAfterSeek = true
+
+    m.player.observeField("state", "onPlayerState")
+
+    applyTheme()
+    highlight(0)
+end sub
+
+sub applyTheme()
+    t = theme.current()
+
+    labelColor = t.color("component.page.titleColor", "0xFFFFFFFF")
+    labelFont = t.font("component.page.bodyTypography", "font:MediumBoldSystemFont")
+
+    for i = 0 to 3
+        m.names[i].color = labelColor
+        m.names[i].font = labelFont
+    end for
+
+    m.audioBadge.color = labelColor
+    m.audioBadge.font = labelFont
+end sub
+
+sub viewWillAppear()
+    if m.player.state <> "playing" and m.player.state <> "buffering"
+        startMosaic()
+    end if
+
+    a11y.context("Multiview demo, four camera feeds")
+end sub
+
+sub viewWillHide()
+    m.connectWatchdog.control = "stop"
+    m.player.control = "stop"
+end sub
+
+sub viewWillDisappear()
+    closeErrorDialog()
+
+    m.audioDebounce.control = "stop"
+    m.connectWatchdog.control = "stop"
+    m.pendingAudio = -1
+
+    m.player.unobserveField("state")
+    m.player.control = "stop"
+end sub
+
+sub raiseScrim()
+    m.scrimAnim.control = "stop"
+    m.scrim.opacity = 1.0
+end sub
+
+sub fadeScrim()
+    m.connectWatchdog.control = "stop"
+    m.loader.callFunc("hide")
+    setReady(true)
+
+    m.scrimInterp.keyValue = [m.scrim.opacity, 0.0]
+    m.scrimAnim.control = "stop"
+    m.scrimAnim.control = "start"
+end sub
+
+sub setReady(value as boolean)
+    m.ready = value
+    m.chrome.visible = value
+end sub
+
+sub beginConnecting()
+    m.failed = false
+    setReady(false)
+    m.loader.callFunc("show")
+
+    m.connectWatchdog.control = "stop"
+    m.connectWatchdog.control = "start"
+end sub
+
+sub showFailure(detail as string)
+    m.failed = true
+
+    m.connectWatchdog.control = "stop"
+    m.audioDebounce.control = "stop"
+    m.pendingAudio = -1
+    m.resumeAt = 0
+
+    raiseScrim()
+    setReady(false)
+
+    m.loader.callFunc("hide")
+    m.player.control = "stop"
+
+    showErrorDialog(detail)
+end sub
+
+sub showErrorDialog(detail as string)
+    if m.errorDialog <> invalid then return
+
+    dialog = CreateObject("roSGNode", "Dialog")
+    dialog.title = "Multiview unavailable"
+    dialog.message = detail
+    dialog.buttons = ["OK"]
+
+    dialog.observeField("buttonSelected", "onErrorDismissed")
+    dialog.observeField("wasClosed", "onErrorDismissed")
+
+    m.errorDialog = dialog
+    m.top.getScene().dialog = dialog
+end sub
+
+sub closeErrorDialog()
+    if m.errorDialog = invalid then return
+
+    m.errorDialog.unobserveField("buttonSelected")
+    m.errorDialog.unobserveField("wasClosed")
+    m.errorDialog.close = true
+    m.errorDialog = invalid
+end sub
+
+sub onErrorDismissed()
+    closeErrorDialog()
+    popView()
+end sub
+
+sub onConnectWatchdog()
+    logger.warn("MosaicPlayerView", "connect watchdog fired, no playable stream")
+    showFailure("The stream never started.")
+end sub
+
+sub startMosaic()
+    raiseScrim()
+    beginConnecting()
+
+    m.player.control = "stop"
+
+    content = CreateObject("roSGNode", "ContentNode")
+    content.url = multiview.mosaicUrl()
+    content.streamFormat = "hls"
+    content.title = "Multiview"
+    content.Live = false
+
+    m.tracks = invalid
+    m.failed = false
+    m.resumeAt = 0
+
+    m.player.content = content
+    m.player.control = "play"
+end sub
+
+sub onPlayerState()
+    state = m.player.state
+    logger.info("MosaicPlayerView", `player state ${state}`)
+
+    if state = "error"
+        logger.error("MosaicPlayerView", `errorCode ${m.player.errorCode} - ${m.player.errorMsg}`)
+        showFailure(`Playback error: ${m.player.errorMsg}.`)
+        return
+    end if
+
+    if state = "playing"
+        m.failed = false
+
+        if m.resumeAt > 1
+            target = m.resumeAt
+            m.resumeAt = 0
+            logger.info("MosaicPlayerView", `seeking back to ${target}`)
+            m.player.seek = target
+        else
+            fadeScrim()
+        end if
+
+        if m.tracks = invalid
+            m.tracks = m.player.availableAudioTracks
+            logger.info("MosaicPlayerView", `audio tracks: ${m.tracks.Count()}`)
+
+            for i = 0 to m.tracks.Count() - 1
+                logger.info("MosaicPlayerView", `track ${i}: ${FormatJson(m.tracks[i])}`)
+            end for
+
+            if m.selected = 0
+                m.audioBadge.text = `AUDIO: ${m.labels[m.selected]}`
+            else
+                selectAudio(m.selected)
+            end if
+        end if
+    end if
+
+    if state = "finished" and not m.failed
+        m.player.control = "replay"
+    end if
+end sub
+
+sub highlight(index as integer)
+    m.selected = index
+    o = m.quadOrigin[index]
+    m.focusRing.translation = [o[0], o[1]]
+end sub
+
+sub requestAudio(index as integer)
+    m.pendingAudio = index
+    m.audioDebounce.control = "stop"
+    m.audioDebounce.control = "start"
+end sub
+
+sub onAudioDebounce()
+    if m.pendingAudio < 0 then return
+
+    index = m.pendingAudio
+    m.pendingAudio = -1
+    selectAudio(index)
+end sub
+
+sub selectAudio(index as integer)
+    if m.tracks = invalid then return
+    if m.tracks.Count() <= index then return
+
+    wanted = m.tracks[index].Track
+    m.audioBadge.text = `AUDIO: ${m.labels[index]}`
+
+    if wanted = m.player.audioTrack
+        logger.info("MosaicPlayerView", `audioTrack already ${wanted}, no switch needed`)
+        return
+    end if
+
+    m.resumeAt = m.player.position
+    raiseScrim()
+    beginConnecting()
+
+    m.player.audioTrack = wanted
+    logger.info("MosaicPlayerView", `audioTrack ${wanted}, resumeAt ${m.resumeAt}`)
+    a11y.focus(`${m.labels[index]}, audio selected`)
+end sub
+
+function onKeyEvent(key as string, press as boolean) as boolean
+    if not press then return false
+
+    if not m.ready
+        if key = "back" then return false
+        return true
+    end if
+
+    target = m.selected
+
+    if key = "right" and m.selected mod 2 = 0 then target = m.selected + 1
+    if key = "left" and m.selected mod 2 = 1 then target = m.selected - 1
+    if key = "down" and m.selected < 2 then target = m.selected + 2
+    if key = "up" and m.selected > 1 then target = m.selected - 2
+
+    if target <> m.selected
+        highlight(target)
+        requestAudio(target)
+        return true
+    end if
+
+    return false
+end function
+
