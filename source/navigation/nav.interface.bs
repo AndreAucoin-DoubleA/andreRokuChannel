@@ -8,6 +8,8 @@ namespace nav
         movies = "MoviesView"
         games = "GamesView"
         movieDetails = "MovieDetailsView"
+        multiview = "MultiviewView"
+        mosaicPlayer = "MosaicPlayerView"
     end enum
 
     interface Request

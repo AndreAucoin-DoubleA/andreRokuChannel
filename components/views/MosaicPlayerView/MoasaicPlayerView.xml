@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="MosaicPlayerView" extends="BaseView">
+    <script type="text/brightscript" uri="pkg:/components/views/MosaicPlayerView/MosaicPlayerView.bs" />
+
+    <children>
+        <Rectangle id="backdrop" width="1920" height="1080" color="0x101114FF"/>
+        <Video id="player" width="1920" height="1080" translation="[0,0]"/>
+
+        <!-- Sits above the video but BELOW the focus ring and labels, so
+             the chrome stays visible while the video is torn down and
+             re-opened. Raised instantly, faded out smoothly. -->
+        <Rectangle id="scrim" width="1920" height="1080" color="0x101114FF" opacity="0"/>
+
+        <Animation id="scrimAnim" duration="0.3" easeFunction="outQuad">
+            <FloatFieldInterpolator
+                id="scrimInterp"
+                key="[0,1]"
+                keyValue="[0,0]"
+                fieldToInterp="scrim.opacity"/>
+        </Animation>
+
+        <!-- Collapses a burst of focus moves into a single audio switch. -->
+        <Timer id="audioDebounce" duration="0.4" repeat="false"/>
+
+        <!-- Failsafe: an opaque scrim that never comes down is a dead UI.
+             If no "playing" arrives to uncover it, drop it anyway. -->
+        <Timer id="scrimWatchdog" duration="6" repeat="false"/>
+
+        <Group id="focusRing">
+            <Rectangle width="960" height="8"   translation="[0,0]"   color="0x8B5CD6FF"/>
+            <Rectangle width="960" height="8"   translation="[0,532]" color="0x8B5CD6FF"/>
+            <Rectangle width="8"   height="540" translation="[0,0]"   color="0x8B5CD6FF"/>
+            <Rectangle width="8"   height="540" translation="[952,0]" color="0x8B5CD6FF"/>   
+        </Group>
+
+        <Label id="name0" translation="[30,24]"/>
+        <Label id="name1" translation="[990,24]"/>
+        <Label id="name2" translation="[30,564]"/>
+        <Label id="name3" translation="[990,564]"/>
+
+        <Label id="statusLabel" translation="[30,960]" width="1400" wrap="true"/>
+        <Label id="audioBadge" translation="[30,1010]"/>
+    </children>
+    
+</component>

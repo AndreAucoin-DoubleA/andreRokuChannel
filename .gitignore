@@ -1,5 +1,6 @@
 node_modules/
 build/
+**/roku_modules/
 out/
 *.zip
 .DS_Store
