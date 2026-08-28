@@ -142,8 +142,6 @@ sub showFailure(detail as string)
     showErrorDialog(detail)
 end sub
 
-' The Dialog is a Scene-level node -- assigning it to scene.dialog is what
-' makes it modal and hands it the focus, so nothing below it can be keyed.
 sub showErrorDialog(detail as string)
     if m.errorDialog <> invalid then return
 
@@ -152,8 +150,6 @@ sub showErrorDialog(detail as string)
     dialog.message = detail
     dialog.buttons = ["OK"]
 
-    ' wasClosed as well as buttonSelected -- Back dismisses the dialog
-    ' without ever selecting a button, and that must exit too.
     dialog.observeField("buttonSelected", "onErrorDismissed")
     dialog.observeField("wasClosed", "onErrorDismissed")
 
@@ -164,8 +160,6 @@ end sub
 sub closeErrorDialog()
     if m.errorDialog = invalid then return
 
-    ' Unobserve BEFORE closing, or close = true re-enters onErrorDismissed
-    ' through the wasClosed observer.
     m.errorDialog.unobserveField("buttonSelected")
     m.errorDialog.unobserveField("wasClosed")
     m.errorDialog.close = true
@@ -287,7 +281,6 @@ sub selectAudio(index as integer)
 end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
-    ' Fires twice per button -- press then release. Ignore release.
     if not press then return false
 
     if not m.ready
