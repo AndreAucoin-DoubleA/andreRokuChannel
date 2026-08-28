@@ -1,5 +1,4 @@
 namespace movieDetails
-    const SAVE_EVERY_TICKS = 15
 
     interface Params
         movie as roSGNodeContentNode

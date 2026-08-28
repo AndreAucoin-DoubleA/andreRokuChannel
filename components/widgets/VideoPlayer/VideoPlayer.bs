@@ -1,0 +1,80 @@
+import "pkg:/source/services/bookmarks.bs"
+import "pkg:/components/widgets/VideoPlayer/VideoPlayer.interface.bs"
+
+sub init()
+    m.top.notificationInterval = 1
+
+    m.top.observeField("content", "onContentAssigned")
+    m.top.observeField("control", "onControlChanged")
+    m.top.observeField("state", "onStateChanged")
+    m.top.observeField("position", "onPositionChanged")
+
+    resetProgressCache()
+end sub
+
+sub resetProgressCache()
+    m.lastPosition = 0
+    m.videoDuration = 0
+    m.ticksSinceSave = 0
+end sub
+
+sub onContentAssigned()
+    content = m.top.content
+    if content = invalid then return
+
+    resetProgressCache()
+
+    if m.top.trackProgress
+        content.playStart = bookmarks.positionFor(m.top.movieId)
+    else
+        content.playStart = 0
+    end if
+end sub
+
+sub onControlChanged()
+    if m.top.control <> "stop" then return
+
+    savePositionNow()
+    resetProgressCache()
+end sub
+
+sub onStateChanged()
+    state = m.top.state
+
+    if state = "paused"
+        savePositionNow()
+        return
+    end if
+
+    if state = "finished"
+        savePositionNow()
+        resetProgressCache()
+    end if
+end sub
+
+sub onPositionChanged()
+    if not m.top.trackProgress then return
+
+    m.lastPosition = m.top.position
+    m.videoDuration = m.top.duration
+
+    m.ticksSinceSave = m.ticksSinceSave + 1
+    if m.ticksSinceSave < videoPlayer.SAVE_EVERY_TICKS then return
+
+    m.ticksSinceSave = 0
+    savePositionNow()
+end sub
+
+sub savePositionNow()
+    if not m.top.trackProgress then return
+
+    position = m.top.position
+    duration = m.top.duration
+
+    if position <= 0 then position = m.lastPosition
+    if duration <= 0 then duration = m.videoDuration
+
+    if position <= 0 then return
+
+    bookmarks.savePosition(m.top.movieId, position, duration)
+end sub

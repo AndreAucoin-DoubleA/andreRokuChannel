@@ -1,0 +1,5 @@
+namespace videoPlayer
+
+    const SAVE_EVERY_TICKS = 15
+
+end namespace
