@@ -1,0 +1,44 @@
+namespace videoPlayer
+
+    const SAVE_EVERY_TICKS = 15
+    const OVERLAY_HIDE_SECONDS = 6
+
+    const SAFE_MARGIN = 96
+    const SCRUB_WIDTH = 1728
+    const SCRUB_HEIGHT = 6
+
+    const KNOB_WIDTH = 8
+    const KNOB_HEIGHT = 22
+    const KNOB_OFFSET_X = -4
+    const KNOB_OFFSET_Y = -8
+
+    const TRACK_COLOR = "0xFFFFFF4D"
+    const FILL_COLOR = "0xFFFFFFFF"
+
+    const SCAN_TICK_SECONDS = 0.25
+    const SCAN_RATE_1 = 8
+    const SCAN_RATE_2 = 24
+    const SCAN_RATE_3 = 60
+    const SCAN_MAX_INDEX = 2
+
+    const REPLAY_SECONDS = 10
+
+    const MODE_IDLE = "idle"
+    const MODE_SKIP = "skip"
+    const MODE_SCAN = "scan"
+
+    const SKIP_SECONDS = 10
+
+    const SKIP_COMMIT_MS = 1200
+    const SKIP_TICK_SECONDS = 0.1
+
+    const SEEK_SETTLE_TOLERANCE = 5
+    const SEEK_SETTLE_TICKS = 4
+
+    const PREVIEW_WIDTH = 320
+    const PREVIEW_HEIGHT = 180
+    const PREVIEW_BORDER = 6
+    const PREVIEW_Y = -216
+    const PREVIEW_WHILE_IDLE = false
+
+end namespace

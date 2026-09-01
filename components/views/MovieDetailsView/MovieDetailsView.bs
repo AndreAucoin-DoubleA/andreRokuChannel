@@ -3,6 +3,8 @@ import "pkg:/source/services/favorites.bs"
 import "pkg:/source/services/bookmarks.bs"
 import "pkg:/source/services/a11y.bs"
 import "pkg:/source/navigation/nav.interface.bs"
+import "pkg:/source/utils/logger.bs"
+import "pkg:/source/data/trickplay.bs"
 import "pkg:/components/views/MovieDetailsView/MovieDetailsView.interface.bs"
 
 sub init()
@@ -35,8 +37,7 @@ sub init()
     m.video = m.top.findNode("videoPlayer")
     m.video.observeField("state", "onVideoStateChanged")
 
-    m.video.notificationInterval = 1
-    m.video.observeField("position", "onVideoPositionChanged")
+    m.video.observeField("overlayButtonSelected", "onOverlayButtonSelected")
 
     m.bgActive = false
     m.fullscreenActive = false
@@ -44,14 +45,10 @@ sub init()
     m.trailerFailed = false
     m.params = {}
     m.currentMovieId = ""
+    m.backdropUri = ""
     m.returnFocus = invalid
     m.errorDialog = invalid
     m.autoPlay = false
-
-    m.lastPosition = 0
-    m.videoDuration = 0
-    m.ticksSinceSave = 0
-    m.trackPosition = false
 
     applyTheme()
 end sub
@@ -123,13 +120,11 @@ sub viewWillAppear()
 end sub
 
 sub viewWillHide()
-    persistPosition()
     resetPlayback()
     closePlaybackError()
 end sub
 
 sub viewWillDisappear()
-    persistPosition()
     resetPlayback()
     closePlaybackError()
 end sub
@@ -144,7 +139,11 @@ sub applyMovie(movie as object)
 
     m.meta.text = movie.title + "  -  Rating: " + movie.rating + "  -  Released: " + movie.releaseDate
     m.desc.text = movie.description
-    m.detailsBack.uri = movie.HDBackgroundImageUrl
+
+    m.backdropUri = ""
+    if movie.HDBackgroundImageUrl <> invalid then m.backdropUri = movie.HDBackgroundImageUrl
+
+    m.detailsBack.uri = m.backdropUri
 
     m.currentMovieId = movie.movieId
     if m.currentMovieId = invalid then m.currentMovieId = ""
@@ -187,6 +186,9 @@ end sub
 
 sub resetPlayback()
     m.bgTimer.control = "stop"
+
+    m.video.callFunc("commitProgress")
+
     m.video.control = "stop"
     m.video.visible = false
 
@@ -216,21 +218,29 @@ end sub
 sub startTrailer(fullscreen as boolean)
     content = CreateObject("roSGNode", "ContentNode")
 
+    m.video.overlayTitle = m.meta.text
+    m.video.overlayInfo = m.desc.text
+    m.video.overlayButtonText = "More Info"
+
     if fullscreen
         content.url = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8"
         content.streamFormat = "hls"
         content.ClosedCaptions = true
+
+        content.playStart = bookmarks.positionFor(m.currentMovieId)
+        logger.info("MovieDetailsView", `resume at ${content.playStart}`)
     else
         content.url = "https://media.w3.org/2010/05/bunny/trailer.mp4"
         content.streamFormat = "mp4"
     end if
 
-    m.trackPosition = fullscreen
+    m.video.movieId = m.currentMovieId
+    m.video.trackProgress = fullscreen
 
     if fullscreen
-        content.playStart = bookmarks.positionFor(m.currentMovieId)
+        m.video.trickplayFeed = trickplay.singleFrameFeed(m.backdropUri)
     else
-        content.playStart = 0
+        m.video.trickplayFeed = trickplay.emptyFeed()
     end if
 
     m.video.suppressCaptions = not fullscreen
@@ -270,6 +280,11 @@ sub onButtonPressed()
     fadeOverlay(0)
 end sub
 
+sub onOverlayButtonSelected()
+    logger.info("MovieDetailsView", `overlay button selected for movie ${m.currentMovieId}`)
+    logger.info("MovieDetailsView", `position ${m.video.position} of ${m.video.duration}, fullscreen ${m.fullscreenActive}`)
+end sub
+
 sub onVideoStateChanged()
     state = m.video.state
 
@@ -277,7 +292,6 @@ sub onVideoStateChanged()
         failedFullScreen = m.fullscreenActive
         m.trailerFailed = true
 
-        persistPosition()
         resetPlayback()
         m.button.setFocus(true)
 
@@ -285,13 +299,7 @@ sub onVideoStateChanged()
         return
     end if
 
-    if state = "paused"
-        savePositionNow()
-        return
-    end if
-
     if state = "finished"
-        persistPosition()
         m.video.control = "stop"
         m.video.visible = false
 
@@ -350,7 +358,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
 
     if m.fullscreenActive and key = "back"
-        persistPosition()
+        m.video.callFunc("commitProgress")
         m.video.control = "stop"
         m.video.visible = false
         restoreDetails()
@@ -410,41 +418,6 @@ function moveFocus(delta as integer) as boolean
 
     return false
 end function
-
-sub onVideoPositionChanged()
-    if not m.trackPosition then return
-
-    m.lastPosition = m.video.position
-    m.videoDuration = m.video.duration
-
-    m.ticksSinceSave = m.ticksSinceSave + 1
-    if m.ticksSinceSave < movieDetails.SAVE_EVERY_TICKS then return
-
-    m.ticksSinceSave = 0
-    savePositionNow()
-end sub
-
-sub savePositionNow()
-    position = m.video.position
-    duration = m.video.duration
-
-    if position <= 0 then position = m.lastPosition
-    if duration <= 0 then duration = m.videoDuration
-
-    if position <= 0 then return
-
-    bookmarks.savePosition(m.currentMovieId, position, duration)
-end sub
-
-sub persistPosition()
-    if not m.trackPosition then return
-
-    savePositionNow()
-
-    m.lastPosition = 0
-    m.ticksSinceSave = 0
-    m.trackPosition = false
-end sub
 
 sub announceScreen()
     parts = ["Movie Details"]
