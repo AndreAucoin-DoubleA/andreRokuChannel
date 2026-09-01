@@ -3,6 +3,7 @@ import "pkg:/source/services/favorites.bs"
 import "pkg:/source/services/bookmarks.bs"
 import "pkg:/source/services/a11y.bs"
 import "pkg:/source/navigation/nav.interface.bs"
+import "pkg:/source/utils/logger.bs"
 import "pkg:/components/views/MovieDetailsView/MovieDetailsView.interface.bs"
 
 sub init()
@@ -34,6 +35,8 @@ sub init()
 
     m.video = m.top.findNode("videoPlayer")
     m.video.observeField("state", "onVideoStateChanged")
+
+    m.video.observeField("overlayButtonSelected", "onOverlayButtonSelected")
 
     m.bgActive = false
     m.fullscreenActive = false
@@ -206,6 +209,10 @@ end sub
 sub startTrailer(fullscreen as boolean)
     content = CreateObject("roSGNode", "ContentNode")
 
+    m.video.overlayTitle = m.meta.text
+    m.video.overlayInfo = m.desc.text
+    m.video.overlayButtonText = "More Info"
+
     if fullscreen
         content.url = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8"
         content.streamFormat = "hls"
@@ -253,6 +260,11 @@ sub onButtonPressed()
     showDetailsChrome(false)
     fadeBackdrop(0)
     fadeOverlay(0)
+end sub
+
+sub onOverlayButtonSelected()
+    logger.info("MovieDetailsView", `overlay button selected for movie ${m.currentMovieId}`)
+    logger.info("MovieDetailsView", `position ${m.video.position} of ${m.video.duration}, fullscreen ${m.fullscreenActive}`)
 end sub
 
 sub onVideoStateChanged()

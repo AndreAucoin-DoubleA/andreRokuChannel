@@ -1,5 +1,32 @@
 namespace videoPlayer
 
     const SAVE_EVERY_TICKS = 15
+    const SCRUB_STEP_SECONDS = 10
+    const OVERLAY_HIDE_SECONDS = 6
+
+    ' Roku title-safe on a 1920 canvas is ~96px per side.
+    const SAFE_MARGIN = 96
+    const SCRUB_WIDTH = 1728
+    const SCRUB_HEIGHT = 6
+
+    const KNOB_WIDTH = 8
+    const KNOB_HEIGHT = 22
+    const KNOB_OFFSET_X = -4
+    const KNOB_OFFSET_Y = -8
+
+    ' Roku's default bar is white on a translucent white track.
+    const TRACK_COLOR = "0xFFFFFF4D"
+    const FILL_COLOR = "0xFFFFFFFF"
+
+    ' Trick play scan. Each FF/RW press steps up one rate, Roku-style.
+    ' Rates are seconds of content covered per second of real time.
+    const SCAN_TICK_SECONDS = 0.25
+    const SCAN_RATE_1 = 8
+    const SCAN_RATE_2 = 24
+    const SCAN_RATE_3 = 60
+    const SCAN_MAX_INDEX = 2
+
+    ' Instant replay jump-back. Roku's own is around 7-10s.
+    const REPLAY_SECONDS = 10
 
 end namespace

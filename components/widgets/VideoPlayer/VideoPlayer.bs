@@ -1,15 +1,89 @@
 import "pkg:/source/services/bookmarks.bs"
 import "pkg:/components/widgets/VideoPlayer/VideoPlayer.interface.bs"
+import "pkg:/source/services/a11y.bs"
+import "pkg:/source/theme/theme.bs"
+import "pkg:/source/utils/logger.bs"
 
 sub init()
     m.top.notificationInterval = 1
+    m.top.enableTrickPlay = false
 
     m.top.observeField("content", "onContentAssigned")
     m.top.observeField("control", "onControlChanged")
     m.top.observeField("state", "onStateChanged")
     m.top.observeField("position", "onPositionChanged")
 
+
+    m.overlay = m.top.findNode("overlay")
+    m.playerScrim = m.top.findNode("playerScrim")
+    m.overlayTitleLabel = m.top.findNode("overlayTitleLabel")
+    m.overlayInfoLabel = m.top.findNode("overlayInfoLabel")
+    m.overlayButton = m.top.findNode("overlayButton")
+    m.overlayButton.observeField("selected", "onOverlayButtonPressed")
+
+    m.scrubZone = m.top.findNode("scrubZone")
+    m.scrubTrack = m.top.findNode("scrubTrack")
+    m.scrubFill = m.top.findNode("scrubFill")
+    m.scrubKnob = m.top.findNode("scrubKnob")
+    m.scrubElapsed = m.top.findNode("scrubElapsed")
+    m.scrubDuration = m.top.findNode("scrubDuration")
+    m.scanBadge = m.top.findNode("scanBadge")
+
+    m.pauseBadge = m.top.findNode("pauseBadge")
+    m.pauseBadgeBg = m.top.findNode("pauseBadgeBg")
+    m.pauseBadgeLabel = m.top.findNode("pauseBadgeLabel")
+
+    m.hideTimer = m.top.findNode("overlayHideTimer")
+    m.hideTimer.duration = videoPlayer.OVERLAY_HIDE_SECONDS
+    m.hideTimer.observeField("fire", "onHideTimerFire")
+
+    m.scanTimer = m.top.findNode("scanTimer")
+    m.scanTimer.duration = videoPlayer.SCAN_TICK_SECONDS
+    m.scanTimer.observeField("fire", "onScanTick")
+
+    m.overlayVisible = false
+    m.scrubbing = false
+    m.scrubTarget = 0
+
+    m.scanning = false
+    m.scanDirection = 1
+    m.scanSpeedIndex = 0
+    m.wasPlaying = false
+
+    applyTheme()
     resetProgressCache()
+end sub
+
+sub applyTheme()
+    t = theme.current()
+
+    m.playerScrim.blendColor = t.color("component.scene.bottomFadeBlendColor", "0x3D1D16FF")
+
+    titleColor = t.color("component.page.titleColor", "0xFFFFFFFF")
+
+    m.overlayTitleLabel.color = titleColor
+    m.overlayTitleLabel.font = t.font("component.page.titleTypography", "font:LargeBoldSystemFont")
+
+    m.overlayInfoLabel.color = t.color("component.page.bodyColor", "0xB7BDC5FF")
+    m.overlayInfoLabel.font = t.font("component.page.bodyTypography", "font:MediumSystemFont")
+
+    timeFont = t.font("component.page.statusTextTypography", "font:SmallestSystemFont")
+
+    m.scrubElapsed.color = titleColor
+    m.scrubElapsed.font = timeFont
+    m.scrubDuration.color = titleColor
+    m.scrubDuration.font = timeFont
+    m.scanBadge.color = titleColor
+    m.scanBadge.font = timeFont
+
+    m.scrubTrack.color = videoPlayer.TRACK_COLOR
+    m.scrubFill.color = videoPlayer.FILL_COLOR
+    m.scrubKnob.color = videoPlayer.FILL_COLOR
+
+    m.pauseBadgeBg.color = t.color("component.movieDetails.scrimColor", "0x202226FF")
+    m.pauseBadgeBg.opacity = 0.85
+    m.pauseBadgeLabel.color = titleColor
+    m.pauseBadgeLabel.font = timeFont
 end sub
 
 sub resetProgressCache()
@@ -34,12 +108,28 @@ end sub
 sub onControlChanged()
     if m.top.control <> "stop" then return
 
+    ' Teardown must never leave a scan timer running.
+    m.scanning = false
+    m.scanTimer.control = "stop"
+    m.scanBadge.visible = false
+
     savePositionNow()
     resetProgressCache()
 end sub
 
 sub onStateChanged()
     state = m.top.state
+
+    m.pauseBadge.visible = (state = "paused" and m.top.trackProgress and not m.scanning)
+
+    ' state lands after the control write, so the hide timer is settled here.
+    if m.overlayVisible and not m.scanning
+        if state = "paused"
+            m.hideTimer.control = "stop"
+        else if state = "playing"
+            restartHideTimer()
+        end if
+    end if
 
     if state = "paused"
         savePositionNow()
@@ -57,6 +147,8 @@ sub onPositionChanged()
 
     m.lastPosition = m.top.position
     m.videoDuration = m.top.duration
+
+    if not m.scrubbing then renderScrub(m.top.position)
 
     m.ticksSinceSave = m.ticksSinceSave + 1
     if m.ticksSinceSave < videoPlayer.SAVE_EVERY_TICKS then return
@@ -77,4 +169,327 @@ sub savePositionNow()
     if position <= 0 then return
 
     bookmarks.savePosition(m.top.movieId, position, duration)
+end sub
+
+function onKeyEvent(key as string, press as boolean) as boolean
+    if not press then return false
+    if not m.top.trackProgress then return false
+
+    ' Scan mode owns the remote while it is running.
+    if m.scanning
+        if key = "fastforward" then return startScan(1)
+        if key = "rewind" then return startScan(-1)
+
+        if key = "OK" or key = "play"
+            stopScan(true)
+            return true
+        end if
+
+        if key = "back"
+            stopScan(false)
+            return true
+        end if
+
+        return true
+    end if
+
+    if key = "fastforward" then return startScan(1)
+    if key = "rewind" then return startScan(-1)
+    if key = "instantreplay" then return instantReplay()
+
+    ' The dedicated play/pause button toggles in every state.
+    if key = "play" then return onPlayPauseKey()
+
+    if not m.overlayVisible
+        if key = "up"
+            showOverlay(true)
+            return true
+        end if
+
+        if key = "OK" then return onPlayPauseKey()
+
+        return false
+    end if
+
+    restartHideTimer()
+
+    if key = "back"
+        showOverlay(false)
+        return true
+    end if
+
+    if key = "down" and m.overlayButton.hasFocus()
+        focusScrub()
+        return true
+    end if
+
+    if key = "up" and m.scrubZone.hasFocus()
+        focusPanel()
+        return true
+    end if
+
+    if m.scrubZone.hasFocus()
+        if key = "left" then return nudgeScrub(-videoPlayer.SCRUB_STEP_SECONDS)
+        if key = "right" then return nudgeScrub(videoPlayer.SCRUB_STEP_SECONDS)
+
+        if key = "OK"
+            if m.scrubbing then return commitScrub()
+            return onPlayPauseKey()
+        end if
+    end if
+
+    return false
+end function
+
+function startScan(direction as integer) as boolean
+    if m.top.duration <= 0 then return true
+
+    if not m.scanning
+        m.scanning = true
+        m.scrubbing = true
+        m.scanDirection = direction
+        m.scanSpeedIndex = 0
+        m.scrubTarget = m.top.position
+        m.wasPlaying = (m.top.state = "playing")
+
+        m.top.control = "pause"
+    else if direction = m.scanDirection
+        if m.scanSpeedIndex < videoPlayer.SCAN_MAX_INDEX
+            m.scanSpeedIndex = m.scanSpeedIndex + 1
+        end if
+    else
+        m.scanDirection = direction
+        m.scanSpeedIndex = 0
+    end if
+
+    logger.info("VideoPlayer", `scan dir ${m.scanDirection} rate ${scanRate()}x`)
+
+    if not m.overlayVisible then showOverlay(true)
+
+    focusScrub()
+    renderScanBadge()
+    renderScrub(m.scrubTarget)
+
+    m.hideTimer.control = "stop"
+    m.scanTimer.control = "start"
+
+    return true
+end function
+
+sub stopScan(commit as boolean)
+    if not m.scanning then return
+
+    logger.info("VideoPlayer", `scan end commit ${commit} at ${m.scrubTarget}`)
+
+    m.scanning = false
+    m.scrubbing = false
+    m.scanTimer.control = "stop"
+    m.scanBadge.visible = false
+
+    if commit
+        m.top.seek = m.scrubTarget
+    else
+        renderScrub(m.top.position)
+    end if
+
+    if m.wasPlaying then m.top.control = "resume"
+
+    restartHideTimer()
+end sub
+
+sub onScanTick()
+    if not m.scanning then return
+
+    advance = scanRate() * videoPlayer.SCAN_TICK_SECONDS
+    m.scrubTarget = m.scrubTarget + (advance * m.scanDirection)
+
+    if m.scrubTarget <= 0
+        m.scrubTarget = 0
+        renderScrub(m.scrubTarget)
+        stopScan(true)
+        return
+    end if
+
+    if m.scrubTarget >= m.top.duration
+        m.scrubTarget = m.top.duration
+        renderScrub(m.scrubTarget)
+        stopScan(true)
+        return
+    end if
+
+    renderScrub(m.scrubTarget)
+end sub
+
+function scanRate() as integer
+    if m.scanSpeedIndex <= 0 then return videoPlayer.SCAN_RATE_1
+    if m.scanSpeedIndex = 1 then return videoPlayer.SCAN_RATE_2
+
+    return videoPlayer.SCAN_RATE_3
+end function
+
+sub renderScanBadge()
+    prefix = ">> "
+    if m.scanDirection < 0 then prefix = "<< "
+
+    m.scanBadge.text = prefix + scanRate().ToStr() + "x"
+    m.scanBadge.visible = true
+end sub
+
+function instantReplay() as boolean
+    if m.top.duration <= 0 then return true
+
+    target = m.top.position - videoPlayer.REPLAY_SECONDS
+    if target < 0 then target = 0
+
+    logger.info("VideoPlayer", `instant replay to ${target}`)
+
+    m.top.seek = target
+
+    showOverlay(true)
+    focusScrub()
+    renderScrub(target)
+
+    return true
+end function
+
+function onPlayPauseKey() as boolean
+    togglePlayPause()
+
+    if not m.overlayVisible
+        showOverlay(true)
+        focusScrub()
+    end if
+
+    return true
+end function
+
+sub togglePlayPause()
+    if m.top.state = "playing"
+        logger.info("VideoPlayer", "pause")
+        m.top.control = "pause"
+    else if m.top.state = "paused"
+        logger.info("VideoPlayer", "resume")
+        m.top.control = "resume"
+    end if
+end sub
+
+sub onOverlayTextChanged()
+    if m.overlayTitleLabel = invalid then return
+
+    m.overlayTitleLabel.text = m.top.overlayTitle
+    m.overlayInfoLabel.text = m.top.overlayInfo
+    m.overlayButton.text = m.top.overlayButtonText
+end sub
+
+sub restartHideTimer()
+    m.hideTimer.control = "stop"
+
+    ' Roku leaves the bar up while paused; it only auto-hides during playback.
+    if m.top.state = "paused" then return
+
+    m.hideTimer.control = "start"
+end sub
+
+sub focusScrub()
+    m.scrubKnob.visible = true
+    m.scrubZone.setFocus(true)
+    a11y.focus("Progress Bar")
+end sub
+
+sub focusPanel()
+    m.scrubKnob.visible = false
+    m.overlayButton.setFocus(true)
+end sub
+
+function nudgeScrub(deltaSeconds as integer) as boolean
+    if m.top.duration <= 0 then return true
+
+    if not m.scrubbing
+        m.scrubbing = true
+        m.scrubTarget = m.top.position
+    end if
+
+    m.scrubTarget = m.scrubTarget + deltaSeconds
+    if m.scrubTarget < 0 then m.scrubTarget = 0
+    if m.scrubTarget > m.top.duration then m.scrubTarget = m.top.duration
+
+    renderScrub(m.scrubTarget)
+    return true
+end function
+
+function commitScrub() as boolean
+
+    if not m.scrubbing then return true
+
+    m.scrubbing = false
+    m.top.seek = m.scrubTarget
+    return true
+
+end function
+
+sub renderScrub(seconds as float)
+    duration = m.top.duration
+
+    if duration <= 0 then return
+
+    fraction = seconds / duration
+
+    if fraction < 0 then fraction = 0
+    if fraction > 1 then fraction = 1
+
+    filled = videoPlayer.SCRUB_WIDTH * fraction
+    m.scrubFill.width = filled
+    m.scrubKnob.translation = [filled + videoPlayer.KNOB_OFFSET_X, videoPlayer.KNOB_OFFSET_Y]
+
+    m.scrubElapsed.text = clock(seconds)
+    m.scrubDuration.text = clock(duration)
+end sub
+
+function clock(seconds as float) as string
+    total = Int(seconds)
+    hrs = Int(total / 3600)
+    mins = Int((total mod 3600) / 60)
+    secs = total mod 60
+
+    if hrs > 0 then return hrs.ToStr() + ":" + pad(mins) + ":" + pad(secs)
+
+    return mins.ToStr() + ":" + pad(secs)
+end function
+
+function pad(value as integer) as string
+    if value < 10 then return "0" + value.ToStr()
+
+    return value.ToStr()
+end function
+
+
+sub showOverlay(show as boolean)
+    logger.info("VideoPlayer", `showOverlay ${show}`)
+
+    m.overlayVisible = show
+    m.overlay.visible = show
+
+    if show
+        if not m.scrubbing then renderScrub(m.top.position)
+        focusPanel()
+        restartHideTimer()
+        a11y.focus("Player Controls")
+    else
+        stopScan(false)
+
+        m.hideTimer.control = "stop"
+        m.scrubbing = false
+        m.scrubKnob.visible = false
+
+        if m.top.isInFocusChain() then m.top.setFocus(true)
+    end if
+end sub
+
+sub onOverlayButtonPressed()
+    logger.info("VideoPlayer", "overlay button pressed, notifying view")
+    m.top.overlayButtonSelected = true
+end sub
+
+sub onHideTimerFire()
+    showOverlay(false)
 end sub

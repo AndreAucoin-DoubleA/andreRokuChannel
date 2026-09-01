@@ -5,5 +5,50 @@
     <interface>
         <field id="movieId" type="string" value=""/>
         <field id="trackProgress" type="boolean" value="false"/>
+
+        <field id="overlayTitle" type="string" value="" onChange="onOverlayTextChanged"/>
+        <field id="overlayInfo" type="string" value="" onChange="onOverlayTextChanged"/>
+        <field id="overlayButtonText" type="string" value="More Info" onChange="onOverlayTextChanged"/>
+        <field id="overlayButtonSelected" type="boolean" alwaysNotify="true"/>
     </interface>
+
+    <children>
+        <Group id="overlay" visible="false">
+            <Poster
+                id="playerScrim"
+                translation="[0,560]"
+                width="1920"
+                height="520"
+                loadDisplayMode="scaleToFill"
+                uri="pkg:/images/bottom_fade.png"/>
+
+            <Group id="infoPanel" translation="[96,655]">
+                <Label id="overlayTitleLabel" width="1500"/>
+                <Label id="overlayInfoLabel" translation="[0,64]" width="1500"
+                    wrap="true" maxLines="2"/>
+                <TextButton id="overlayButton" width="300" translation="[0,168]"/>
+            </Group>
+
+            <Group id="scrubZone" translation="[96,942]">
+                <Rectangle id="scrubTrack" width="1728" height="6"/>
+                <Rectangle id="scrubFill" width="0" height="6"/>
+                <Rectangle id="scrubKnob" width="8" height="22"
+                    translation="[-4,-8]" visible="false"/>
+                <Label id="scrubElapsed" translation="[0,22]" width="500"/>
+                <Label id="scanBadge" translation="[614,22]" width="500"
+                    horizAlign="center" visible="false"/>
+                <Label id="scrubDuration" translation="[1228,22]" width="500"
+                    horizAlign="right"/>
+            </Group>
+        </Group>
+
+        <Group id="pauseBadge" translation="[96,60]" visible="false">
+            <Rectangle id="pauseBadgeBg" width="190" height="56"/>
+            <Label id="pauseBadgeLabel" text="Paused" width="190" height="56"
+                horizAlign="center" vertAlign="center"/>
+        </Group>
+
+        <Timer id="overlayHideTimer" repeat="false"/>
+        <Timer id="scanTimer" repeat="true"/>
+    </children>
 </component>
