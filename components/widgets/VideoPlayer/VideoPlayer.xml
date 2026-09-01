@@ -53,8 +53,6 @@
                 <Rectangle id="scrubKnob" width="8" height="22"
                     translation="[-4,-8]" visible="false"/>
                 <Label id="scrubElapsed" translation="[0,22]" width="500"/>
-                <Label id="statusBadge" translation="[614,22]" width="500"
-                    horizAlign="center" visible="false"/>
                 <Label id="scrubDuration" translation="[1228,22]" width="500"
                     horizAlign="right"/>
             </Group>

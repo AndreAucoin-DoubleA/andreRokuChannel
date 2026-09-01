@@ -13,7 +13,6 @@ sub init()
     m.top.observeField("control", "onControlChanged")
     m.top.observeField("state", "onStateChanged")
     m.top.observeField("position", "onPositionChanged")
-    m.top.observeField("bufferingStatus", "onBufferingChanged")
 
     m.overlay = m.top.findNode("overlay")
     m.playerScrim = m.top.findNode("playerScrim")
@@ -28,7 +27,6 @@ sub init()
     m.scrubKnob = m.top.findNode("scrubKnob")
     m.scrubElapsed = m.top.findNode("scrubElapsed")
     m.scrubDuration = m.top.findNode("scrubDuration")
-    m.statusBadge = m.top.findNode("statusBadge")
 
     m.pauseBadge = m.top.findNode("pauseBadge")
     m.pauseBadgeBg = m.top.findNode("pauseBadgeBg")
@@ -46,9 +44,6 @@ sub init()
     m.skipTimer.duration = videoPlayer.SKIP_TICK_SECONDS
     m.skipTimer.observeField("fire", "onSkipTick")
 
-    ' Measures the gap since the last press. The timer only has to be running
-    ' during a burst; it never has to be restarted, which is what makes the
-    ' window reliable however fast the presses arrive.
     m.skipClock = CreateObject("roTimespan")
 
     m.previewCard = m.top.findNode("previewCard")
@@ -71,7 +66,6 @@ sub init()
     m.seekTarget = 0
     m.seekTicks = 0
 
-    m.bufferingPercent = 100
     m.previewIndex = -1
 
     applyTheme()
@@ -97,8 +91,6 @@ sub applyTheme()
     m.scrubElapsed.font = timeFont
     m.scrubDuration.color = titleColor
     m.scrubDuration.font = timeFont
-    m.statusBadge.color = titleColor
-    m.statusBadge.font = timeFont
 
     m.scrubTrack.color = videoPlayer.TRACK_COLOR
     m.scrubFill.color = videoPlayer.FILL_COLOR
@@ -125,19 +117,9 @@ sub resetProgressCache()
     m.seekPending = false
     m.seekTarget = 0
     m.seekTicks = 0
-
-    ' Duration is written once per stream, and the badge text repeats across
-    ' buffering callbacks; both are worth guarding. Elapsed and the preview
-    ' stamp change on every single render, so caching those would never hit.
     m.renderedDuration = -1
-    m.renderedStatus = ""
 end sub
 
-' Resume is applied by the owner, on the ContentNode, before it is assigned
-' here: this observer runs off the message loop, so a playStart written from
-' inside it lands after playback has already begun at zero. The player still
-' owns saving progress; it just cannot own restoring it.
-' See MovieDetailsView.startTrailer.
 sub onContentAssigned()
     if m.top.content = invalid then return
 
@@ -147,13 +129,11 @@ end sub
 sub onControlChanged()
     if m.top.control <> "stop" then return
 
-    ' Teardown must never leave a scan or skip timer running.
     m.mode = videoPlayer.MODE_IDLE
     m.scanTimer.control = "stop"
     m.skipTimer.control = "stop"
 
     hidePreview()
-    renderStatus()
 
     savePositionNow()
     resetProgressCache()
@@ -162,10 +142,8 @@ end sub
 sub onStateChanged()
     state = m.top.state
 
-    ' Scan pauses the decoder on purpose, so it must not read as "Paused".
     m.pauseBadge.visible = (state = "paused" and m.top.trackProgress and m.mode <> videoPlayer.MODE_SCAN)
 
-    ' state lands after the control write, so the hide timer is settled here.
     if m.overlayVisible and m.mode = videoPlayer.MODE_IDLE
         if state = "paused"
             m.hideTimer.control = "stop"
@@ -173,8 +151,6 @@ sub onStateChanged()
             restartHideTimer()
         end if
     end if
-
-    renderStatus()
 
     if state = "paused"
         savePositionNow()
@@ -195,7 +171,6 @@ sub onPositionChanged()
 
     settleSeek()
 
-    ' Live position only drives the bar when no driver owns the target.
     if m.mode = videoPlayer.MODE_IDLE then renderAt(livePosition())
 
     m.ticksSinceSave = m.ticksSinceSave + 1
@@ -205,7 +180,6 @@ sub onPositionChanged()
     savePositionNow()
 end sub
 
-' Every seek goes through here so the in-flight target is always recorded.
 sub requestSeek(seconds as float)
     m.seekTarget = seconds
     m.seekPending = true
@@ -214,9 +188,6 @@ sub requestSeek(seconds as float)
     m.top.seek = seconds
 end sub
 
-' Where the viewer believes they are, which is not m.top.position while a
-' seek is in flight. Anchoring a new burst on the stale value throws them
-' backwards to wherever playback happened to be before the last jump.
 function livePosition() as float
     if m.seekPending then return m.seekTarget
 
@@ -228,9 +199,6 @@ sub settleSeek()
 
     m.seekTicks = m.seekTicks + 1
 
-    ' Landed near the requested point, or give up waiting: a decoder that
-    ' snapped to a distant keyframe, or a pause taken right after the seek,
-    ' would otherwise never close the gap.
     if Abs(m.top.position - m.seekTarget) <= videoPlayer.SEEK_SETTLE_TOLERANCE
         m.seekPending = false
     else if m.seekTicks >= videoPlayer.SEEK_SETTLE_TICKS
@@ -255,16 +223,9 @@ sub savePositionAt(position as float)
     bookmarks.savePosition(m.top.movieId, position, duration)
 end sub
 
-' Called synchronously by the owning view before it tears the player down.
-' Field observers are dispatched off the message loop, so a view that writes
-' control = "stop" and then re-reads the bookmark races onControlChanged and
-' renders its buttons from the previous session's value.
 function commitProgress() as boolean
     position = livePosition()
 
-    ' A skip still inside its window, or a scan in flight, is where the viewer
-    ' means to be. Bookmark that rather than the decoder's position. No seek:
-    ' we are shutting down, so only the bookmark matters.
     if m.mode <> videoPlayer.MODE_IDLE then position = m.scrubTarget
 
     m.mode = videoPlayer.MODE_IDLE
@@ -280,14 +241,12 @@ function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
     if not m.top.trackProgress then return false
 
-    ' Scan owns the remote outright; skip never does.
     if m.mode = videoPlayer.MODE_SCAN then return onScanKey(key)
 
     if key = "fastforward" then return beginScan(1)
     if key = "rewind" then return beginScan(-1)
     if key = "instantreplay" then return skipBy(-videoPlayer.REPLAY_SECONDS)
 
-    ' The dedicated play/pause button toggles in every state.
     if key = "play" then return onPlayPauseKey()
 
     if not m.overlayVisible
@@ -296,7 +255,6 @@ function onKeyEvent(key as string, press as boolean) as boolean
             return true
         end if
 
-        ' Skipping from clean playback raises the bar on its own.
         if key = "left" then return skipBy(-videoPlayer.SKIP_SECONDS)
         if key = "right" then return skipBy(videoPlayer.SKIP_SECONDS)
 
@@ -305,8 +263,6 @@ function onKeyEvent(key as string, press as boolean) as boolean
         return false
     end if
 
-    ' Skip is handled before the hide-timer poke: skipBy owns that timer, and
-    ' a repeat press must not cost two extra timer writes on the way in.
     if m.scrubZone.hasFocus()
         if key = "left" then return skipBy(-videoPlayer.SKIP_SECONDS)
         if key = "right" then return skipBy(videoPlayer.SKIP_SECONDS)
@@ -341,16 +297,9 @@ function onKeyEvent(key as string, press as boolean) as boolean
     return false
 end function
 
-' Skip: a discrete jump. Presses accumulate into one target, playback never
-' stops, and the seek fires once the viewer stops pressing.
-'
-' This runs on the render thread once per keypress, so it must stay cheap:
-' no logging, no a11y, no focus churn. Anything that can wait waits for the
-' commit, which is debounced and therefore fires once per burst.
 function skipBy(deltaSeconds as integer) as boolean
     if m.top.duration <= 0 then return true
 
-    ' Entry work happens once per burst, not once per press.
     if m.mode <> videoPlayer.MODE_SKIP
         m.mode = videoPlayer.MODE_SKIP
         m.skipAnchor = livePosition()
@@ -364,15 +313,10 @@ function skipBy(deltaSeconds as integer) as boolean
 
     m.skipClock.Mark()
 
-    ' Accumulate against the running target, never against the live position:
-    ' playback keeps advancing mid-burst and would skew every reading. The
-    ' clamp is what stops the badge growing once we are pinned to either end.
     m.scrubTarget = clampToDuration(m.scrubTarget + deltaSeconds)
 
     renderAt(m.scrubTarget)
-    renderStatus()
 
-    ' The overlay must outlive the accumulation window.
     m.hideTimer.control = "stop"
 
     return true
@@ -385,8 +329,6 @@ sub onSkipTick()
     commitSkip()
 end sub
 
-' How far this burst has moved. Derived, never stored: the target and the
-' anchor already say it, and a third variable could only disagree with them.
 function skipDelta() as float
     return m.scrubTarget - m.skipAnchor
 end function
@@ -401,12 +343,9 @@ sub commitSkip()
 
     requestSeek(m.scrubTarget)
 
-    ' One announcement for the whole burst reads better than a partial
-    ' reading per press, and keeps the speech task off the hot path.
     announceSkip()
 
     hidePreview()
-    renderStatus()
     restartHideTimer()
 end sub
 
@@ -429,20 +368,15 @@ sub cancelPendingSkip()
     m.mode = videoPlayer.MODE_IDLE
 end sub
 
-' Scan: continuous trick play. The decoder is paused for the duration and the
-' target moves on a clock, not on a keypress.
 function onScanKey(key as string) as boolean
     if key = "fastforward" then return beginScan(1)
     if key = "rewind" then return beginScan(-1)
 
-    ' Leaving a scan always keeps where you scanned to, the way Roku's own
-    ' player does. There is no "undo the fast forward" gesture.
     if key = "OK" or key = "play" or key = "back"
         endScan()
         return true
     end if
 
-    ' Scan is modal: swallow everything else.
     return true
 end function
 
@@ -474,7 +408,6 @@ function beginScan(direction as integer) as boolean
 
     focusScrub()
     renderAt(m.scrubTarget)
-    renderStatus()
     announceScan()
 
     m.hideTimer.control = "stop"
@@ -503,7 +436,6 @@ sub endScan()
     if m.wasPlaying then m.top.control = "resume"
 
     hidePreview()
-    renderStatus()
     restartHideTimer()
 end sub
 
@@ -556,55 +488,6 @@ sub togglePlayPause()
     end if
 end sub
 
-' One owner for the badge, so it can never be left showing a stale rate.
-sub renderStatus()
-    if m.statusBadge = invalid then return
-
-    text = statusText()
-    if text = m.renderedStatus then return
-
-    m.renderedStatus = text
-    m.statusBadge.text = text
-    m.statusBadge.visible = (text <> "")
-end sub
-
-function statusText() as string
-    if m.mode = videoPlayer.MODE_SCAN
-        prefix = ">> "
-        if m.scanDirection < 0 then prefix = "<< "
-
-        return prefix + scanRate().ToStr() + "x"
-    end if
-
-    ' Skip reports a delta, scan reports a rate. Different units on purpose.
-    ' The delta comes from the target, not from the live position, so a burst
-    ' of taps reads +10s / +20s / +30s rather than drifting.
-    if m.mode = videoPlayer.MODE_SKIP
-        delta = skipDelta()
-
-        magnitude = Int(Abs(delta) + 0.5)
-        if magnitude = 0 then return ""
-
-        sign = "+"
-        if delta < 0 then sign = "-"
-
-        return sign + magnitude.ToStr() + "s"
-    end if
-
-    if m.bufferingPercent < 100 then return `Buffering ${m.bufferingPercent}%`
-
-    return ""
-end function
-
-sub onBufferingChanged()
-    status = m.top.bufferingStatus
-    if status = invalid then return
-
-    if status.percentage <> invalid then m.bufferingPercent = Int(status.percentage)
-
-    renderStatus()
-end sub
-
 sub onOverlayTextChanged()
     if m.overlayTitleLabel = invalid then return
 
@@ -616,7 +499,6 @@ end sub
 sub restartHideTimer()
     m.hideTimer.control = "stop"
 
-    ' Roku leaves the bar up while paused; it only auto-hides during playback.
     if m.top.state = "paused" then return
 
     m.hideTimer.control = "start"
@@ -625,12 +507,10 @@ end sub
 sub focusScrub()
     m.scrubKnob.visible = true
 
-    ' Repeat presses must not re-enter the focus chain or re-announce.
     if m.scrubZone.hasFocus() then return
 
     m.scrubZone.setFocus(true)
 
-    ' Skip and scan announce their own state; only a plain focus move speaks.
     if m.mode = videoPlayer.MODE_IDLE then a11y.focus("Progress Bar")
 end sub
 
@@ -646,7 +526,6 @@ function clampToDuration(seconds as float) as float
     return seconds
 end function
 
-' How far along the track a given instant sits, 0 to 1.
 function trackFraction(seconds as float) as float
     duration = m.top.duration
     if duration <= 0 then return 0
@@ -659,9 +538,6 @@ function trackFraction(seconds as float) as float
     return fraction
 end function
 
-' The bar and the thumbnail always describe the same instant, so they move
-' together. The card only rides along while a driver owns the target, which
-' is what keeps it hidden during ordinary playback.
 sub renderAt(seconds as float)
     renderScrub(seconds)
 
@@ -708,14 +584,11 @@ sub renderPreview(seconds as float)
 
     index = trickplay.frameIndex(feed, seconds)
 
-    ' Only touch the Poster when the bucket actually changes; a 60x scan
-    ' ticks four times a second and would otherwise reload the bitmap.
     if index <> m.previewIndex
         m.previewIndex = index
         m.previewImage.uri = trickplay.frameUri(feed, index)
     end if
 
-    ' The knob may sit at either end; the card must stay inside the track.
     x = (videoPlayer.SCRUB_WIDTH * trackFraction(seconds)) - (videoPlayer.PREVIEW_WIDTH / 2)
     if x < 0 then x = 0
 
@@ -759,8 +632,6 @@ sub showOverlay(show as boolean)
     m.overlay.visible = show
 
     if show
-        ' Entering via skip or scan: that caller focuses the scrub itself, so
-        ' don't take focus here only to hand it straight back.
         if m.mode = videoPlayer.MODE_IDLE
             renderScrub(livePosition())
             focusPanel()
@@ -769,8 +640,6 @@ sub showOverlay(show as boolean)
 
         restartHideTimer()
     else
-        ' Dismissing the bar applies whatever was in flight rather than
-        ' throwing it away: the viewer already asked to move.
         endScan()
         commitSkip()
 
