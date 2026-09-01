@@ -90,8 +90,6 @@ sub viewWillHide()
     m.loader.callFunc("hide")
 end sub
 
-' Grab focus only when this view already owns it but the rows do not -- the case
-' where favorites arrive while the empty state is on screen.
 sub claimFocusForRow()
     if not m.top.isInFocusChain() then return
     if m.movieRows.isInFocusChain() then return

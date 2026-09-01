@@ -29,14 +29,9 @@ namespace videoPlayer
 
     const SKIP_SECONDS = 10
 
-    ' How long the burst waits for another press before it seeks. Measured
-    ' with a stopwatch against a plain repeating tick, so it never depends on
-    ' restarting a Timer that is already running.
     const SKIP_COMMIT_MS = 1200
     const SKIP_TICK_SECONDS = 0.1
 
-    ' A seek is asynchronous: position reports the old spot until the decoder
-    ' repositions. These bound how long we trust the requested target instead.
     const SEEK_SETTLE_TOLERANCE = 5
     const SEEK_SETTLE_TICKS = 4
 

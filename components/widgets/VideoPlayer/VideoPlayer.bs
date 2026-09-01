@@ -456,7 +456,6 @@ sub onScanTick()
 
     renderAt(m.scrubTarget)
 
-    ' Running off either end commits where we landed, same as pressing OK.
     if atEnd then endScan()
 end sub
 
@@ -557,7 +556,6 @@ sub renderScrub(seconds as float)
 
     m.scrubElapsed.text = clock(seconds)
 
-    ' Duration never changes mid-stream; writing it per tick is pure waste.
     if duration <> m.renderedDuration
         m.renderedDuration = duration
         m.scrubDuration.text = clock(duration)

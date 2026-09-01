@@ -187,9 +187,6 @@ end sub
 sub resetPlayback()
     m.bgTimer.control = "stop"
 
-    ' Bookmark synchronously before the stop. The player's own control
-    ' observer runs off the message loop, so it would land after the details
-    ' chrome below has already re-read the old bookmark.
     m.video.callFunc("commitProgress")
 
     m.video.control = "stop"
@@ -230,9 +227,6 @@ sub startTrailer(fullscreen as boolean)
         content.streamFormat = "hls"
         content.ClosedCaptions = true
 
-        ' playStart must be on the node before it is handed over. The player's
-        ' content observer runs off the message loop, so anything it sets there
-        ' lands after control = "play" has already started us at zero.
         content.playStart = bookmarks.positionFor(m.currentMovieId)
         logger.info("MovieDetailsView", `resume at ${content.playStart}`)
     else
@@ -243,7 +237,6 @@ sub startTrailer(fullscreen as boolean)
     m.video.movieId = m.currentMovieId
     m.video.trackProgress = fullscreen
 
-    ' No scrub bar on the ambient trailer, so no picture feed either.
     if fullscreen
         m.video.trickplayFeed = trickplay.singleFrameFeed(m.backdropUri)
     else
