@@ -1,0 +1,8 @@
+namespace trickplay
+
+    interface Feed
+        intervalSeconds as integer
+        frames as object
+    end interface
+
+end namespace

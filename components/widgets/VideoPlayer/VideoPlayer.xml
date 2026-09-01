@@ -5,11 +5,14 @@
     <interface>
         <field id="movieId" type="string" value=""/>
         <field id="trackProgress" type="boolean" value="false"/>
+        <field id="trickplayFeed" type="assocarray" onChange="onTrickplayFeedChanged"/>
 
         <field id="overlayTitle" type="string" value="" onChange="onOverlayTextChanged"/>
         <field id="overlayInfo" type="string" value="" onChange="onOverlayTextChanged"/>
         <field id="overlayButtonText" type="string" value="More Info" onChange="onOverlayTextChanged"/>
         <field id="overlayButtonSelected" type="boolean" alwaysNotify="true"/>
+
+        <function name="commitProgress"/>
     </interface>
 
     <children>
@@ -30,12 +33,27 @@
             </Group>
 
             <Group id="scrubZone" translation="[96,942]">
+                <Group id ="previewCard" translation="[0,-216]" visible="false">
+                    <Rectangle id="previewFrame" width="332" height="192" translation="[-6,-6]"/>
+                    <Poster 
+                        id="previewImage"
+                        width="320"
+                        height="180"
+                        loadDisplayMode="scaleToFill"
+                        loadingBitmapUri="pkg:/images/poster_placeholder_landscape.png"
+                        failedBitmapUri="pkg:/images/poster_placeholder_landscape.png"/>
+                    <Rectangle id="previewTimeBg" width="320" height="34" translation="[0,146]"/>
+                    <Label id="previewTime" width="320" height="34" translation="[0,146]"
+                        horizAlign="center" vertAlign="center"/>
+                </Group>
+
+
                 <Rectangle id="scrubTrack" width="1728" height="6"/>
                 <Rectangle id="scrubFill" width="0" height="6"/>
                 <Rectangle id="scrubKnob" width="8" height="22"
                     translation="[-4,-8]" visible="false"/>
                 <Label id="scrubElapsed" translation="[0,22]" width="500"/>
-                <Label id="scanBadge" translation="[614,22]" width="500"
+                <Label id="statusBadge" translation="[614,22]" width="500"
                     horizAlign="center" visible="false"/>
                 <Label id="scrubDuration" translation="[1228,22]" width="500"
                     horizAlign="right"/>
@@ -50,5 +68,6 @@
 
         <Timer id="overlayHideTimer" repeat="false"/>
         <Timer id="scanTimer" repeat="true"/>
+        <Timer id="skipCommitTimer" repeat="true"/>
     </children>
 </component>

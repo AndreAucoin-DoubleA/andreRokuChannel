@@ -4,6 +4,7 @@ import "pkg:/source/services/bookmarks.bs"
 import "pkg:/source/services/a11y.bs"
 import "pkg:/source/navigation/nav.interface.bs"
 import "pkg:/source/utils/logger.bs"
+import "pkg:/source/data/trickplay.bs"
 import "pkg:/components/views/MovieDetailsView/MovieDetailsView.interface.bs"
 
 sub init()
@@ -44,6 +45,7 @@ sub init()
     m.trailerFailed = false
     m.params = {}
     m.currentMovieId = ""
+    m.backdropUri = ""
     m.returnFocus = invalid
     m.errorDialog = invalid
     m.autoPlay = false
@@ -137,7 +139,11 @@ sub applyMovie(movie as object)
 
     m.meta.text = movie.title + "  -  Rating: " + movie.rating + "  -  Released: " + movie.releaseDate
     m.desc.text = movie.description
-    m.detailsBack.uri = movie.HDBackgroundImageUrl
+
+    m.backdropUri = ""
+    if movie.HDBackgroundImageUrl <> invalid then m.backdropUri = movie.HDBackgroundImageUrl
+
+    m.detailsBack.uri = m.backdropUri
 
     m.currentMovieId = movie.movieId
     if m.currentMovieId = invalid then m.currentMovieId = ""
@@ -180,6 +186,12 @@ end sub
 
 sub resetPlayback()
     m.bgTimer.control = "stop"
+
+    ' Bookmark synchronously before the stop. The player's own control
+    ' observer runs off the message loop, so it would land after the details
+    ' chrome below has already re-read the old bookmark.
+    m.video.callFunc("commitProgress")
+
     m.video.control = "stop"
     m.video.visible = false
 
@@ -217,6 +229,12 @@ sub startTrailer(fullscreen as boolean)
         content.url = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8"
         content.streamFormat = "hls"
         content.ClosedCaptions = true
+
+        ' playStart must be on the node before it is handed over. The player's
+        ' content observer runs off the message loop, so anything it sets there
+        ' lands after control = "play" has already started us at zero.
+        content.playStart = bookmarks.positionFor(m.currentMovieId)
+        logger.info("MovieDetailsView", `resume at ${content.playStart}`)
     else
         content.url = "https://media.w3.org/2010/05/bunny/trailer.mp4"
         content.streamFormat = "mp4"
@@ -224,6 +242,13 @@ sub startTrailer(fullscreen as boolean)
 
     m.video.movieId = m.currentMovieId
     m.video.trackProgress = fullscreen
+
+    ' No scrub bar on the ambient trailer, so no picture feed either.
+    if fullscreen
+        m.video.trickplayFeed = trickplay.singleFrameFeed(m.backdropUri)
+    else
+        m.video.trickplayFeed = trickplay.emptyFeed()
+    end if
 
     m.video.suppressCaptions = not fullscreen
     m.video.mute = not fullscreen
@@ -340,6 +365,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
 
     if m.fullscreenActive and key = "back"
+        m.video.callFunc("commitProgress")
         m.video.control = "stop"
         m.video.visible = false
         restoreDetails()

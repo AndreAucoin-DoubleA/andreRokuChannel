@@ -1,0 +1,55 @@
+import "pkg:/source/data/trickplay.interface.bs"
+
+namespace trickplay
+
+    ' A picture feed is a flat list of frames, each covering intervalSeconds
+    ' of the timeline. One hard-coded frame and a real 300-frame feed differ
+    ' only in frames.Count(), so every lookup below is already the real one.
+    const DEFAULT_INTERVAL_SECONDS = 10
+    const PLACEHOLDER_URI = "pkg:/images/poster_placeholder_landscape.png"
+
+    function emptyFeed() as trickplay.Feed
+        return {
+            intervalSeconds: DEFAULT_INTERVAL_SECONDS,
+            frames: []
+        }
+    end function
+
+    function singleFrameFeed(uri as string) as trickplay.Feed
+        feed = emptyFeed()
+
+        if uri = "" then uri = PLACEHOLDER_URI
+        feed.frames = [uri]
+
+        return feed
+    end function
+
+    function isEmpty(feed as object) as boolean
+        if feed = invalid then return true
+        if feed.frames = invalid then return true
+
+        return feed.frames.Count() = 0
+    end function
+
+    function frameIndex(feed as object, seconds as float) as integer
+        if isEmpty(feed) then return -1
+        if feed.intervalSeconds <= 0 then return 0
+
+        index = Int(seconds / feed.intervalSeconds)
+
+        if index < 0 then index = 0
+
+        last = feed.frames.Count() - 1
+        if index > last then index = last
+
+        return index
+    end function
+
+    function frameUri(feed as object, index as integer) as string
+        if isEmpty(feed) then return ""
+        if index < 0 or index >= feed.frames.Count() then return ""
+
+        return feed.frames[index]
+    end function
+
+end namespace
