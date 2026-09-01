@@ -2,9 +2,6 @@ import "pkg:/source/data/trickplay.interface.bs"
 
 namespace trickplay
 
-    ' A picture feed is a flat list of frames, each covering intervalSeconds
-    ' of the timeline. One hard-coded frame and a real 300-frame feed differ
-    ' only in frames.Count(), so every lookup below is already the real one.
     const DEFAULT_INTERVAL_SECONDS = 10
     const PLACEHOLDER_URI = "pkg:/images/poster_placeholder_landscape.png"
 
