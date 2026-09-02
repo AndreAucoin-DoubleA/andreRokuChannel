@@ -179,9 +179,7 @@ end sub
 
 sub beginAmbientCountdown()
     resetPlayback()
-    if m.trailerFailed then return
-    m.bgPlayed = false
-    m.bgTimer.control = "start"
+    startAmbientTimer()
 end sub
 
 sub resetPlayback()
@@ -349,8 +347,7 @@ sub restoreDetails()
     fadeOverlay(1)
     m.button.setFocus(true)
 
-    m.bgPlayed = false
-    m.bgTimer.control = "start"
+    startAmbientTimer()
     a11y.context("Movie details")
 end sub
 
@@ -424,7 +421,30 @@ sub announceScreen()
 
     if m.meta.text <> "" then parts.Push(m.meta.text)
 
-    if m.desc.text <> "" then parts.Push(m.desc.text)
-
     a11y.context(parts.Join(". "))
 end sub
+
+sub startAmbientTimer()
+    if m.trailerFailed then return
+    if not autoplayAllowed() then return
+
+    m.bgTimer.duration = ambientDelay()
+    m.bgPlayed = false
+    m.bgTimer.control = "start"
+end sub
+
+function autoplayAllowed() as boolean
+    info = CreateObject("roDeviceInfo")
+
+    version = info.GetOSVersion()
+    if version = invalid then return true
+
+    if Val(version.major) < 13 then return true
+
+    return info.IsAutoplayEnabled() = true
+end function
+
+function ambientDelay() as float
+    if m.global.screenReaderOn = true then return 12
+    return 5
+end function
