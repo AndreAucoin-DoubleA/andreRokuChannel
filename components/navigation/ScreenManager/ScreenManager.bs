@@ -1,69 +1,30 @@
 import "pkg:/source/navigation/routes.bs"
+import "pkg:/source/navigation/screenOps.bs"
 
 sub init()
-    m.stacks = {}
-    m.activeStack = invalid
+    m.ctx = screenOps.newContext(m.top)
 end sub
 
 function showStack(id as string) as object
-    if m.top.activeStackId = id then return m.activeStack
-
-    entry = routes.byId(id)
-    if entry = invalid then return invalid
-
-    if m.activeStack <> invalid
-        m.activeStack.callFunc("suspendTop")
-        m.activeStack.visible = false
-    end if
-
-    stack = m.stacks[id]
-
-    if stack = invalid
-        stack = m.top.createChild("ViewStack")
-        m.stacks[id] = stack
-
-        stack.callFunc("setRoot", { view: entry.component, params: {}, inset: [160, 0] })
-        stack.observeField("stackDepth", "onStackDepthChanged")
-    else
-        stack.callFunc("resumeTop")
-    end if
-
-    stack.visible = true
-    m.activeStack = stack
-    m.top.activeStackId = id
-
-    publishDepth()
-    return stack
+    return screenOps.showStack(m.ctx, id, routes.byId)
 end function
 
 function focusActive() as boolean
-    if m.activeStack = invalid then return false
-    return m.activeStack.callFunc("focusTop")
+    return screenOps.focusActive(m.ctx)
 end function
 
 function suspendActive() as boolean
-    if m.activeStack = invalid then return false
-    return m.activeStack.callFunc("suspendTop")
+    return screenOps.suspendActive(m.ctx)
 end function
 
 function resumeActive() as boolean
-    if m.activeStack = invalid then return false
-    return m.activeStack.callFunc("resumeTop")
+    return screenOps.resumeActive(m.ctx)
 end function
 
 sub onStackDepthChanged()
-    publishDepth()
-end sub
-
-sub publishDepth()
-    if m.activeStack = invalid
-        m.top.activeDepth = 0
-        return
-    end if
-    m.top.activeDepth = m.activeStack.callFunc("depth")
+    screenOps.publishDepth(m.ctx)
 end sub
 
 function pushOnActive(request as object) as object
-    if m.activeStack = invalid then return invalid
-    return m.activeStack.callFunc("push", request)
+    return screenOps.pushOnActive(m.ctx, request)
 end function
