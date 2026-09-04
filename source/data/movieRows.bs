@@ -1,0 +1,85 @@
+import "pkg:/source/data/movieContent.bs"
+import "pkg:/source/utils/logger.bs"
+import "pkg:/source/data/catalog.interface.bs"
+
+namespace movieRows
+
+    const DEFAULT_BATCH_SIZE = 5
+
+    function effectiveBatchSize(batchSize as integer) as integer
+        if batchSize < 1 then return DEFAULT_BATCH_SIZE
+
+        return batchSize
+    end function
+
+    function slice(rows as catalog.Row[], start as integer, count as integer) as catalog.Row[]
+        part = []
+        index = start
+
+        while index < rows.Count() and part.Count() < count
+            part.Push(rows[index])
+            index = index + 1
+        end while
+
+        return part
+    end function
+
+    function urlsOf(batch as catalog.Row[]) as object
+        urls = []
+
+        for each row in batch
+            urls.Push(row.url)
+        end for
+
+        return urls
+    end function
+
+    function batches(rows as catalog.Row[], batchSize as integer) as object
+        size = effectiveBatchSize(batchSize)
+        out = []
+        start = 0
+
+        while start < rows.Count()
+            batch = slice(rows, start, size)
+            if batch.Count() = 0 then exit while
+
+            out.Push(batch)
+            start = start + batch.Count()
+        end while
+
+        return out
+    end function
+
+    sub appendRow(root as object, title as string, json as object)
+        if json = invalid or json.results = invalid or json.results.Count() = 0
+            logger.info("PopulateMoviesTask", `skipped empty row: ${title}`)
+            return
+        end if
+
+        row = root.CreateChild("ContentNode")
+        row.title = title
+
+        for each result in json.results
+            row.AppendChild(movieContent.fromJson(result))
+        end for
+    end sub
+
+    function buildBatchNode(batch as catalog.Row[], responses as object) as object
+        batchNode = CreateObject("roSGNode", "ContentNode")
+
+        for index = 0 to batch.Count() - 1
+            appendRow(batchNode, batch[index].title, responses[index])
+        end for
+
+        return batchNode
+    end function
+
+    sub fetchInto(node as object, rows as catalog.Row[], batchSize as integer, fetchBatch as function)
+        for each batch in batches(rows, batchSize)
+            node.rowBatch = buildBatchNode(batch, fetchBatch(urlsOf(batch)))
+        end for
+
+        node.loadComplete = true
+    end sub
+
+end namespace

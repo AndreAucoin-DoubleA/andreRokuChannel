@@ -1,75 +1,11 @@
 import "pkg:/source/api/http.bs"
 import "pkg:/source/data/catalog.bs"
-import "pkg:/source/data/movieContent.bs"
-import "pkg:/source/utils/logger.bs"
-import "pkg:/source/data/catalog.interface.bs"
+import "pkg:/source/data/movieRows.bs"
 
 sub init()
     m.top.functionName = "fetchMovies"
 end sub
 
 sub fetchMovies()
-    rows = catalog.rows()
-
-    batchSize = m.top.batchSize
-    if batchSize < 1 then batchSize = 5
-
-    start = 0
-
-    while start < rows.Count()
-        batch = slice(rows, start, batchSize)
-        if batch.Count() = 0 then exit while
-
-        m.top.rowBatch = buildBatchNode(batch, http.getJsonBatch(urlsOf(batch)))
-
-        start = start + batch.Count()
-    end while
-
-    m.top.loadComplete = true
-end sub
-
-function slice(rows as catalog.Row[], start as integer, count as integer) as catalog.Row[]
-    part = []
-    index = start
-
-    while index < rows.Count() and part.Count() < count
-        part.Push(rows[index])
-        index = index + 1
-    end while
-
-    return part
-end function
-
-function urlsOf(batch as catalog.Row[]) as object
-    urls = []
-
-    for each row in batch
-        urls.Push(row.url)
-    end for
-
-    return urls
-end function
-
-function buildBatchNode(batch as catalog.Row[], responses as object) as object
-    batchNode = CreateObject("roSGNode", "ContentNode")
-
-    for index = 0 to batch.Count() - 1
-        appendRow(batchNode, batch[index].title, responses[index])
-    end for
-
-    return batchNode
-end function
-
-sub appendRow(root as object, title as string, json as object)
-    if json = invalid or json.results = invalid or json.results.Count() = 0
-        logger.info("PopulateMoviesTask", `skipped empty row: ${title}`)
-        return
-    end if
-
-    row = root.CreateChild("ContentNode")
-    row.title = title
-
-    for each result in json.results
-        row.AppendChild(movieContent.fromJson(result))
-    end for
+    movieRows.fetchInto(m.top, catalog.rows(), m.top.batchSize, http.getJsonBatch)
 end sub
