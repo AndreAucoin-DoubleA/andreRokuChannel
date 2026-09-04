@@ -1,0 +1,31 @@
+import "pkg:/source/services/a11y.bs"
+
+namespace buttonOps
+
+    function spokenLabel(node as object) as string
+        spoken = node.audioGuideText
+
+        if spoken = "" then spoken = node.text
+        if spoken = "" then return ""
+
+        return spoken + ", button"
+    end function
+
+    sub announce(node as object)
+        spoken = buttonOps.spokenLabel(node)
+
+        if spoken = "" then return
+
+        a11y.focus(spoken)
+    end sub
+
+    function handleKey(node as object, key as string, press as boolean) as boolean
+        if press and key = "OK"
+            node.selected = true
+            return true
+        end if
+
+        return false
+    end function
+
+end namespace

@@ -1,5 +1,6 @@
 import "pkg:/source/theme/theme.bs"
 import "pkg:/source/services/a11y.bs"
+import "pkg:/source/widgets/buttonOps.bs"
 
 sub init()
     m.customButton = m.top.findNode("customButton")
@@ -48,19 +49,9 @@ sub onFocusChanged()
 end sub
 
 sub announce()
-    spoken = m.top.audioGuideText
-
-    if spoken = "" then spoken = m.top.text
-
-    if spoken = "" then return
-
-    a11y.focus(spoken + ", button")
+    buttonOps.announce(m.top)
 end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
-    if press and key = "OK"
-        m.top.selected = true
-        return true
-    end if
-    return false
+    return buttonOps.handleKey(m.top, key, press)
 end function
