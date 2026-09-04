@@ -1,0 +1,145 @@
+import "pkg:/source/utils/logger.bs"
+import "pkg:/source/navigation/nav.interface.bs"
+import "pkg:/components/navigation/ViewStack/ViewStack.interface.bs"
+
+namespace viewStackOps
+
+    function depth(stack as object) as integer
+        return stack.getChildCount()
+    end function
+
+    function peek(stack as object) as object
+        if viewStackOps.depth(stack) = 0 then return invalid
+
+        return stack.getChild(viewStackOps.depth(stack) - 1)
+    end function
+
+    sub publishDepth(stack as object)
+        stack.stackDepth = viewStackOps.depth(stack)
+    end sub
+
+    function pushEntry(stack as object, request as object) as object
+        if request = invalid or request.view = invalid then return invalid
+
+        view = stack.createChild(request.view)
+
+        if not view.isSubtype("BaseView")
+            logger.error("ViewStack", `${request.view} must extend BaseView`)
+            stack.removeChild(view)
+            return invalid
+        end if
+
+        params = request.params
+
+        if params = invalid then params = {}
+
+        if request.inset <> invalid then view.translation = request.inset
+
+        view.observeField("navRequest", "onNavRequest")
+
+        view.callFunc("viewDidLoad", params)
+        view.callFunc("viewWillAppear")
+
+        return view
+    end function
+
+    function setRoot(stack as object, request as object) as object
+        while viewStackOps.depth(stack) > 0
+            viewStackOps.destroyTop(stack)
+        end while
+
+        view = viewStackOps.pushEntry(stack, request)
+        viewStackOps.publishDepth(stack)
+
+        return view
+    end function
+
+    function push(stack as object, request as object) as object
+        if viewStackOps.depth(stack) >= stack.maxDepth
+            logger.error("ViewStack", `push rejected, maxDepth ${stack.maxDepth} reached`)
+            return invalid
+        end if
+
+        current = viewStackOps.peek(stack)
+
+        if current <> invalid
+            current.callFunc("viewWillHide")
+            current.visible = false
+        end if
+
+        view = viewStackOps.pushEntry(stack, request)
+        viewStackOps.publishDepth(stack)
+
+        if view <> invalid then viewStackOps.focusTop(stack)
+
+        return view
+    end function
+
+    function pop(stack as object) as boolean
+        if viewStackOps.depth(stack) <= 1 then return false
+
+        viewStackOps.destroyTop(stack)
+        viewStackOps.revealTop(stack)
+        viewStackOps.publishDepth(stack)
+
+        return true
+    end function
+
+    sub destroyTop(stack as object)
+        view = viewStackOps.peek(stack)
+
+        if view = invalid then return
+
+        view.callFunc("viewWillDisappear")
+        view.unobserveField("navRequest")
+        stack.removeChild(view)
+    end sub
+
+    sub revealTop(stack as object)
+        view = viewStackOps.peek(stack)
+
+        if view = invalid then return
+
+        view.visible = true
+        viewStackOps.resumeTop(stack)
+        viewStackOps.focusTop(stack)
+    end sub
+
+    function focusTop(stack as object) as boolean
+        view = viewStackOps.peek(stack)
+        if view = invalid then return false
+
+        return view.callFunc("setViewFocus")
+    end function
+
+    function resumeTop(stack as object) as boolean
+        view = viewStackOps.peek(stack)
+        if view = invalid then return false
+
+        view.callFunc("viewWillAppear")
+        return true
+    end function
+
+    function suspendTop(stack as object) as boolean
+        view = viewStackOps.peek(stack)
+        if view = invalid then return false
+
+        view.callFunc("viewWillHide")
+        return true
+    end function
+
+    sub handleNavRequest(stack as object, req as object)
+        if req = invalid or req.action = invalid then return
+
+        if req.action = nav.Action.push then viewStackOps.push(stack, req)
+        if req.action = nav.Action.pop then viewStackOps.pop(stack)
+    end sub
+
+    function handleKey(stack as object, key as string, press as boolean) as boolean
+        if not press then return false
+        if key = "back" then return viewStackOps.pop(stack)
+
+        return false
+    end function
+
+end namespace

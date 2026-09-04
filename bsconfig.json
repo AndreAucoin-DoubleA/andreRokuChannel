@@ -6,6 +6,7 @@
     "source/**/*",
     "!source/tests/**/*",
     "components/**/*",
+    "!components/tests/**/*",
     "images/**/*",
     "tokens/**/*",
     "fonts/**/*"

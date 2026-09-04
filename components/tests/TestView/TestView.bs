@@ -1,0 +1,29 @@
+sub record(name as string)
+    if m.top.lifecycleLog = ""
+        m.top.lifecycleLog = name
+    else
+        m.top.lifecycleLog = m.top.lifecycleLog + "," + name
+    end if
+end sub
+
+sub viewDidLoad(params as object)
+    m.top.loadedParams = params
+    record("viewDidLoad")
+end sub
+
+sub viewWillAppear()
+    record("viewWillAppear")
+end sub
+
+sub viewWillHide()
+    record("viewWillHide")
+end sub
+
+sub viewWillDisappear()
+    record("viewWillDisappear")
+end sub
+
+function setViewFocus() as boolean
+    record("setViewFocus")
+    return true
+end function
