@@ -1,0 +1,93 @@
+namespace tests
+
+    @suite("BaseView lifecycle & navigation")
+    class BaseViewTests extends rooibos.BaseTestSuite
+
+        function newView() as object
+            return CreateObject("roSGNode", "BaseView")
+        end function
+
+        function rowsStub(movie as object, row = 2 as integer, index = 3 as integer) as object
+            return { selectedMovie: movie, selectedRow: row, selectedIndex: index }
+        end function
+
+        function newMovie(title as string) as object
+            movie = CreateObject("roSGNode", "ContentNode")
+            movie.title = title
+
+            return movie
+        end function
+
+        @describe("lifecycle & navigation")
+
+        @it("each lifecycle hook is a safe no-op by default")
+        sub _()
+            view = m.newView()
+
+            m.assertInvalid(view.callFunc("viewDidLoad", {}), "viewDidLoad")
+            m.assertInvalid(view.callFunc("viewDidLoad", { id: "438631" }), "viewDidLoad with params")
+            m.assertInvalid(view.callFunc("viewWillAppear"), "viewWillAppear")
+            m.assertInvalid(view.callFunc("viewWillHide"), "viewWillHide")
+            m.assertInvalid(view.callFunc("viewWillDisappear"), "viewWillDisappear")
+
+            m.assertInvalid(view.navRequest, "no hook should raise a navRequest")
+        end sub
+
+        @it("setViewFocus returns false by default")
+        sub _()
+            view = m.newView()
+            m.assertFalse(view.callFunc("setViewFocus"))
+        end sub
+
+        @it("pushView writes a push navRequest")
+        @params("MovieDetailsView")
+        @params("MosaicPlayerView")
+        sub _(viewName as string)
+            view = m.newView()
+
+            viewNav.pushView(view, viewName, { id: "438631" })
+
+            request = view.navRequest
+
+            m.assertAAHasKeys(request, ["action", "view", "params"])
+            m.assertEqual(request.action, "push")
+            m.assertEqual(request.view, viewName)
+            m.assertEqual(request.params.id, "438631", "params must pass through")
+        end sub
+
+        @it("popView writes a pop navRequest")
+        sub _()
+            view = m.newView()
+
+            viewNav.popView(view)
+
+            request = view.navRequest
+
+            m.assertEqual(request.action, "pop")
+            m.assertInvalid(request.view, "a pop carries no view")
+            m.assertInvalid(request.params, "a pop carries no params")
+        end sub
+
+        @it("pushMovieDetails targets MovieDetailsView with params")
+        sub _()
+            view = m.newView()
+            movie = m.newMovie("Dune")
+
+            viewNav.pushMovieDetails(view, m.rowsStub(movie, 4, 7))
+
+            request = view.navRequest
+
+            m.assertEqual(request.action, "push")
+            m.assertEqual(request.view, "MovieDetailsView")
+            m.assertAAHasKeys(request.params, ["movie", "row", "index"])
+            m.assertTrue(request.params.movie.isSameNode(movie), "the selected movie must be forwarded")
+            m.assertEqual(request.params.row, 4)
+            m.assertEqual(request.params.index, 7)
+
+            quiet = m.newView()
+            viewNav.pushMovieDetails(quiet, m.rowsStub(invalid))
+            m.assertInvalid(quiet.navRequest, "an empty selection must not navigate")
+        end sub
+
+    end class
+end namespace

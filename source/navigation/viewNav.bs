@@ -1,0 +1,25 @@
+import "pkg:/source/navigation/nav.interface.bs"
+
+namespace viewNav
+
+    sub pushView(view as object, viewName as string, params as object)
+        view.navRequest = { action: nav.Action.push, view: viewName, params: params }
+    end sub
+
+    sub popView(view as object)
+        view.navRequest = { action: nav.Action.pop }
+    end sub
+
+    sub pushMovieDetails(view as object, rows as object)
+        movie = rows.selectedMovie
+
+        if movie = invalid then return
+
+        viewNav.pushView(view, nav.ViewId.movieDetails, {
+            movie: movie,
+            row: rows.selectedRow,
+            index: rows.selectedIndex
+        })
+    end sub
+
+end namespace
