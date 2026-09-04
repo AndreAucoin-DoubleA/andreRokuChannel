@@ -1,7 +1,7 @@
 namespace multiview
 
     function host() as string
-        return "http://172.16.12.7:8000"
+        return "http://172.16.12.10:8000"
     end function
 
     function mosaicUrl() as string

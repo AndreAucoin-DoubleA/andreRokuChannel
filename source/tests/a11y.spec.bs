@@ -1,0 +1,207 @@
+namespace tests
+    @suite("a11y")
+    class A11Tests extends rooibos.BaseTestSuite
+        @describe("clean & send")
+
+        @beforeEach
+        protected override sub beforeEach()
+            probe = CreateObject("roSGNode", "ContentNode")
+            probe.addFields({ request: {} })
+
+            if m.global.hasField("speechTask")
+                m.global.speechTask = probe
+            else
+                m.global.addFields({ speechTask: probe })
+            end if
+        end sub
+
+        function task() as object
+            return m.global.speechTask
+        end function
+
+        function sentRequest() as object
+            return m.global.speechTask.request
+        end function
+
+        function watchRequests() as object
+            port = CreateObject("roMessagePort")
+            m.task().observeField("request", port)
+            return port
+        end function
+
+        function drain(port as object) as object
+            requests = []
+
+            while true
+                msg = port.GetMessage()
+                if msg = invalid then exit while
+                requests.Push(msg.getData())
+            end while
+
+            m.task().unobserveField("request")
+
+            return requests
+        end function
+
+        function newContent() as object
+            content = CreateObject("roSGNode", "ContentNode")
+
+            row0 = content.createChild("ContentNode")
+            row0.title = "Popular"
+            for each name in ["Dune", "Arrival", "Sicario"]
+                item = row0.createChild("ContentNode")
+                item.title = name
+            end for
+
+            row1 = content.createChild("ContentNode")
+            row1.title = "Action"
+            heat = row1.createChild("ContentNode")
+            heat.title = "Heat"
+
+            row2 = content.createChild("ContentNode")
+            row2.title = "Empty"
+
+            return content
+        end function
+
+        @it("clean(invalid) return empty")
+        sub _()
+            m.assertEqual(a11y.clean(invalid), "")
+        end sub
+
+        @it("clean passes a string throuhg")
+        @params("Dune", "Dune")
+        @params("", "")
+        @params("Dune, 1 of 3", "Dune, 1 of 3")
+        sub _(value as dynamic, expected as string)
+            m.assertEqual(a11y.clean(value), expected)
+        end sub
+
+        @it("a request with empty focus and context is dropped")
+        sub _()
+            a11y.send({ focus: "", context: "" })
+
+            m.assertEmpty(m.sentRequest(), "an empty request should not reach the task")
+        end sub
+
+        @it("a flush request is sent even when empty")
+        sub _()
+            a11y.flush()
+
+            request = m.sentRequest()
+
+            m.assertNotEmpty(request, "flush should bypass the empty check")
+            m.assertTrue(request.flush)
+        end sub
+
+        @it("a missing speechTask global does not throw")
+        sub _()
+            m.global.speechTask = invalid
+
+            a11y.focus("Dune")
+            a11y.context("Popular")
+            a11y.flush()
+
+            m.assertInvalid(m.global.speechTask)
+        end sub
+
+        @it("focus and context write to the task's request field")
+        sub _()
+            a11y.focus("Dune")
+
+            m.assertEqual(m.sentRequest().focus, "Dune")
+
+            a11y.context("Popular")
+
+            m.assertEqual(m.sentRequest().context, "Popular")
+        end sub
+
+        @describe("announceRowItem")
+
+        @it("an invalid rowItemFocused does nothing")
+        sub _()
+            a11y.announceRowItem({ rowItemFocused: invalid }, m.newContent(), true)
+
+            m.assertEmpty(m.sentRequest())
+        end sub
+
+        @it("a selection shorter than two elements does nothing")
+        sub _()
+            a11y.announceRowItem({ rowItemFocused: [] }, m.newContent(), true)
+            m.assertEmpty(m.sentRequest(), "empty selection")
+
+            a11y.announceRowItem({ rowItemFocused: [0] }, m.newContent(), true)
+            m.assertEmpty(m.sentRequest(), "one-element selection")
+        end sub
+
+        @it("a missing row does nothing")
+        @params(99)
+        @params(3)
+        sub _(rowIndex as integer)
+            a11y.announceRowItem({ rowItemFocused: [rowIndex, 0] }, m.newContent(), true)
+
+            m.assertEmpty(m.sentRequest())
+        end sub
+
+        @it("a missing item does nothing")
+        @params(99)
+        @params(3)
+        sub _(itemIndex as integer)
+            a11y.announceRowItem({ rowItemFocused: [0, itemIndex] }, m.newContent(), true)
+
+            m.assertEmpty(m.sentRequest())
+        end sub
+
+        @it("a row with no children does nothing")
+        sub _()
+            a11y.announceRowItem({ rowItemFocused: [2, 0] }, m.newContent(), true)
+
+            m.assertEmpty(m.sentRequest())
+        end sub
+
+        @it("the focus string reads Title, N of M")
+        sub _()
+            a11y.announceRowItem({ rowItemFocused: [0, 0] }, m.newContent(), false)
+
+            m.assertEqual(m.sentRequest().focus, "Dune, 1 of 3")
+        end sub
+
+        @it("the index is one-based in the spoken string")
+        @params(0, "Dune, 1 of 3")
+        @params(1, "Arrival, 2 of 3")
+        @params(2, "Sicario, 3 of 3")
+        sub _(itemIndex as integer, expected as string)
+            a11y.announceRowItem({ rowItemFocused: [0, itemIndex] }, m.newContent(), false)
+
+            m.assertEqual(m.sentRequest().focus, expected)
+        end sub
+
+        @it("with includeRowTitle, context is sent before focus")
+        sub _()
+            port = m.watchRequests()
+
+            a11y.announceRowItem({ rowItemFocused: [0, 1] }, m.newContent(), true)
+
+            requests = m.drain(port)
+
+            m.assertArrayCount(requests, 2, "expected a context then a focus write")
+            m.assertEqual(requests[0].context, "Popular", "context must be sent first")
+            m.assertEqual(requests[1].focus, "Arrival, 2 of 3", "focus must be sent second")
+        end sub
+
+        @it("without it, only focus is sent")
+        sub _()
+            port = m.watchRequests()
+
+            a11y.announceRowItem({ rowItemFocused: [0, 1] }, m.newContent(), false)
+
+            requests = m.drain(port)
+
+            m.assertArrayCount(requests, 1, "only one write expected")
+            m.assertEqual(requests[0].focus, "Arrival, 2 of 3")
+            m.assertInvalid(requests[0].context, "no context should be sent")
+        end sub
+
+
+    end class
+end namespace

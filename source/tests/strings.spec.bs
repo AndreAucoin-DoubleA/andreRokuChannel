@@ -1,0 +1,55 @@
+namespace tests
+
+    @suite("strings.fromValue")
+    class StringsFromValue extends rooibos.BaseTestSuite
+
+        @describe("values it refuses to convert")
+
+        @it("returns an empty string for invalid")
+        sub _()
+            m.assertEqual(strings.fromValue(invalid), "")
+        end sub
+
+        @it("returns an empty string for an associative array")
+        sub _()
+            m.assertEqual(strings.fromValue({ id: 1 }), "")
+        end sub
+
+        @it("returns an empty string for an array")
+        sub _()
+            m.assertEqual(strings.fromValue([1, 2, 3]), "")
+        end sub
+
+        @it("returns an empty string for a node")
+        sub _()
+            m.assertEqual(strings.fromValue(CreateObject("roSGNode", "ContentNode")), "")
+        end sub
+
+        @describe("strings pass through untouched")
+
+        @it("keeps a populated string as-is")
+        sub _()
+            m.assertEqual(strings.fromValue("Spider-Man"), "Spider-Man")
+        end sub
+
+        @it("keeps an empty string empty")
+        sub _()
+            m.assertEqual(strings.fromValue(""), "")
+        end sub
+
+        @describe("scalars convert via ToStr")
+
+        @it("stringifies")
+        @params(1, "1")
+        @params(0, "0")
+        @params(-42, "-42")
+        @params(1.5, "1.5")
+        @params(true, "true")
+        @params(false, "false")
+        sub _(input as dynamic, expected as string)
+            m.assertEqual(strings.fromValue(input), expected)
+        end sub
+
+    end class
+end namespace
+

@@ -1,0 +1,279 @@
+namespace tests
+    @suite("tokens.color & size")
+    class TokenColorSizeTests extends rooibos.BaseTestSuite
+
+        function badColor() as string
+            return "0xFF00FFFF"
+        end function
+
+        @describe("ColorToRgba")
+
+        @it("a non-string logs a warning and returns the magenta sentinel")
+        @params(invalid)
+        @params(16)
+        @params(1.5)
+        @params(true)
+        sub _(value as dynamic)
+            m.assertEqual(tokens.ColorToRgba(value), m.badColor())
+        end sub
+
+        @it("a non-string logs a warning and returns the magenta sentinel")
+        @params(invalid)
+        @params(16)
+        @params(1.5)
+        @params(true)
+        sub _(value as dynamic)
+            m.assertEqual(tokens.ColorToRgba(value), m.badColor())
+        end sub
+
+        @it("#FFF expands to 0xFFFFFFFF")
+        @params("#FFF", "0xFFFFFFFF")
+        @params("#ABC", "0xAABBCCFF")
+        @params("#F00", "0xFF0000FF")
+        sub _(value as string, expected as string)
+            m.assertEqual(tokens.ColorToRgba(value), expected)
+        end sub
+
+        @it("a six-digit hex gains an FF alpha")
+        sub _()
+            m.assertEqual(tokens.ColorToRgba("#1A2B3C"), "0x1A2B3CFF")
+        end sub
+
+        @it("a hex without # is accepted")
+        @params("1A2B3C", "0x1A2B3CFF")
+        @params("ABC", "0xAABBCCFF")
+        @params("1A2B3C80", "0x1A2B3C80")
+        sub _(value as string, expected as string)
+            m.assertEqual(tokens.ColorToRgba(value), expected)
+        end sub
+
+        @it("an eight-digit hex passes through")
+        @params("#1A2B3C80", "0x1A2B3C80")
+        @params("#00000000", "0x00000000")
+        sub _(value as string, expected as string)
+            m.assertEqual(tokens.ColorToRgba(value), expected)
+        end sub
+
+        @it("lowercase input is uppercased")
+        @params("#abcdef", "0xABCDEFFF")
+        @params("#abcdef80", "0xABCDEF80")
+        @params("#abc", "0xAABBCCFF")
+        sub _(value as string, expected as string)
+            m.assertEqual(tokens.ColorToRgba(value), expected)
+        end sub
+
+        @it("a four-digit hex is malformed and returns the sentinel")
+        @params("#ABCD")
+        @params("#AB")
+        @params("#ABCDE")
+        @params("#ABCDEFF")
+        @params("")
+        sub _(value as string)
+            m.assertEqual(tokens.ColorToRgba(value), m.badColor())
+        end sub
+
+        @describe("DimensionToFloat")
+
+        @it("invalid returns 0.0")
+        sub _()
+            m.assertEqual(tokens.DimensionToFloat(invalid), 0.0)
+        end sub
+
+        @it("'16px' returns 16.0")
+        sub _it()
+            m.assertEqual(tokens.DimensionToFloat("16px"), 16.0)
+        end sub
+
+        @it("'1.5rem' returns 1.5")
+        sub _()
+            m.assertEqual(tokens.DimensionToFloat("1.5rem"), 1.5)
+        end sub
+
+        @it("a bare number passes through")
+        @params(24, 24.0)
+        @params(1.5, 1.5)
+        @params(0, 0.0)
+        @params("24", 24.0)
+        @params("1.5", 1.5)
+        sub _(value as dynamic, expected as float)
+            m.assertEqual(tokens.DimensionToFloat(value), expected)
+        end sub
+
+        @it("the scale argument multiples the result")
+        @params("16px", 2.0, 32.0)
+        @params("16px", 0.5, 8.0)
+        @params("1.5rem", 32.0, 48.0)
+        @params(10, 0.5, 5.0)
+        sub _(value as dynamic, scale as float, expected as float)
+            m.assertEqual(tokens.DimensionToFloat(value, scale), expected)
+        end sub
+
+        @it("surrounding whitespace is trimmed")
+        @params("  16px  ", 16.0)
+        @params(" 1.5rem", 1.5)
+        @params("16 px", 16.0)
+        sub _it(value as string, expected as float)
+            m.assertEqual(tokens.DimensionToFloat(value), expected)
+        end sub
+
+        @it("an unparseable string returns 0")
+        @params("auto")
+        @params("")
+        @params("inherit")
+        sub _(value as string)
+            m.assertEqual(tokens.DimensionToFloat(value), 0.0)
+        end sub
+
+        @describe("alias helpers")
+
+        @it("IsAlias is true for {a.b}")
+        @params("{a.b}")
+        @params("{color.primary}")
+        @params("{Color.Primary}")
+        @params("{}")
+        sub _(value as dynamic)
+            m.assertTrue(tokens.IsAlias(value))
+        end sub
+
+        @it("IsAlias is false for a non-string")
+        @params("{color.primary")
+        @params("color.primary}")
+        @params("{")
+        @params("}")
+        sub _(value as dynamic)
+            m.assertFalse(tokens.IsAlias(value))
+        end sub
+
+        @it("AliasKey strips braces and lowercases")
+        @params("{a.b}", "a.b")
+        @params("{Color.Primary}", "color.primary")
+        @params("{COLOR.BG.DEFAULT}", "color.bg.default")
+        sub _(value as string, expected as string)
+            m.assertEqual(tokens.AliasKey(value), expected)
+        end sub
+
+
+        @describe("NormaizeValue")
+
+        @it("type color routes to ColorToRbga")
+        @params("#FFF", "0xFFFFFFFF")
+        @params("#1A2B3C", "0x1A2B3CFF")
+        @params("#abc", "0xAABBCCFF")
+        sub _(value as dynamic, expected as string)
+            m.assertEqual(tokens.NormalizeValue("color", value), expected)
+        end sub
+
+        @it("type dimensions routes to DimensionsToFloat")
+        @params("16px", 16.0)
+        @params("1.5rem", 1.5)
+        @params("auto", 0.0)
+        sub _(value as dynamic, expected as float)
+            m.assertEqual(tokens.NormalizeValue("dimension", value), expected)
+        end sub
+
+        @it("type typography returns family plus a float size")
+        sub _()
+            result = tokens.NormalizeValue("typography", { fontFamily: "Arial", fontSize: "24px" })
+
+            m.assertAAHasKeys(result, ["fontFamily", "fontSize"])
+            m.assertEqual(result.fontFamily, "Arial")
+            m.assertEqual(result.fontSize, 24.0)
+        end sub
+
+        @it("an unknown type passes through untouched")
+        @params("spacing", "8px")
+        @params("fontWeight", 700)
+        @params(invalid, "#FFFFFF")
+        @params("", "raw")
+        @params("Color", "#FFF")
+        sub _(tokenType as dynamic, value as dynamic)
+            m.assertEqual(tokens.NormalizeValue(tokenType, value), value)
+        end sub
+
+        @it("typography with a non-AA value passes through untouched")
+        @params("inherit")
+        @params(16)
+        @params(invalid)
+        sub _(value as dynamic)
+            m.assertEqual(tokens.NormalizeValue("typography", value), value)
+        end sub
+
+        @describe("typograph with non-AA value")
+
+        @it("a non-AA value is returned unchanged")
+        @params("inherit", "inherit")
+        @params("24px", "24px")
+        @params("", "")
+        @params(16, 16)
+        @params(1.5, 1.5)
+        @params(0, 0)
+        @params(true, true)
+        @params(false, false)
+        sub _(value as dynamic, expected as dynamic)
+            m.assertEqual(tokens.NormalizeValue("typography", value), expected)
+        end sub
+
+        @it("a non-AA value never comes back as an associative array")
+        @params("inherit")
+        @params("")
+        @params(16)
+        @params(true)
+        @params(invalid)
+        sub _(value as dynamic)
+            result = tokens.NormalizeValue("typography", value)
+
+            m.assertNotEqual(type(result), "roAssociativeArray", "a non-AA input was rebuilt as a typography AA")
+        end sub
+
+        @it("invalid comes back as invalid, not a half-built typography AA")
+        sub _()
+            result = tokens.NormalizeValue("typography", invalid)
+
+            m.assertInvalid(result, "invalid was converted into something else")
+        end sub
+
+        @it("an array is not an AA and passes through by reference")
+        sub _()
+            value = ["Arial", "24px"]
+
+            result = tokens.NormalizeValue("typography", value)
+
+            m.assertArrayCount(result, 2)
+            m.assertEqual(result[0], "Arial")
+            m.assertEqual(result[1], "24px")
+
+            result.Push("extra")
+            m.assertArrayCount(value, 3, "result was a copy, not the same array")
+        end sub
+
+        @it("a node is not an AA and passes through")
+        sub _()
+            node = CreateObject("roSGNode", "ContentNode")
+            node.title = "Arial"
+
+            result = tokens.NormalizeValue("typography", node)
+
+            m.assertSubType(result, "ContentNode")
+            m.assertEqual(result.title, "Arial")
+        end sub
+
+        @it("the same string transforms inside an AA but not bare")
+        sub _()
+            bare = tokens.NormalizeValue("typography", "24px")
+            wrapped = tokens.NormalizeValue("typography", { fontFamily: "Arial", fontSize: "24px" })
+
+            m.assertEqual(bare, "24px", "a bare string should not be converted")
+            m.assertEqual(wrapped.fontSize, 24.0, "an AA should have its fontSize converted")
+        end sub
+
+        @it("an empty AA is still an AA and does get transformed")
+        sub _()
+            result = tokens.NormalizeValue("typography", {})
+
+            m.assertAAHasKeys(result, ["fontFamily", "fontSize"])
+            m.assertInvalid(result.fontFamily)
+            m.assertEqual(result.fontSize, 0.0)
+        end sub
+
+    end class
+end namespace

@@ -1,0 +1,93 @@
+namespace tests
+
+    @suite("routes")
+    class RoutesTests extends rooibos.BaseTestSuite
+
+        function viewIds() as object
+            return [
+                nav.ViewId.home,
+                nav.ViewId.movies,
+                nav.ViewId.games,
+                nav.ViewId.movieDetails,
+                nav.ViewId.multiview,
+                nav.ViewId.mosaicPlayer
+            ]
+        end function
+
+        @describe("routes")
+
+        @it("all returns four routes")
+        sub _()
+            m.assertArrayCount(routes.all(), 4)
+        end sub
+
+        @it("every route has id, label, icon and component")
+        sub _()
+            for each route in routes.all()
+                m.assertAAHasKeys(route, ["id", "label", "icon", "component"])
+                m.assertNotEmpty(route.id, "a route is missing its id")
+                m.assertNotEmpty(route.label, `route ${route.id} is missing its label`)
+                m.assertNotEmpty(route.icon, `route ${route.id} is missing its component`)
+            end for
+        end sub
+
+        @it("route ids are unique")
+        sub _()
+            seen = {}
+
+            for each route in routes.all()
+                m.assertFalse(seen.DoesExist(route.id), `duplicate route id: ${route.id}`)
+                seen[route.id] = true
+            end for
+        end sub
+
+        @it("every component is a valid nav.ViewId")
+        sub _()
+            valid = m.viewIds()
+
+            for each route in routes.all()
+                m.assertArrayContains(valid, route.component, invalid, `route ${route.id} points at unknown view ${route.component}`)
+            end for
+        end sub
+
+        @it("byId resolves each of the four ids")
+        @params("home", "Home", "HomeView")
+        @params("movies", "Movies", "MoviesView")
+        @params("games", "Games", "GamesView")
+        @params("multiview", "Multiview", "MultiviewView")
+        sub _(id as string, expectedLabel as string, expectedComponent as string)
+            route = routes.byId(id)
+
+            m.assertNotInvalid(route, `byId did not resolve ${id}`)
+            m.assertEqual(route.id, id)
+            m.assertEqual(route.label, expectedLabel)
+            m.assertEqual(route.component, expectedComponent)
+        end sub
+
+        @it("byId with a unknown id return invalid")
+        @params("")
+        @params("settings")
+        @params("Home")
+        sub _(id as string)
+            m.assertInvalid(routes.byId(id))
+        end sub
+
+        @it("indexOf('home') is 0")
+        sub _()
+            m.assertEqual(routes.indexOf("home"), 0)
+        end sub
+
+        @it("indexOf('multiview) is 3")
+        sub _()
+            m.assertEqual(routes.indexOf("multiview"), 3)
+        end sub
+
+        @it("indexOf with an unknown id is -1")
+        @params("")
+        @params("settings")
+        @params("Home")
+        sub _(id as string)
+            m.assertEqual(routes.indexOf(id), -1)
+        end sub
+    end class
+end namespace

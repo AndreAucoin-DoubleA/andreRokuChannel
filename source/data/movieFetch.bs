@@ -1,0 +1,26 @@
+import "pkg:/source/api/http.bs"
+import "pkg:/source/api/tmdb.bs"
+import "pkg:/source/data/movieContent.bs"
+import "pkg:/source/utils/logger.bs"
+import "pkg:/components/tasks/FetchMovieTask/FetchMovieTask.interface.bs"
+
+namespace movieFetch
+
+    function failure() as object
+        return { status: tasks.Status.failed, movie: invalid }
+    end function
+
+    function forId(movieId as string) as object
+        if movieId = "" then return failure()
+
+        json = http.getJson(tmdb.movieUrl(movieId))
+
+        if json = invalid or json.id = invalid
+            logger.warn("FetchMovieTask", `no movie for id ${movieId}`)
+            return failure()
+        end if
+
+        return { status: tasks.Status.ok, movie: movieContent.fromJson(json) }
+    end function
+
+end namespace

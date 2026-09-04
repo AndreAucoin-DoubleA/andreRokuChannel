@@ -1,0 +1,121 @@
+namespace tests
+    @suite("catalog")
+    class CatalogTests extends rooibos.BaseTestSuite
+        @describe("source tables")
+
+        @it("list returns the four endpoints")
+        sub _()
+            m.assertArrayCount(catalog.lists(), 4)
+        end sub
+
+        @lit("every list entry carries a title and a listName")
+        sub _()
+            for each entry in catalog.lists()
+                m.assertAAHasKeys(entry, ["title", "listName"])
+                m.assertNotEmpty(entry.title)
+                m.assertNotEmpty(entry.listName)
+            end for
+        end sub
+
+        @it("genres() returns nineteen genres")
+        sub _()
+            m.assertArrayCount(catalog.genres(), 19)
+        end sub
+
+        @it("every genre carries a title and a positive id")
+        sub _()
+            for each genre in catalog.genres()
+                m.assertNotEmpty(genre.title)
+                m.assertTrue(genre.genreId > 0, `genre ${genre.title} has id ${genre.genreId}`)
+            end for
+        end sub
+
+        @it("genre titles as unique")
+        sub _()
+            seen = {}
+            for each genre in catalog.genres()
+                m.assertFalse(seen.DoesExist(genre.title), `duplicate genre title: ${genre.title}`)
+                seen[genre.title] = true
+            end for
+        end sub
+
+        @describe("rowTitle")
+
+        @it("omits the suffix on page one")
+        @params("Popular", "Movie - Popular")
+        @params("Science Fiction", "Movie - Science Fiction")
+        sub _(name as string, expected as string)
+            m.assertEqual(catalog.rowTitle(name, 1), expected)
+        end sub
+
+        @it("appends the page number beyond page one")
+        @params("Popular", 2, "Movie - Popular (2)")
+        @params("Action", 3, "Movie - Action (3)")
+        @params("Action", 10, "Movie - Action (10)")
+        sub _(name as string, page as integer, expected as string)
+            m.assertEqual(catalog.rowTitle(name, page), expected)
+        end sub
+
+        @describe("row")
+
+        @it("returns one row per source per page")
+        sub _()
+            perPage = catalog.lists().Count() + catalog.genres().Count()
+            m.assertEqual(perPage, 23)
+            m.assertArrayCount(catalog.rows(), catalog.PAGES * perPage)
+            m.assertArrayCount(catalog.rows(), 46)
+        end sub
+
+        @it("every row has title and a url")
+        sub _()
+            for each row in catalog.rows()
+                m.assertNotEmpty(row.title)
+                m.assertNotEmpty(row.url)
+            end for
+        end sub
+
+        @it("puts every list row before the genre rows within a page")
+        sub _()
+            rows = catalog.rows()
+            lists = catalog.lists()
+            genres = catalog.genres()
+
+            for index = 0 to lists.Count() - 1
+                m.assertEqual(rows[index].title, "Movie - " + lists[index].title)
+            end for
+
+            m.assertEqual(rows[lists.Count()].title, "Movie - " + genres[0].title)
+        end sub
+
+        @it("wires list rows to listUrl and genre rows to discoverUrl")
+        sub _()
+            rows = catalog.rows()
+            lists = catalog.lists()
+            genres = catalog.genres()
+
+            m.assertEqual(rows[0].url, tmdb.listUrl(lists[0].listName, 1))
+            m.assertEqual(rows[lists.Count()].url, tmdb.discoverUrl(genres[0].genreId, 1))
+        end sub
+
+        @it("requests page one for the first block and page two for the second")
+        sub _()
+            rows = catalog.rows()
+            perPage = catalog.lists().Count() + catalog.genres().Count()
+
+            m.assertTrue(rows[0].url.Instr("page=1") > -1, rows[0].url)
+            m.assertTrue(rows[perPage - 1].url.Instr("page=1") > -1, rows[perPage - 1].url)
+            m.assertTrue(rows[perPage].url.Instr("page=2") > -1, rows[perPage].url)
+            m.assertTrue(rows[rows.Count() - 1].url.Instr("page=2") > -1, rows[rows.Count() - 1].url)
+        end sub
+
+        @it("marks page-two titles with the page suffix")
+        sub _()
+            rows = catalog.rows()
+            perPage = catalog.lists().Count() + catalog.genres().Count()
+
+            m.assertEqual(rows[perPage].title, "Movie - " + catalog.lists()[0].title + " (2)")
+        end sub
+
+    end class
+end namespace
+

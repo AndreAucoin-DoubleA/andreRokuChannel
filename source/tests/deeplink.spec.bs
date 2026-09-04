@@ -1,0 +1,158 @@
+namespace tests
+    @suite("deeplink")
+    class DeeplinkTests extends rooibos.BaseTestSuite
+
+
+
+        @describe("payload & hasLink")
+
+        @it("payload(invalid) returns invalid")
+        sub _()
+            m.assertInvalid(deeplink.payload(invalid))
+        end sub
+
+        @it("payload unwraps launchParams when present")
+        sub _()
+            link = deeplink.payload({ launchParams: { contentId: "123", mediaType: "movie" } })
+
+            m.assertNotInvalid(link)
+            m.assertEqual(link.contentId, "123")
+            m.assertAANotHasKey(link, "launchParams", "payload returned the wrapper, not the inner link")
+        end sub
+
+        @it("payload returns args directly when not wrapped")
+        sub _()
+            link = deeplink.payload({ contentId: "456", mediaType: "series" })
+
+            m.assertNotInvalid(link)
+            m.assertEqual(link.contentId, "456")
+        end sub
+
+        @it("hasLink is false for invalid")
+        sub _()
+            m.assertFalse(deeplink.hasLink(invalid))
+        end sub
+
+        @it("hasLink is false with no contentId")
+        sub _()
+            m.assertFalse(deeplink.hasLink({ mediaType: "movie" }))
+        end sub
+
+        @it("hasLink is false for an empty contentId")
+        sub _()
+            m.assertFalse(deeplink.hasLink({ contentId: "" }))
+        end sub
+
+        @it("hasLink is true for a populated contentId")
+        sub _()
+            m.assertTrue(deeplink.hasLink({ contentId: "123" }))
+        end sub
+
+        @it("hasLink works through launchParams")
+        sub _()
+            m.assertTrue(deeplink.hasLink({ launchParams: { contentId: "123" } }), "wrapped populated contentId")
+            m.assertFalse(deeplink.hasLink({ launchParams: { contentId: "" } }), "wrapped empty contentId")
+            m.assertFalse(deeplink.hasLink({ launchParams: {} }), "wrapped missing contentId")
+        end sub
+
+        @describe("parse")
+
+        @it("contentId is carried through")
+        @params({ contentId: "123", mediaType: "movie" }, "123")
+        @params({ launchParams: { contentId: "456", mediaType: "movie" } }, "456")
+        sub _(args as object, expected as string)
+            m.assertEqual(deeplink.parse(args).contentId, expected)
+        end sub
+
+        @it("mediaType is lowercased")
+        @params("MOVIE", "movie")
+        @params("Series", "series")
+        @params("ShortFormVideo", "shortformvideo")
+        @params("movie", "movie")
+        sub _(mediaType as string, expected as string)
+            m.assertEqual(deeplink.parse({ contentId: "1", mediaType: mediaType }).mediaType, expected)
+        end sub
+
+        @it("a missing mediaType becomes an empty string")
+        sub _()
+            m.assertEqual(deeplink.parse({ contentId: "1" }).mediaType, "")
+        end sub
+
+        @it("a missing mediaType still counts as a movie")
+        sub _()
+            m.assertTrue(deeplink.parse({ contentId: "1" }).isMovie)
+        end sub
+
+        @it("autoPlay is true for movie")
+        sub _()
+            m.assertTrue(deeplink.parse({ contentId: "1", mediaType: "movie" }).autoPlay)
+        end sub
+
+        @it("autoPlay is false for series")
+        sub _()
+            m.assertFalse(deeplink.parse({ contentId: "1", mediaType: "series" }).autoPlay)
+        end sub
+
+        @describe("isMovie / isPlayable")
+
+        @it("series, season and episode are not movies")
+        @params("series")
+        @params("season")
+        @params("episode")
+        sub _(mediaType as string)
+            m.assertFalse(deeplink.isMovie(mediaType))
+        end sub
+
+        @it("movie is a movie")
+        sub _()
+            m.assertTrue(deeplink.isMovie("movie"))
+        end sub
+
+        @it("an unknown type defaults to movie")
+        @params("")
+        @params("podcast")
+        @params("shortformvideo")
+        @params("live")
+        sub _(mediaType as string)
+            m.assertTrue(deeplink.isMovie(mediaType))
+        end sub
+
+        @it("isMovie ignores case")
+        @params("SERIES", false)
+        @params("Season", false)
+        @params("ePiSoDe", false)
+        @params("MOVIE", true)
+        sub _(mediaType as string, expected as boolean)
+            m.assertEqual(deeplink.isMovie(mediaType), expected)
+        end sub
+
+        @it("each of the six playable kinds is playable")
+        @params("movie")
+        @params("episode")
+        @params("shortformvideo")
+        @params("tvspecial")
+        @params("live")
+        @params("special")
+        sub _(mediaType as string)
+            m.assertTrue(deeplink.isPlayable(mediaType))
+        end sub
+
+        @it("series is not playable")
+        @params("series")
+        @params("season")
+        @params("")
+        @params("podcast")
+        sub _(mediaType as string)
+            m.assertFalse(deeplink.isPlayable(mediaType))
+        end sub
+
+        @it("isPlayable ignores case")
+        @params("MOVIE", true)
+        @params("ShortFormVideo", true)
+        @params("TVSpecial", true)
+        @params("SERIES", false)
+        sub _(mediaType as string, expected as boolean)
+            m.assertEqual(deeplink.isPlayable(mediaType), expected)
+        end sub
+    end class
+end namespace

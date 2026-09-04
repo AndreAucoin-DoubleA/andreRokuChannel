@@ -1,0 +1,81 @@
+namespace tests
+    @suite("tmdb")
+    class TmdbTest extends rooibos.BaseTestSuite
+        @describe("imageUrl")
+
+        @it("returns an empty string when there is no path")
+        sub _()
+            m.assertEqual(tmdb.imageUrl(tmdb.POSTER_THUMB, ""), "")
+        end sub
+
+        @it("joins host, size and path with exactly one slash")
+        sub _()
+            m.assertEqual(tmdb.imageUrl("w342", "/kqjL17.jpg"), "https://image.tmdb.org/t/p/w342/kqjL17.jpg")
+        end sub
+
+        @it("relies on the path carrying its own leading slash")
+        sub _()
+            m.assertEqual(tmdb.imageUrl("w342", "kqjL17.jpg"), "https://image.tmdb.org/t/p/w342kqjL17.jpg")
+        end sub
+
+        @it("builds a url for every shipped size")
+        @params("w300", "https://image.tmdb.org/t/p/w300/kqjL17.jpg")
+        @params("w1280", "https://image.tmdb.org/t/p/w1280/kqjL17.jpg")
+        @params("w342", "https://image.tmdb.org/t/p/w342/kqjL17.jpg")
+        @params("w780", "https://image.tmdb.org/t/p/w780/kqjL17.jpg")
+        @params("w500", "https://image.tmdb.org/t/p/w500/kqjL17.jpg")
+        sub _(size as string, expected as string)
+            m.assertEqual(tmdb.imageUrl(size, "/kqjL17.jpg"), expected)
+        end sub
+
+        @it("exposes the five sizes callers use")
+        sub _()
+            m.assertEqual(tmdb.BACKDROP_THUMB, "w300")
+            m.assertEqual(tmdb.BACKDROP_FULL, "w1280")
+            m.assertEqual(tmdb.POSTER_THUMB, "w342")
+            m.assertEqual(tmdb.POSTER_FULL, "w780")
+            m.assertEqual(tmdb.LOGO, "w500")
+        end sub
+
+        @describe("endpoint urls")
+        @it("movieUrl targets the movie and carries the api key")
+        sub _()
+            m.assertEqual(tmdb.movieUrl("603"), "https://api.themoviedb.org/3/movie/603?api_key=488f756dc5932e8f8725809c68f6bf9d")
+        end sub
+
+        @it("movieImagesUrl appends the images segment")
+        sub _()
+            m.assertEqual(tmdb.movieImagesUrl("603"), "https://api.themoviedb.org/3/movie/603/images?api_key=488f756dc5932e8f8725809c68f6bf9d")
+        end sub
+
+        @it("listUrl carries the list name and page")
+        sub _()
+            m.assertEqual(tmdb.listUrl("popular", 1), "https://api.themoviedb.org/3/movie/popular?api_key=488f756dc5932e8f8725809c68f6bf9d&page=1")
+        end sub
+
+        @it("discoverUrl carries the genre and page")
+        sub _()
+            m.assertEqual(tmdb.discoverUrl(28, 2), "https://api.themoviedb.org/3/discover/movie?with_genres=28&api_key=488f756dc5932e8f8725809c68f6bf9d&page=2")
+        end sub
+
+        @describe("number formatting")
+
+        @it("writes page numbers without truncating or padding")
+        @params(1, "&page=1")
+        @params(9, "&page=9")
+        @params(10, "&page=10")
+        @params(100, "&page=100")
+        sub _(page as integer, suffix as string)
+            m.assertEqual(tmdb.listUrl("popular", page), "https://api.themoviedb.org/3/movie/popular?api_key=488f756dc5932e8f8725809c68f6bf9d" + suffix)
+        end sub
+
+        @it("writes multi-digit genre ids intact")
+        @params(28, "with_genres=28")
+        @params(878, "with_genres=878")
+        @params(10751, "with_genres=10751")
+        sub _(genreId as integer, fragment as string)
+            m.assertEqual(tmdb.discoverUrl(genreId, 1), "https://api.themoviedb.org/3/discover/movie?" + fragment + "&api_key=488f756dc5932e8f8725809c68f6bf9d&page=1")
+        end sub
+
+    end class
+end namespace

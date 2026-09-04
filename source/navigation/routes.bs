@@ -31,10 +31,10 @@ namespace routes
     end function
 
     function indexOf(id as string) as integer
-        all = all()
+        routeList = all()
 
-        for index = 0 to all.Count() - 1
-            if all[index].id = id then return index
+        for index = 0 to routeList.Count() - 1
+            if routeList[index].id = id then return index
         end for
 
         return -1

@@ -1,0 +1,55 @@
+namespace tests
+
+    @suite("multiview")
+    class MultiviewTests extends rooibos.BaseTestSuite
+
+        @describe("multiview")
+
+        @it("mosaicUrl() is the host plus /hls/master.m3u8")
+        sub _()
+            url = multiview.mosaicUrl()
+            host = multiview.host()
+
+            m.assertEqual(url, host + "/hls/master.m3u8")
+
+            m.assertEqual(Left(url, Len(host)), host, "url must start with host()")
+            m.assertEqual(Right(url, 16), "/hls/master.m3u8", "url must end with the playlist path")
+            m.assertEqual(Instr(1, url, "//hls"), 0, "host and path joined with a double slash")
+        end sub
+
+        @it("titleLabels() returns four camera labels")
+        sub _()
+            labels = multiview.titleLabels()
+            expected = [
+                "CAM 1 / PIT LANE"
+                "CAM 2 / TURN 3"
+                "CAM 3 / ONBOARD"
+                "CAM 4 / GRANDSTAND"
+            ]
+
+            m.assertArrayCount(labels, 4)
+
+            seen = {}
+            for index = 0 to expected.Count() - 1
+                label = labels[index]
+
+                m.assertEqual(label, expected[index], `label ${index} is wrong or out of order`)
+
+                prefix = `CAM ${index + 1} /`
+                m.assertEqual(Left(label, Len(prefix)), prefix, `label ${index} should start with "${prefix}"`)
+
+                m.assertFalse(seen.DoesExist(label), `duplicate label: ${label}`)
+                seen[label] = true
+            end for
+        end sub
+
+        @it("host() is a hardcoded LAN address -- pin it so a move is deliberate")
+        sub _()
+            m.assertEqual(multiview.host(), "http://172.16.12.10:8000")
+
+            m.assertNotEqual(Right(multiview.host(), 1), "/", "host() must not end in a slash")
+        end sub
+
+    end class
+end namespace
+

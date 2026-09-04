@@ -1,0 +1,90 @@
+namespace tests
+    @suite("analytics")
+    class AnalyticsTests extends rooibos.BaseTestSuite
+
+        @describe("trackEvent")
+
+        @beforeEach
+        protected override sub beforeEach()
+            m.probe = CreateObject("roSGNode", "ContentNode")
+            m.probe.addFields({ event: {} })
+
+            if m.global.hasField("analyticsTask")
+                m.global.analyticsTask = m.probe
+            else
+                m.global.addFields({ analyticsTask: m.probe })
+            end if
+        end sub
+
+        function trackedEvent() as object
+            return m.probe.event
+        end function
+
+        @it("a missing task logs a warning and drops the event")
+        sub _()
+            m.global.analyticsTask = invalid
+
+            analytics.trackEvent("favorite_toggled", { movieId: "438631" })
+            analytics.trackEvent("no_props_event")
+
+            m.assertInvalid(m.global.analyticsTask)
+
+            m.assertEmpty(m.trackedEvent(), "the event should have been dropped")
+        end sub
+
+        @it("a present task receives name and props")
+        sub _()
+            m.assertEmpty(m.trackedEvent(), "precondition: no event yet")
+
+            analytics.trackEvent("favorite_toggled", { movieId: "438631", favorited: true, totalFavorites: 3 })
+
+            event = m.trackedEvent()
+
+            m.assertAAHasKeys(event, ["name", "props", "ts"])
+            m.assertEqual(event.name, "favorite_toggled")
+
+            m.assertAAHasKeys(event.props, ["movieId", "favorited", "totalFavorites"])
+            m.assertEqual(event.props.movieId, "438631")
+            m.assertTrue(event.props.favorited)
+            m.assertEqual(event.props.totalFavorites, 3)
+        end sub
+
+        @it("the timestamp is ISO 8601")
+        sub _()
+            before = CreateObject("roDateTime").AsSeconds()
+
+            analytics.trackEvent("timed_event")
+
+            ts = m.trackedEvent().ts
+
+            m.assertNotEmpty(ts, "no timestamp was stamped")
+
+            pattern = CreateObject("roRegex", "^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$", "")
+            m.assertTrue(pattern.IsMatch(ts), `not ISO 8601: ${ts}`)
+
+            parsed = CreateObject("roDateTime")
+            parsed.FromISO8601String(ts)
+
+            m.assertTrue(parsed.AsSeconds() >= before, `${ts} predates the call`)
+            m.assertTrue(parsed.AsSeconds() <= before + 60, `${ts} is not a current time`)
+        end sub
+
+        @it("props default to an empty AA")
+        sub _()
+            analytics.trackEvent("no_props_event")
+
+            event = m.trackedEvent()
+
+            m.assertEqual(event.name, "no_props_event")
+            m.assertNotInvalid(event.props, "props should default to an AA, not invalid")
+            m.assertEmpty(event.props, "the default props AA should be empty")
+
+            analytics.trackEvent("first", { a: 1 })
+            analytics.trackEvent("second")
+
+            m.assertEmpty(m.trackedEvent().props, "the default leaked from a previous call")
+        end sub
+
+    end class
+
+end namespace

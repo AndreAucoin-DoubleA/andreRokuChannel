@@ -1,0 +1,6 @@
+{
+  "$description": "Deliberately invalid JSON. Used by tokens.load.spec.bs.",
+  "color": {
+    "$type": "color",
+    "brand": { "$value": }
+  }

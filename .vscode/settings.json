@@ -1,0 +1,20 @@
+{
+  "brightscript.projects": [
+    {
+      "name": "app",
+      "path": "bsconfig.json"
+    },
+    {
+      "name": "tests",
+      "path": "bsconfig-test.json"
+    }
+  ],
+  "cSpell.words": [
+    "bslint",
+    "brighterscript",
+    "roku",
+    "rokucommunity",
+    "rooibos",
+    "sgnode"
+  ]
+}

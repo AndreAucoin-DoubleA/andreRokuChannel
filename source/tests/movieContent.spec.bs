@@ -1,0 +1,169 @@
+namespace tests
+
+    @suite("movieContent")
+
+    class MovieContentTests extends rooibos.BaseTestSuite
+
+        function fullJSON() as object
+            return {
+                id: 438631,
+                title: "Dune",
+                overview: "Paul Atreides leads nomadic tribes.",
+                vote_average: 8.5,
+                release_date: "2021-10-22",
+                backdrop_path: "/backdrop.jpg",
+                poster_path: "/poster.jpg"
+            }
+        end function
+
+        function newNode() as object
+            return CreateObject("roSGNode", "ContentNode")
+        end function
+
+        @describe("fromJson")
+
+        @it("returns a ContentNode")
+        sub _()
+            m.assertSubType(movieContent.fromJson(m.fullJson()), "ContentNode")
+            m.assertSubType(movieContent.fromJson({}), "ContentNode")
+        end sub
+
+        @it("movieId, title, description, rating and releaseDate are populated")
+        sub _()
+            item = movieContent.fromJson(m.fullJson())
+
+            m.assertEqual(item.movieId, "438631")
+            m.assertEqual(item.title, "Dune")
+            m.assertEqual(item.description, "Paul Atreides leads nomadic tribes.")
+            m.assertEqual(item.rating, "8.5")
+            m.assertEqual(item.releaseDate, "2021-10-22")
+        end sub
+
+        @it("missing fields become empty strings rather than invalid")
+        sub _()
+            item = movieContent.fromJson({})
+
+            m.assertEqual(item.movieId, "")
+            m.assertEqual(item.title, "")
+            m.assertEqual(item.description, "")
+            m.assertEqual(item.rating, "")
+            m.assertEqual(item.releaseDate, "")
+        end sub
+
+        @describe("applyArtwork")
+
+        @it("a backdrop path is preferred over a poster path")
+        sub _()
+            item = m.newNode()
+
+            movieContent.applyArtwork(item, { backdrop_path: "/backdrop.jpg", poster_path: "/poster.jpg" })
+
+            m.assertEqual(item.HDPosterUrl, "https://image.tmdb.org/t/p/w300/backdrop.jpg")
+            m.assertEqual(item.HDBackgroundImageUrl, "https://image.tmdb.org/t/p/w1280/backdrop.jpg")
+        end sub
+
+        @it("a poster path is used when no backdrop exists")
+        sub _()
+            item = m.newNode()
+
+            movieContent.applyArtwork(item, { poster_path: "/poster.jpg" })
+
+            m.assertEqual(item.HDPosterUrl, "https://image.tmdb.org/t/p/w342/poster.jpg")
+            m.assertEqual(item.HDBackgroundImageUrl, "https://image.tmdb.org/t/p/w780/poster.jpg")
+        end sub
+
+        @it("neither path leaves both url fields unset")
+        sub _()
+            item = m.newNode()
+
+            movieContent.applyArtwork(item, {})
+
+            m.assertEqual(item.HDPosterUrl, "", "HDPosterUrl should stay at its default")
+            m.assertEqual(item.HDBackgroundImageUrl, "", "HDBackgroundImageUrl should stay at its default")
+        end sub
+
+        @describe("spokenLabel")
+
+        @it("title alone produces just the title")
+        sub _()
+            m.assertEqual(movieContent.spokenLabel({ title: "Dune" }), "Dune")
+        end sub
+
+        @it("a release date adds released YYYY")
+        @params("2021-10-22", "Dune, released 2021")
+        @params("1999", "Dune, released 1999")
+        sub _(releaseDate as string, expected as string)
+            m.assertEqual(movieContent.spokenLabel({ title: "Dune", release_date: releaseDate }), expected)
+        end sub
+
+        @it("a vote average adds rated N out of 10")
+        @params(8.5, "Dune, rated 8 out of 10")
+        @params(7.0, "Dune, rated 7 out of 10")
+        @params(0.5, "Dune, rated 0 out of 10")
+        sub _(voteAverage as float, expected as string)
+            m.assertEqual(movieContent.spokenLabel({ title: "Dune", vote_average: voteAverage }), expected)
+        end sub
+
+        @it("a zero average is omitted")
+        sub _()
+            m.assertEqual(movieContent.spokenLabel({ title: "Dune", vote_average: 0 }), "Dune")
+        end sub
+
+        @it("a release date shorter than four characters is omitted")
+        @params("202")
+        @params("")
+        @params("1")
+        sub _(releaseDate as string)
+            m.assertEqual(movieContent.spokenLabel({ title: "Dune", release_date: releaseDate }), "Dune")
+        end sub
+
+        @it("an empty result set returns an empty string")
+        sub _()
+            m.assertEqual(movieContent.spokenLabel({}), "")
+        end sub
+
+        @it("parts are comma-joined in title, year, rating order")
+        sub _()
+            label = movieContent.spokenLabel(m.fullJson())
+
+            m.assertEqual(label, "Dune, released 2021, rated 8 out of 10")
+        end sub
+
+        @describe("applyAudioGuide")
+
+        @it("empty text adds no field")
+        sub _()
+            item = m.newNode()
+
+            movieContent.applyAudioGuide(item, "")
+
+            m.assertFalse(item.hasField("audioGuideText"), "an empty label should not create the field")
+        end sub
+
+        @it("the field is added when absent")
+        sub _()
+            item = m.newNode()
+
+            m.assertFalse(item.hasField("audioGuideText"), "precondition: field must start absent")
+
+            movieContent.applyAudioGuide(item, "Dune, released 2021")
+
+            m.assertTrue(item.hasField("audioGuideText"))
+            m.assertEqual(item.audioGuideText, "Dune, released 2021")
+        end sub
+
+        @it("the field is set when already present")
+        sub _()
+            item = m.newNode()
+            item.AddFields({ audioGuideText: "stale label" })
+
+            movieContent.applyAudioGuide(item, "fresh label")
+
+            m.assertTrue(item.hasField("audioGuideText"))
+            m.assertEqual(item.audioGuideText, "fresh label", "the existing field should be overwritten")
+        end sub
+
+
+
+    end class
+end namespace
