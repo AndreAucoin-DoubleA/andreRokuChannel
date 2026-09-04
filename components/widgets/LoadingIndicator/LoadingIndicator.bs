@@ -1,21 +1,15 @@
 import "pkg:/source/theme/theme.bs"
-import "pkg:/source/services/a11y.bs"
+import "pkg:/source/widgets/loadingOps.bs"
 
 sub init()
-    m.content = m.top.findNode("content")
-    m.spinner = m.top.findNode("spinner")
-    m.statusLabel = m.top.findNode("statusLabel")
-    m.delayTimer = m.top.findNode("delayTimer")
-    m.timeoutTimer = m.top.findNode("timeoutTimer")
+    m.ctx = loadingOps.newContext(m.top)
 
-    m.spinner.poster.uri = "pkg:/images/spinner.png"
-    m.spinner.poster.width = 96
-    m.spinner.poster.height = 96
+    m.ctx.spinner.poster.uri = "pkg:/images/spinner.png"
+    m.ctx.spinner.poster.width = 96
+    m.ctx.spinner.poster.height = 96
 
-    m.delayTimer.observeField("fire", "onDelayFired")
-    m.timeoutTimer.observeField("fire", "onTimeoutFired")
-
-    m.active = false
+    m.ctx.delayTimer.observeField("fire", "onDelayFired")
+    m.ctx.timeoutTimer.observeField("fire", "onTimeoutFired")
 
     applyTheme()
 end sub
@@ -23,54 +17,27 @@ end sub
 sub applyTheme()
     t = theme.current()
 
-    m.statusLabel.color = t.color("component.page.statusTextColor", "0xB7BDC5FF")
-    m.statusLabel.font = t.font("component.page.statusTextTypography", "font:MediumSystemFont")
+    m.ctx.statusLabel.color = t.color("component.page.statusTextColor", "0xB7BDC5FF")
+    m.ctx.statusLabel.font = t.font("component.page.statusTextTypography", "font:MediumSystemFont")
 end sub
 
 sub show()
-    if m.active then return
-    m.active = true
-
-    m.statusLabel.text = m.top.message
-    m.spinner.visible = true
-
-    m.delayTimer.duration = m.top.showDelay
-    m.delayTimer.control = "start"
-
-    if m.top.timeout > 0
-        m.timeoutTimer.duration = m.top.timeout
-        m.timeoutTimer.control = "start"
-    end if
-end sub
-
-sub onDelayFired()
-    m.content.visible = true
-    m.spinner.control = "start"
-    a11y.context(m.top.message)
+    loadingOps.show(m.ctx)
 end sub
 
 sub hide()
-    m.active = false
-
-    m.delayTimer.control = "stop"
-    m.timeoutTimer.control = "stop"
-    m.spinner.control = "stop"
-    m.content.visible = false
+    loadingOps.hide(m.ctx)
 end sub
 
 sub showError(text = "" as string)
-    hide()
+    loadingOps.showError(m.ctx, text)
+end sub
 
-    message = text
-    if message = "" then message = m.top.errorMessage
-
-    m.statusLabel.text = message
-    m.spinner.visible = false
-    m.content.visible = true
-
-    a11y.context(message)
+sub onDelayFired()
+    loadingOps.reveal(m.ctx)
 end sub
 
 sub onTimeoutFired()
-    showError(m.top.errorMessage)
+    loadingOps.showError(m.ctx, m.top.errorMessage)
 end sub
+

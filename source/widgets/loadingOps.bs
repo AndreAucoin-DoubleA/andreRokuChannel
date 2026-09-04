@@ -1,0 +1,63 @@
+import "pkg:/source/services/a11y.bs"
+
+namespace loadingOps
+
+    function newContext(top as object) as object
+        return {
+            top: top,
+            content: top.findNode("content"),
+            spinner: top.findNode("spinner"),
+            statusLabel: top.findNode("statusLabel"),
+            delayTimer: top.findNode("delayTimer"),
+            timeoutTimer: top.findNode("timeoutTimer"),
+            active: false
+        }
+    end function
+
+    sub show(ctx as object)
+        if ctx.active then return
+        ctx.active = true
+
+        ctx.statusLabel.text = ctx.top.message
+        ctx.spinner.visible = true
+
+        ctx.delayTimer.duration = ctx.top.showDelay
+        ctx.delayTimer.control = "start"
+
+        if ctx.top.timeout > 0
+            ctx.timeoutTimer.duration = ctx.top.timeout
+            ctx.timeoutTimer.control = "start"
+        end if
+    end sub
+
+    sub reveal(ctx as object)
+        ctx.content.visible = true
+        ctx.spinner.control = "start"
+
+        a11y.context(ctx.top.message)
+    end sub
+
+    sub hide(ctx as object)
+        ctx.active = false
+
+        ctx.delayTimer.control = "stop"
+        ctx.timeoutTimer.control = "stop"
+        ctx.spinner.control = "stop"
+        ctx.content.visible = false
+    end sub
+
+    sub showError(ctx as object, text = "" as string)
+        loadingOps.hide(ctx)
+
+        message = text
+        if message = "" then message = ctx.top.errorMessage
+
+        ctx.statusLabel.text = message
+        ctx.spinner.visible = false
+        ctx.content.visible = true
+
+        a11y.context(message)
+    end sub
+
+end namespace
+

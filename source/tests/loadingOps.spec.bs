@@ -1,0 +1,122 @@
+namespace tests
+
+    @suite("LoadingIndicator")
+    class LoadingIndicatorTests extends rooibos.BaseTestSuite
+
+        @describe("LoadingIndicator")
+
+        @beforeEach
+        protected override sub beforeEach()
+            probe = CreateObject("roSGNode", "ContentNode")
+            probe.addFields({ request: {} })
+
+            if m.global.hasField("speechTask")
+                m.global.speechTask = probe
+            else
+                m.global.addFields({ speechTask: probe })
+            end if
+        end sub
+
+        function newCtx() as object
+            return loadingOps.newContext(CreateObject("roSGNode", "LoadingIndicator"))
+        end function
+
+        function announced() as dynamic
+            return m.global.speechTask.request.context
+        end function
+
+        @it("show does not display immediately")
+        sub _()
+            ctx = m.newCtx()
+
+            m.assertFalse(ctx.content.visible, "precondition: hidden")
+
+            loadingOps.show(ctx)
+
+            m.assertFalse(ctx.content.visible, "the delay must elapse before anything shows")
+            m.assertTrue(ctx.active, "but it is now active")
+            m.assertEqual(ctx.statusLabel.text, ctx.top.message, "the message is staged")
+            m.assertTrue(ctx.spinner.visible, "the spinner is staged inside the hidden content")
+            m.assertEqual(ctx.delayTimer.control, "start", "the delay timer must be running")
+            m.assertEqual(ctx.timeoutTimer.control, "start", "the timeout timer must be running")
+            m.assertInvalid(m.announced(), "nothing is announced until it is visible")
+        end sub
+
+        @it("the delay timer firing makes it visible")
+        sub _()
+            ctx = m.newCtx()
+
+            loadingOps.show(ctx)
+            loadingOps.reveal(ctx)
+
+            m.assertTrue(ctx.content.visible)
+            m.assertEqual(ctx.spinner.control, "start", "the spinner must start animating")
+            m.assertEqual(m.announced(), "Loading...", "the message is announced on reveal")
+        end sub
+
+        @it("hide cancels a pending delay")
+        sub _()
+            ctx = m.newCtx()
+
+            loadingOps.show(ctx)
+            m.assertEqual(ctx.delayTimer.control, "start", "precondition: delay pending")
+
+            loadingOps.hide(ctx)
+
+            m.assertEqual(ctx.delayTimer.control, "stop", "the pending delay must be cancelled")
+            m.assertEqual(ctx.timeoutTimer.control, "stop", "the timeout must be cancelled too")
+            m.assertFalse(ctx.content.visible)
+            m.assertFalse(ctx.active, "hide must clear active so a later show works")
+
+            loadingOps.show(ctx)
+            m.assertEqual(ctx.delayTimer.control, "start", "a second show must restart the delay")
+        end sub
+
+        @it("hide while visible hides it")
+        sub _()
+            ctx = m.newCtx()
+
+            loadingOps.show(ctx)
+            loadingOps.reveal(ctx)
+            m.assertTrue(ctx.content.visible, "precondition: visible")
+
+            loadingOps.hide(ctx)
+
+            m.assertFalse(ctx.content.visible)
+            m.assertEqual(ctx.spinner.control, "stop", "the spinner must stop animating")
+        end sub
+
+        @it("showError displays the error message")
+        @params("Network unavailable", "Network unavailable")
+        @params("", "Something went wrong")
+        sub _(text as string, expected as string)
+            ctx = m.newCtx()
+
+            loadingOps.showError(ctx, text)
+
+            m.assertEqual(ctx.statusLabel.text, expected, "an empty text falls back to errorMessage")
+            m.assertTrue(ctx.content.visible, "the error must be shown")
+            m.assertFalse(ctx.spinner.visible, "the spinner must be hidden in the error state")
+            m.assertEqual(m.announced(), expected, "the error is announced")
+        end sub
+
+        @it("the timeout firing shows the error state")
+        sub _()
+            ctx = m.newCtx()
+
+            loadingOps.show(ctx)
+            loadingOps.reveal(ctx)
+            m.assertTrue(ctx.spinner.visible, "precondition: loading with a spinner")
+
+            loadingOps.showError(ctx, ctx.top.errorMessage)
+
+            m.assertEqual(ctx.statusLabel.text, "Something went wrong")
+            m.assertTrue(ctx.content.visible, "the error stays on screen")
+            m.assertFalse(ctx.spinner.visible, "loading must give way to the error")
+            m.assertEqual(ctx.delayTimer.control, "stop", "showError hides first, stopping the timers")
+            m.assertEqual(ctx.timeoutTimer.control, "stop")
+            m.assertFalse(ctx.active)
+        end sub
+
+    end class
+end namespace
