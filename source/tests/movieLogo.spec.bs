@@ -1,0 +1,82 @@
+namespace tests
+
+    @suite("movieLogo")
+    class MovieLogoTests extends rooibos.BaseTestSuite
+
+        @describe("resolveLogoUrl")
+
+        @it("an empty movieId returns empty")
+        sub _()
+            m.expectNotCalled(http.getJson(""))
+
+            m.assertEqual(movieLogo.forId(""), "")
+        end sub
+
+        @it("an invalid response returns empty")
+        sub _()
+            m.stubCall(http.getJson, function(url as string, timeoutMs = 8000 as integer) as dynamic
+                return invalid
+            end function)
+
+            m.assertEqual(movieLogo.forId("438631"), "")
+        end sub
+
+        @it("a response with no logos returns empty")
+        sub _()
+            m.stubCall(http.getJson, function(url as string, timeoutMs = 8000 as integer) as dynamic
+                return { id: 438631, backdrops: [{ file_path: "/b.jpg" }] }
+            end function)
+
+            m.assertEqual(movieLogo.forId("438631"), "")
+        end sub
+
+        @it("an empty logos array returns empty")
+        sub _()
+            m.stubCall(http.getJson, function(url as string, timeoutMs = 8000 as integer) as dynamic
+                return { id: 438631, logos: [] }
+            end function)
+
+            m.assertEqual(movieLogo.forId("438631"), "")
+        end sub
+
+        @it("an English logo is preferred")
+        sub _()
+            m.stubCall(http.getJson, function(url as string, timeoutMs = 8000 as integer) as dynamic
+                return { logos: [
+                    { iso_639_1: "fr", file_path: "/french.png" }
+                    { iso_639_1: "de", file_path: "/german.png" }
+                    { iso_639_1: "en", file_path: "/english.png" }
+                    { iso_639_1: "es", file_path: "/spanish.png" }
+                ] }
+            end function)
+
+            m.assertEqual(movieLogo.forId("438631"), "https://image.tmdb.org/t/p/w500/english.png")
+        end sub
+
+        @it("the first logo is used when none is English")
+        sub _()
+            m.stubCall(http.getJson, function(url as string, timeoutMs = 8000 as integer) as dynamic
+                return { logos: [
+                    { iso_639_1: "fr", file_path: "/french.png" }
+                    { iso_639_1: "de", file_path: "/german.png" }
+                ] }
+            end function)
+
+            m.assertEqual(movieLogo.forId("438631"), "https://image.tmdb.org/t/p/w500/french.png")
+        end sub
+
+        @it("the url is built at the LOGO size")
+        sub _()
+            m.stubCall(http.getJson, function(url as string, timeoutMs = 8000 as integer) as dynamic
+                return { logos: [{ iso_639_1: "en", file_path: "/only.png" }] }
+            end function)
+
+            url = movieLogo.forId("438631")
+
+            m.assertEqual(url, tmdb.imageUrl(tmdb.LOGO, "/only.png"), "must use the LOGO size, not a poster size")
+            m.assertEqual(url, "https://image.tmdb.org/t/p/w500/only.png")
+            m.assertEqual(Instr(1, url, "/w500/"), 27, "w500 must sit between host and path")
+        end sub
+
+    end class
+end namespace

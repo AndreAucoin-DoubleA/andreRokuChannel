@@ -1,0 +1,25 @@
+import "pkg:/source/api/http.bs"
+import "pkg:/source/api/tmdb.bs"
+import "pkg:/source/utils/strings.bs"
+
+namespace movieLogo
+
+    function forId(movieId as string) as string
+        if movieId = "" then return ""
+
+        json = http.getJson(tmdb.movieImagesUrl(movieId))
+
+        if json = invalid or json.logos = invalid or json.logos.Count() = 0 then return ""
+
+        return tmdb.imageUrl(tmdb.LOGO, strings.fromValue(preferred(json.logos).file_path))
+    end function
+
+    function preferred(logos as object) as object
+        for each logo in logos
+            if logo.iso_639_1 = "en" then return logo
+        end for
+
+        return logos[0]
+    end function
+
+end namespace
