@@ -1,11 +1,12 @@
 import "pkg:/source/services/a11y.bs"
+import "pkg:/source/widgets/favoriteOps.bs"
 
 sub init()
     m.favIcon = m.top.findNode("favIcon")
 
     m.top.scaleRotateCenter = [32, 32]
 
-    m.okHeld = false
+    m.ctx = favoriteOps.newContext(m.top)
 
     m.top.observeField("focusedChild", "onFocusChanged")
 
@@ -27,45 +28,14 @@ sub onFocusChanged()
     if m.top.hasFocus()
         m.favIcon.opacity = 1.0
         m.top.scale = [1.15, 1.15]
-        announceState()
+        favoriteOps.announceState(m.ctx)
     else
-        m.okHeld = false
+        favoriteOps.releaseHold(m.ctx)
         m.favIcon.opacity = 0.6
         m.top.scale = [1.0, 1.0]
     end if
 end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean
-
-    if key <> "OK" then return false
-
-    if not press
-        m.okHeld = false
-        return true
-    end if
-
-    if m.okHeld then return true
-
-    m.okHeld = true
-    m.top.favorited = not m.top.favorited
-
-    announceChange()
-
-    return true
+    return favoriteOps.handleKey(m.ctx, key, press)
 end function
-
-sub announceState()
-    if m.top.favorited
-        a11y.focus("Favorite, button, in your favorites")
-    else
-        a11y.focus("Favorite, button, not in your favorites")
-    end if
-end sub
-
-sub announceChange()
-    if m.top.favorited
-        a11y.focus("Added to favorites")
-    else
-        a11y.focus("Removed from favorites")
-    end if
-end sub

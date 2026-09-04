@@ -1,0 +1,106 @@
+namespace tests
+
+    @suite("FavoriteToggle")
+    class FavoriteToggleTests extends rooibos.BaseTestSuite
+
+        @describe("FavoriteToggle")
+
+        @beforeEach
+        protected override sub beforeEach()
+            probe = CreateObject("roSGNode", "ContentNode")
+            probe.addFields({ request: {} })
+
+            if m.global.hasField("speechTask")
+                m.global.speechTask = probe
+            else
+                m.global.addFields({ speechTask: probe })
+            end if
+        end sub
+
+        function newToggle() as object
+            return CreateObject("roSGNode", "FavoriteToggle")
+        end function
+
+        function newCtx() as object
+            return favoriteOps.newContext(m.newToggle())
+        end function
+
+        function spokenText() as dynamic
+            return m.global.speechTask.request.focus
+        end function
+
+        @it("a favorited change swaps the icon")
+        sub _()
+            toggle = m.newToggle()
+            icon = toggle.findNode("favIcon")
+
+            m.assertEqual(icon.uri, "pkg:/images/favorite_empty.png", "starts unfavorited")
+
+            toggle.favorited = true
+            m.assertEqual(icon.uri, "pkg:/images/favorite_filled.png")
+
+            toggle.favorited = false
+            m.assertEqual(icon.uri, "pkg:/images/favorite_empty.png", "must swap back")
+        end sub
+
+        @it("gaining focus announces the current state")
+        sub _()
+            ctx = m.newCtx()
+
+            m.assertInvalid(m.spokenText(), "precondition: nothing announced yet")
+
+            favoriteOps.announceState(ctx)
+            m.assertEqual(m.spokenText(), "Favorite, button, not in your favorites")
+
+            ctx.top.favorited = true
+            favoriteOps.announceState(ctx)
+            m.assertEqual(m.spokenText(), "Favorite, button, in your favorites")
+        end sub
+
+        @it("toggling announces the change")
+        sub _()
+            ctx = m.newCtx()
+
+            favoriteOps.handleKey(ctx, "OK", true)
+            m.assertEqual(m.spokenText(), "Added to favorites", "adding")
+
+            favoriteOps.handleKey(ctx, "OK", false)
+
+            favoriteOps.handleKey(ctx, "OK", true)
+            m.assertEqual(m.spokenText(), "Removed from favorites", "removing")
+        end sub
+
+        @it("OK flips favorited")
+        sub _()
+            ctx = m.newCtx()
+
+            m.assertFalse(ctx.top.favorited, "precondition: not favorited")
+
+            m.assertTrue(favoriteOps.handleKey(ctx, "OK", true), "OK must be consumed")
+            m.assertTrue(ctx.top.favorited, "the first press should favorite")
+
+            m.assertTrue(favoriteOps.handleKey(ctx, "OK", true), "a repeat is still consumed")
+            m.assertTrue(ctx.top.favorited, "a held key must not toggle twice")
+
+            m.assertTrue(favoriteOps.handleKey(ctx, "OK", false), "the release must be consumed")
+
+            m.assertTrue(favoriteOps.handleKey(ctx, "OK", true))
+            m.assertFalse(ctx.top.favorited, "the next press should unfavorite")
+        end sub
+
+        @it("other keys are not handled")
+        @params("back", true)
+        @params("up", true)
+        @params("down", false)
+        @params("ok", true)
+        @params("", true)
+        sub _(key as string, press as boolean)
+            ctx = m.newCtx()
+
+            m.assertFalse(favoriteOps.handleKey(ctx, key, press), `${key} press=${press} must not be handled`)
+            m.assertFalse(ctx.top.favorited, "favorited must not change")
+            m.assertInvalid(m.spokenText(), "nothing should be announced")
+        end sub
+
+    end class
+end namespace

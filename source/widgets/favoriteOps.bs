@@ -1,0 +1,51 @@
+import "pkg:/source/services/a11y.bs"
+
+namespace favoriteOps
+
+    function newContext(top as object) as object
+        return { top: top, okHeld: false }
+    end function
+
+    function stateLabel(favorited as boolean) as string
+        if favorited then return "Favorite, button, in your favorites"
+
+        return "Favorite, button, not in your favorites"
+    end function
+
+    function changeLabel(favorited as boolean) as string
+        if favorited then return "Added to favorites"
+
+        return "Removed from favorites"
+    end function
+
+    sub announceState(ctx as object)
+        a11y.focus(favoriteOps.stateLabel(ctx.top.favorited))
+    end sub
+
+    sub announceChange(ctx as object)
+        a11y.focus(favoriteOps.changeLabel(ctx.top.favorited))
+    end sub
+
+    sub releaseHold(ctx as object)
+        ctx.okHeld = false
+    end sub
+
+    function handleKey(ctx as object, key as string, press as boolean) as boolean
+        if key <> "OK" then return false
+
+        if not press
+            ctx.okHeld = false
+            return true
+        end if
+
+        if ctx.okHeld then return true
+
+        ctx.okHeld = true
+        ctx.top.favorited = not ctx.top.favorited
+
+        favoriteOps.announceChange(ctx)
+
+        return true
+    end function
+
+end namespace
