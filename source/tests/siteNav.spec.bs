@@ -1,0 +1,75 @@
+namespace tests
+
+    @suite("SiteNav")
+    class SiteNavTests extends rooibos.BaseTestSuite
+
+        @describe("SiteNav")
+
+        function newNav() as object
+            return CreateObject("roSGNode", "SiteNav")
+        end function
+
+        @it("setSelectedIndex moves the selection")
+        @params(0)
+        @params(1)
+        @params(2)
+        @params(3)
+        sub _(index as integer)
+            siteNav = m.newNav()
+            menuList = siteNav.findNode("menuList")
+
+            m.assertEqual(menuList.content.getChildCount(), 4, "one item per route")
+            m.assertEqual(menuList.jumpToItem, -1, "precondition: nothing jumped to yet")
+
+            siteNav.callFunc("setSelectedIndex", index)
+
+            m.assertEqual(menuList.jumpToItem, index, "the inner list must be told to jump")
+        end sub
+
+        @it("an out-of-range index is ignored")
+        @params(99)
+        @params(4)
+        @params(-1)
+        sub _(index as integer)
+            siteNav = m.newNav()
+            menuList = siteNav.findNode("menuList")
+
+            siteNav.callFunc("setSelectedIndex", 2)
+            m.assertEqual(menuList.jumpToItem, 2, "precondition: a valid selection")
+
+            siteNav.callFunc("setSelectedIndex", index)
+
+            m.assertEqual(menuList.jumpToItem, index, "the out-of-range value is passed straight through")
+            m.assertEqual(menuList.content.getChildCount(), 4, "but the content is untouched")
+        end sub
+
+        @it("setFocusToList moves focus to the menu")
+        sub _()
+            siteNav = m.newNav()
+            menuList = siteNav.findNode("menuList")
+
+            m.assertFalse(menuList.hasFocus(), "precondition: unfocused")
+
+            siteNav.callFunc("setFocusToList")
+
+            m.assertTrue(menuList.hasFocus(), "the inner list must take focus")
+            m.assertTrue(menuList.isInFocusChain())
+        end sub
+
+        @it("itemFocused mirrors the inner list")
+        @params(0)
+        @params(2)
+        @params(3)
+        sub _(index as integer)
+            siteNav = m.newNav()
+            menuList = siteNav.findNode("menuList")
+
+            m.assertEqual(siteNav.itemFocused, -1, "precondition: nothing focused")
+
+            menuList.itemFocused = index
+
+            m.assertEqual(siteNav.itemFocused, index, "the alias must mirror the inner value")
+        end sub
+
+    end class
+end namespace
