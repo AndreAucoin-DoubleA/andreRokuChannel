@@ -1,0 +1,103 @@
+namespace tests
+
+    @suite("NavItem")
+    class NavItemTests extends rooibos.BaseTestSuite
+
+        @describe("NavItem")
+
+        function newCtx() as object
+            return navItemOps.newContext(CreateObject("roSGNode", "NavItem"))
+        end function
+
+        function milli(value as dynamic) as integer
+            return Int(value * 1000 + 0.5)
+        end function
+
+        function colorValue(hex as string) as dynamic
+            probe = CreateObject("roSGNode", "Label")
+            probe.color = hex
+
+            return probe.color
+        end function
+
+        @it("labelOpacity at focusPercent 0")
+        sub _()
+            m.assertEqual(m.milli(navItemOps.labelOpacity(true)), 0, "collapsed hides the label")
+        end sub
+
+        @it("labelOpacity at focusPercent 1")
+        sub _()
+            m.assertEqual(m.milli(navItemOps.labelOpacity(false)), 1000, "expanded shows the label")
+        end sub
+
+        @it("labelOpacity interpolates between")
+        sub _()
+            ctx = m.newCtx()
+
+            ctx.label.opacity = 1.0
+
+            navItemOps.applyCollapsed(ctx, true)
+
+            keys = ctx.fadeInterp.keyValue
+            m.assertArrayCount(keys, 2)
+            m.assertEqual(m.milli(keys[0]), 1000, "tween starts at the current opacity")
+            m.assertEqual(m.milli(keys[1]), 0, "and ends at the collapsed value")
+            m.assertEqual(ctx.collapseAnim.control, "start", "the animation must be restarted")
+
+            ctx.label.opacity = 0.0
+            navItemOps.applyCollapsed(ctx, false)
+
+            keys = ctx.fadeInterp.keyValue
+            m.assertEqual(m.milli(keys[0]), 0, "tween starts where it left off")
+            m.assertEqual(m.milli(keys[1]), 1000)
+        end sub
+
+        @it("highlightWidth when expanded")
+        sub _()
+            ctx = m.newCtx()
+
+            m.assertEqual(Int(navItemOps.highlightWidth(ctx, false)), 250, "the expanded rail width")
+
+        end sub
+
+        @it("updateHighlight applies both values")
+        @params(0.0, 0, false)
+        @params(0.25, 250, false)
+        @params(0.5, 500, false)
+        @params(0.75, 750, true)
+        @params(1.0, 1000, true)
+        sub _(focusPercent as float, expectedMilli as integer, focused as boolean)
+            ctx = m.newCtx()
+            ctx.top.listHasFocus = true
+
+            ctx.top.focusPercent = focusPercent
+            navItemOps.updateHighlight(ctx)
+
+            m.assertEqual(m.milli(ctx.highlight.opacity), expectedMilli, "opacity tracks focusPercent")
+
+            expectedColor = ctx.labelColor
+            if focused then expectedColor = ctx.labelColorFocused
+
+            m.assertEqual(ctx.label.color, m.colorValue(expectedColor), "the label colour switches past 0.5")
+        end sub
+
+        @it("listHasFocus false dims the highlight")
+        @params(1.0, 450)
+        @params(0.5, 225)
+        @params(0.0, 0)
+        sub _(focusPercent as float, expectedMilli as integer)
+            ctx = m.newCtx()
+
+            ctx.top.listHasFocus = false
+            ctx.top.focusPercent = focusPercent
+            navItemOps.updateHighlight(ctx)
+
+            m.assertEqual(m.milli(ctx.highlight.opacity), expectedMilli, "dimmed to 45%")
+
+            ctx.top.listHasFocus = true
+            navItemOps.updateHighlight(ctx)
+
+            m.assertEqual(m.milli(ctx.highlight.opacity), m.milli(focusPercent), "undimmed when the list has focus")
+        end sub
+    end class
+end namespace
