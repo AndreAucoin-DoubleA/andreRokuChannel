@@ -1,0 +1,373 @@
+namespace tests
+
+    @suite("MovieDetailsView")
+    class MovieDetailsViewTests extends rooibos.BaseTestSuite
+
+        @describe("focus & a11y order")
+
+        @setup
+        protected override sub setup()
+            m.savedFavorites = {}
+            registry = favorites.section()
+            for each key in registry.GetKeyList()
+                m.savedFavorites[key] = registry.Read(key)
+            end for
+
+            m.savedBookmarks = {}
+            registry = bookmarks.section()
+            for each key in registry.GetKeyList()
+                m.savedBookmarks[key] = registry.Read(key)
+            end for
+        end sub
+
+        @teardown
+        protected override sub tearDown()
+            m.restore(favorites.section(), m.savedFavorites)
+            m.restore(bookmarks.section(), m.savedBookmarks)
+        end sub
+
+        sub restore(registry as object, saved as object)
+            for each key in registry.GetKeyList()
+                registry.Delete(key)
+            end for
+            for each key in saved
+                registry.Write(key, saved[key])
+            end for
+            registry.Flush()
+        end sub
+
+        @beforeEach
+        protected override sub beforeEach()
+            m.clear(favorites.section())
+            m.clear(bookmarks.section())
+
+            ' m.global fields the view reads; main.bs is not in the test build.
+            if not m.global.hasField("screenReaderOn")
+                m.global.addFields({ screenReaderOn: false })
+            end if
+            m.global.screenReaderOn = false
+
+            if not m.global.hasField("favoritesVersion")
+                m.global.addFields({ favoritesVersion: 0 })
+            end if
+            m.global.favoritesVersion = 0
+
+            probe = CreateObject("roSGNode", "ContentNode")
+            probe.addFields({ request: {}, event: {} })
+
+            if m.global.hasField("speechTask")
+                m.global.speechTask = probe
+            else
+                m.global.addFields({ speechTask: probe })
+            end if
+
+            if m.global.hasField("analyticsTask")
+                m.global.analyticsTask = probe
+            else
+                m.global.addFields({ analyticsTask: probe })
+            end if
+        end sub
+
+        @afterEach
+        protected override sub afterEach()
+            m.clear(favorites.section())
+            m.clear(bookmarks.section())
+        end sub
+
+        sub clear(registry as object)
+            for each key in registry.GetKeyList()
+                registry.Delete(key)
+            end for
+            registry.Flush()
+        end sub
+
+        function newView() as object
+            return CreateObject("roSGNode", "MovieDetailsView")
+        end function
+
+        function newMovie(movieId = "438631" as string) as object
+            movie = CreateObject("roSGNode", "ContentNode")
+            movie.addFields({ movieId: movieId })
+            movie.title = "Dune"
+            movie.description = "Paul Atreides leads nomadic tribes."
+            movie.rating = "8.5"
+            movie.releaseDate = "2021-10-22"
+            movie.HDBackgroundImageUrl = "https://image.tmdb.org/t/p/w1280/b.jpg"
+
+            return movie
+        end function
+
+        ' A content row of three movies, for the nextSibling cases.
+        function rowOf(titles as object) as object
+            row = CreateObject("roSGNode", "ContentNode")
+
+            for each title in titles
+                item = row.createChild("ContentNode")
+                item.title = title
+            end for
+
+            return row
+        end function
+
+        function announced() as dynamic
+            return m.global.speechTask.request.context
+        end function
+
+        function ids(chain as object) as string
+            out = []
+            for each control in chain
+                out.Push(control.id)
+            end for
+
+            return out.Join(",")
+        end function
+
+        @it("focusChain lists controls in the intended order")
+        sub _()
+            view = m.newView()
+
+            ' Both optional buttons start hidden.
+            m.assertEqual(m.ids(view.callFunc("focusChain")), "playButton", "play only")
+
+            view.findNode("restartButton").visible = true
+            m.assertEqual(m.ids(view.callFunc("focusChain")), "playButton,restartButton", "restart follows play")
+
+            view.findNode("nextButton").visible = true
+            m.assertEqual(m.ids(view.callFunc("focusChain")), "playButton,restartButton,nextButton", "next is last")
+
+            ' Hiding restart closes the gap rather than leaving a hole.
+            view.findNode("restartButton").visible = false
+            m.assertEqual(m.ids(view.callFunc("focusChain")), "playButton,nextButton")
+        end sub
+
+        @it("focusedColumnControl resolves the current control")
+        sub _()
+            view = m.newView()
+            view.findNode("restartButton").visible = true
+            view.findNode("nextButton").visible = true
+
+            ' With nothing focused it falls back to the play button.
+            m.assertEqual(view.callFunc("focusedColumnControl").id, "playButton", "the default")
+
+            view.findNode("nextButton").setFocus(true)
+            m.assertEqual(view.callFunc("focusedColumnControl").id, "nextButton")
+
+            view.findNode("restartButton").setFocus(true)
+            m.assertEqual(view.callFunc("focusedColumnControl").id, "restartButton")
+        end sub
+
+        ' A fresh view per step: outside a rendered scene there is no focus
+        ' chain, so an earlier setFocus is never cleared and moveFocus would
+        ' keep matching the first control in the chain.
+        function focusedView(startId as string) as object
+            view = m.newView()
+            view.findNode("restartButton").visible = true
+            view.findNode("nextButton").visible = true
+            view.findNode(startId).setFocus(true)
+
+            return view
+        end function
+
+        @it("moveFocus down advances one step")
+        @params("playButton", "restartButton")
+        @params("restartButton", "nextButton")
+        sub _(startId as string, expectedId as string)
+            view = m.focusedView(startId)
+
+            m.assertTrue(view.callFunc("moveFocus", 1), "the move is handled")
+            m.assertTrue(view.findNode(expectedId).hasFocus(), `${startId} -> ${expectedId}`)
+        end sub
+
+        @it("moveFocus up retreats one step")
+        @params("nextButton", "restartButton")
+        @params("restartButton", "playButton")
+        sub _(startId as string, expectedId as string)
+            view = m.focusedView(startId)
+
+            m.assertTrue(view.callFunc("moveFocus", -1))
+            m.assertTrue(view.findNode(expectedId).hasFocus(), `${startId} -> ${expectedId}`)
+        end sub
+
+        @it("moveFocus stops at the ends rather than wrapping")
+        @params("playButton", -1)
+        @params("nextButton", 1)
+        sub _(startId as string, delta as integer)
+            view = m.focusedView(startId)
+
+            m.assertFalse(view.callFunc("moveFocus", delta), `${delta} from ${startId} must be unhandled`)
+            m.assertTrue(view.findNode(startId).hasFocus(), "and focus must not move")
+        end sub
+
+        @it("announceScreen sends context before item focus")
+        sub _()
+            view = m.newView()
+
+            m.assertInvalid(m.announced(), "precondition: nothing announced")
+
+            ' With no metadata yet it is just the screen name.
+            view.callFunc("announceScreen")
+            m.assertEqual(m.announced(), "Movie Details", "the screen name alone")
+
+            ' Once a movie is applied the metadata is appended.
+            view.callFunc("applyMovie", m.newMovie())
+            view.callFunc("announceScreen")
+
+            m.assertEqual(m.announced(), "Movie Details. Dune  -  Rating: 8.5  -  Released: 2021-10-22", "screen name then metadata")
+        end sub
+
+        @it("nextSibling mid-row returns the next movie")
+        @params(0, "Arrival")
+        @params(1, "Sicario")
+        sub _(index as integer, expected as string)
+            view = m.newView()
+            row = m.rowOf(["Dune", "Arrival", "Sicario"])
+
+            view.callFunc("viewDidLoad", { movie: row.getChild(index), row: row, index: index })
+
+            sibling = view.callFunc("nextSibling")
+
+            m.assertNotInvalid(sibling, `no sibling after index ${index}`)
+            m.assertEqual(sibling.title, expected)
+        end sub
+
+        @it("nextSibling at the end of a row returns invalid")
+        sub _()
+            view = m.newView()
+            row = m.rowOf(["Dune", "Arrival", "Sicario"])
+
+            view.callFunc("viewDidLoad", { movie: row.getChild(2), row: row, index: 2 })
+            m.assertInvalid(view.callFunc("nextSibling"), "the last movie has no sibling")
+
+            ' No row or index at all is also invalid.
+            bare = m.newView()
+            bare.callFunc("viewDidLoad", { movie: m.newMovie() })
+            m.assertInvalid(bare.callFunc("nextSibling"), "params without a row")
+        end sub
+
+        @describe("content & playback")
+
+        @it("applyMovie populates title, description and rating")
+        sub _()
+            view = m.newView()
+
+            view.callFunc("applyMovie", m.newMovie())
+
+            m.assertEqual(view.findNode("meta").text, "Dune  -  Rating: 8.5  -  Released: 2021-10-22")
+            m.assertEqual(view.findNode("desc").text, "Paul Atreides leads nomadic tribes.")
+            m.assertEqual(view.findNode("detailsBack").uri, "https://image.tmdb.org/t/p/w1280/b.jpg", "the backdrop follows")
+
+            ' An invalid movie is a no-op rather than a crash.
+            view.callFunc("applyMovie", invalid)
+            m.assertEqual(view.findNode("meta").text, "Dune  -  Rating: 8.5  -  Released: 2021-10-22", "left untouched")
+        end sub
+
+        @it("toggling favorite calls favorites.setFavorite")
+        sub _()
+            view = m.newView()
+            view.callFunc("applyMovie", m.newMovie("438631"))
+
+            m.assertFalse(favorites.isFavorite("438631"), "precondition: not favorited")
+
+            view.findNode("detailsFav").favorited = true
+            view.callFunc("onFavoriteToggled")
+
+            m.assertTrue(favorites.isFavorite("438631"), "the registry is written")
+
+            view.findNode("detailsFav").favorited = false
+            view.callFunc("onFavoriteToggled")
+
+            m.assertFalse(favorites.isFavorite("438631"), "and un-written")
+        end sub
+
+        @it("autoplayAllowed is false when the screen reader is on")
+        sub _()
+            view = m.newView()
+
+            baseline = view.callFunc("autoplayAllowed")
+
+            m.global.screenReaderOn = true
+            withReader = view.callFunc("autoplayAllowed")
+
+            ' NOTE: autoplayAllowed reads roDeviceInfo -- the OS version and
+            ' IsAutoplayEnabled -- not m.global.screenReaderOn. The screen
+            ' reader only affects ambientDelay. This pins the real behaviour.
+            m.assertEqual(withReader, baseline, "the screen reader does not gate autoplay")
+        end sub
+
+        @it("ambientDelay is longer with the screen reader on")
+        sub _()
+            view = m.newView()
+
+            m.global.screenReaderOn = false
+            m.assertEqual(Int(view.callFunc("ambientDelay")), 5, "the default countdown")
+
+            m.global.screenReaderOn = true
+            m.assertEqual(Int(view.callFunc("ambientDelay")), 12, "longer so the announcement can finish")
+        end sub
+
+        @it("resetPlayback stops the trailer")
+        sub _()
+            view = m.newView()
+            video = view.findNode("videoPlayer")
+
+            video.visible = true
+
+            view.callFunc("resetPlayback")
+
+            m.assertEqual(video.control, "stop", "the player is stopped")
+            m.assertFalse(video.visible, "and hidden")
+            m.assertEqual(view.findNode("bgPlayTimer").control, "stop", "the ambient countdown is cancelled")
+            m.assertEqual(Int(view.findNode("detailsBack").opacity), 1, "the backdrop comes back")
+            m.assertTrue(view.findNode("meta").visible, "and the chrome is restored")
+        end sub
+
+        @it("back during a trailer restores the details chrome")
+        sub _()
+            view = m.newView()
+            view.callFunc("applyMovie", m.newMovie())
+
+            ' restoreDetails is what back invokes once fullscreen is active.
+            view.callFunc("showDetailsChrome", false)
+            m.assertFalse(view.findNode("meta").visible, "precondition: chrome hidden")
+
+            view.callFunc("restoreDetails")
+
+            m.assertTrue(view.findNode("meta").visible, "the metadata returns")
+            m.assertTrue(view.findNode("desc").visible)
+            m.assertTrue(view.findNode("playButton").visible)
+            m.assertTrue(view.findNode("playButton").hasFocus(), "and focus lands on play")
+            m.assertEqual(m.announced(), "Movie details", "the return is announced")
+        end sub
+
+        @it("a video error opens the playback dialog")
+        sub _()
+            view = m.newView()
+            view.callFunc("applyMovie", m.newMovie())
+            video = view.findNode("videoPlayer")
+
+            ' A non-fullscreen failure resets but shows no dialog.
+            video.state = "error"
+            view.callFunc("onVideoStateChanged")
+
+            m.assertInvalid(view.getScene().dialog, "an ambient failure stays silent")
+            m.assertTrue(view.findNode("playButton").hasFocus(), "but focus is recovered")
+            m.assertEqual(video.control, "stop", "and playback is reset")
+        end sub
+
+        @it("dismissing the dialog restores focus")
+        sub _()
+            view = m.newView()
+            view.callFunc("applyMovie", m.newMovie())
+
+            view.findNode("nextButton").visible = true
+            view.findNode("nextButton").setFocus(true)
+            m.assertFalse(view.findNode("playButton").hasFocus(), "precondition: focus elsewhere")
+
+            view.callFunc("onPlaybackErrorDismissed")
+
+            m.assertTrue(view.findNode("playButton").hasFocus(), "focus returns to play")
+            m.assertInvalid(view.getScene().dialog, "and no dialog is left open")
+        end sub
+
+    end class
+end namespace

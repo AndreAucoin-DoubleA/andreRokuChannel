@@ -1,0 +1,232 @@
+namespace tests
+
+    @suite("MovieRowList")
+    class MovieRowListTests extends rooibos.BaseTestSuite
+
+        @describe("MovieRowList")
+
+        @beforeEach
+        protected override sub beforeEach()
+            probe = CreateObject("roSGNode", "ContentNode")
+            probe.addFields({ request: {} })
+
+            if m.global.hasField("speechTask")
+                m.global.speechTask = probe
+            else
+                m.global.addFields({ speechTask: probe })
+            end if
+        end sub
+
+        function newWidget() as object
+            return CreateObject("roSGNode", "MovieRowList")
+        end function
+
+        function catalogNode() as object
+            content = CreateObject("roSGNode", "ContentNode")
+
+            popular = content.createChild("ContentNode")
+            popular.title = "Popular"
+            for each name in ["Dune", "Arrival"]
+                item = popular.createChild("ContentNode")
+                item.title = name
+            end for
+
+            action = content.createChild("ContentNode")
+            action.title = "Action"
+            heat = action.createChild("ContentNode")
+            heat.title = "Heat"
+
+            return content
+        end function
+
+        function loadedCtx() as object
+            widget = m.newWidget()
+            widget.content = m.catalogNode()
+
+            return rowListOps.newContext(widget)
+        end function
+
+        function requests() as object
+            return m.global.speechTask.request
+        end function
+
+        function fakeRowList(focused as object, selected as object) as object
+            return {
+                rowItemFocused: focused,
+                rowItemSelected: selected,
+                isInFocusChain: function() as boolean
+                    return true
+                end function
+            }
+        end function
+
+        function ctxWith(focused as object, selected as object) as object
+            widget = m.newWidget()
+            widget.content = m.catalogNode()
+
+            return {
+                top: widget,
+                rowList: m.fakeRowList(focused, selected),
+                decor: widget.findNode("decor"),
+                lastAnnouncedRow: -1
+            }
+        end function
+
+        function drain(port as object) as object
+            out = []
+
+            while true
+                msg = port.GetMessage()
+                if msg = invalid then exit while
+                out.Push(msg.getData())
+            end while
+
+            return out
+        end function
+
+        @it("hasRows is false with invalid content")
+        sub _()
+            ctx = rowListOps.newContext(m.newWidget())
+
+            m.assertInvalid(ctx.top.content, "precondition: no content")
+            m.assertFalse(rowListOps.hasRows(ctx))
+        end sub
+
+        @it("hasRows is false with zero children")
+        sub _()
+            widget = m.newWidget()
+            widget.content = CreateObject("roSGNode", "ContentNode")
+
+            ctx = rowListOps.newContext(widget)
+
+            m.assertNotInvalid(ctx.top.content, "the content node exists but is empty")
+            m.assertFalse(rowListOps.hasRows(ctx))
+        end sub
+
+        @it("hasRows is true with children")
+        sub _()
+            m.assertTrue(rowListOps.hasRows(m.loadedCtx()))
+        end sub
+
+        @it("movieAt returns the node at a valid index")
+        @params(0, 0, "Dune")
+        @params(0, 1, "Arrival")
+        @params(1, 0, "Heat")
+        sub _(row as integer, index as integer, expected as string)
+            movie = rowListOps.movieAt(m.loadedCtx(), [row, index])
+
+            m.assertNotInvalid(movie, `no movie at [${row}, ${index}]`)
+            m.assertEqual(movie.title, expected)
+        end sub
+
+        @it("movieAt out of range returns invalid")
+        sub _()
+            ctx = m.loadedCtx()
+
+            m.assertInvalid(rowListOps.movieAt(ctx, invalid), "invalid selection")
+            m.assertInvalid(rowListOps.movieAt(ctx, []), "empty selection")
+            m.assertInvalid(rowListOps.movieAt(ctx, [0]), "one-element selection")
+            m.assertInvalid(rowListOps.movieAt(ctx, [99, 0]), "row past the end")
+            m.assertInvalid(rowListOps.movieAt(ctx, [2, 0]), "row one past the last")
+            m.assertInvalid(rowListOps.movieAt(ctx, [0, 99]), "item past the end")
+            m.assertInvalid(rowListOps.movieAt(ctx, [1, 1]), "item one past the last")
+
+            m.assertInvalid(rowListOps.movieAt(rowListOps.newContext(m.newWidget()), [0, 0]), "no content")
+        end sub
+
+        @it("row item focus sets focusedMovie")
+        sub _()
+            ctx = m.ctxWith([0, 1], invalid)
+
+            m.assertInvalid(ctx.top.focusedMovie, "precondition: nothing focused")
+
+            rowListOps.rowItemFocused(ctx)
+
+            m.assertNotInvalid(ctx.top.focusedMovie)
+            m.assertEqual(ctx.top.focusedMovie.title, "Arrival")
+            m.assertEqual(ctx.decor.summaryText, "Arrival", "the chrome summary must follow focus")
+
+            ctx.rowList.rowItemFocused = [99, 0]
+            rowListOps.rowItemFocused(ctx)
+
+            m.assertEqual(ctx.top.focusedMovie.title, "Arrival", "a bad selection must not clear it")
+        end sub
+
+        @it("row item selection sets selectedMovie, selectedRow and selectedIndex")
+        sub _()
+            ctx = m.ctxWith(invalid, [1, 0])
+
+            m.assertEqual(ctx.top.selectedIndex, -1, "precondition: nothing selected")
+
+            rowListOps.rowItemSelected(ctx)
+
+            m.assertEqual(ctx.top.selectedMovie.title, "Heat")
+            m.assertEqual(ctx.top.selectedRow.title, "Action", "selectedRow is the row node, not an index")
+            m.assertEqual(ctx.top.selectedIndex, 0)
+
+            ctx.rowList.rowItemSelected = [0, 99]
+            rowListOps.rowItemSelected(ctx)
+
+            m.assertEqual(ctx.top.selectedMovie.title, "Heat", "a bad selection must not overwrite")
+            m.assertEqual(ctx.top.selectedIndex, 0)
+        end sub
+
+        @it("announceFocus delegates to a11y")
+        sub _()
+            ctx = m.ctxWith([0, 0], invalid)
+
+            port = CreateObject("roMessagePort")
+            m.global.speechTask.observeField("request", port)
+
+            rowListOps.announceFocus(ctx)
+
+            first = m.drain(port)
+            m.assertArrayCount(first, 2, "a new row announces its title then the item")
+            m.assertEqual(first[0].context, "Popular", "the row title comes first")
+            m.assertEqual(first[1].focus, "Dune, 1 of 2")
+            m.assertEqual(ctx.lastAnnouncedRow, 0, "the announced row is remembered")
+
+            ctx.rowList.rowItemFocused = [0, 1]
+            rowListOps.announceFocus(ctx)
+
+            second = m.drain(port)
+            m.assertArrayCount(second, 1, "the same row announces only the item")
+            m.assertEqual(second[0].focus, "Arrival, 2 of 2")
+
+            m.global.speechTask.unobserveField("request")
+        end sub
+
+        @it("focusRows is false when there are no rows")
+        sub _()
+            ctx = rowListOps.newContext(m.newWidget())
+
+            m.assertFalse(rowListOps.hasRows(ctx), "precondition: no rows")
+
+            result = rowListOps.focusRows(ctx)
+
+            m.assertTrue(result, "setFocus succeeds regardless of content")
+            m.assertEqual(ctx.lastAnnouncedRow, -1, "with no rows there is nothing to announce")
+            m.assertInvalid(m.requests().focus, "and nothing is spoken")
+        end sub
+
+        @it("a row spacing change re-lays out")
+        @params(60)
+        @params(0)
+        @params(120)
+        sub _(spacing as integer)
+            widget = m.newWidget()
+            before = widget.findNode("rowList").itemSpacing
+
+            m.assertEqual(Int(before[1]), 40, "the XML default")
+
+            widget.rowSpacing = spacing
+
+            after = widget.findNode("rowList").itemSpacing
+
+            m.assertEqual(Int(after[0]), 0, "horizontal spacing stays 0")
+            m.assertEqual(Int(after[1]), spacing, "vertical spacing must follow rowSpacing")
+        end sub
+
+    end class
+end namespace
+

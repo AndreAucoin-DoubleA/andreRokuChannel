@@ -1,0 +1,57 @@
+namespace tests
+
+    @suite("anim")
+    class AnimTests extends rooibos.BaseTestSuite
+
+        @describe("field writes (plain AAs stand in for nodes)")
+
+        @it("retarget writes [from, target] to keyValue")
+        @params(0.0, 1.0)
+        @params(1.0, 0.0)
+        @params(-5.5, 12.25)
+        @params(0.0, 0.0)
+        sub _(from as float, target as float)
+            interpolator = {}
+
+            anim.retarget(interpolator, from, target)
+
+            m.assertArrayCount(interpolator.keyValue, 2)
+            m.assertEqual(interpolator.keyValue[0], from, "from must be first")
+            m.assertEqual(interpolator.keyValue[1], target, "target must be second")
+        end sub
+
+        @it("restart writes stop then start")
+        sub _()
+            animation = { control: "none" }
+
+            anim.restart(animation)
+
+            m.assertEqual(animation.control, "start", "start must be the last write")
+            m.assertNotEqual(animation.control, "stop", "the writes ran in reverse order")
+        end sub
+
+        @it("tweenTo stops, retargets, then starts -- in that order")
+        sub _()
+            animation = { control: "none" }
+            interpolator = {}
+
+            anim.tweenTo(animation, interpolator, 2.0, 8.0)
+
+            m.assertArrayCount(interpolator.keyValue, 2)
+            m.assertEqual(interpolator.keyValue[0], 2.0)
+            m.assertEqual(interpolator.keyValue[1], 8.0)
+
+            m.assertEqual(animation.control, "start", "start must be the last write")
+
+            interrupted = { control: "none" }
+            try
+                anim.tweenTo(interrupted, invalid, 2.0, 8.0)
+            catch e
+            end try
+
+            m.assertEqual(interrupted.control, "stop", "stop must run before retarget")
+        end sub
+
+    end class
+end namespace
+

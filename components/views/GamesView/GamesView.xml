@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="GamesView" extends="BaseView">
     <script type="text/brightscript" uri="pkg:/components/views/GamesView/GamesView.bs"/>
+
+    <interface>
+        <!-- Exposed for tests. -->
+        <function name="applyTheme"/>
+    </interface>
     <children>
         <Label
             id="titleLabel"

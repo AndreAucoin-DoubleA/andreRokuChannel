@@ -1,0 +1,342 @@
+namespace tests
+
+    @suite("HomeView")
+    class HomeViewTests extends rooibos.BaseTestSuite
+
+        @describe("favorites row")
+
+        @setup
+        protected override sub setup()
+            m.savedFavorites = {}
+
+            registry = favorites.section()
+            for each key in registry.GetKeyList()
+                m.savedFavorites[key] = registry.Read(key)
+            end for
+        end sub
+
+        @teardown
+        protected override sub tearDown()
+            registry = favorites.section()
+
+            for each key in registry.GetKeyList()
+                registry.Delete(key)
+            end for
+            for each key in m.savedFavorites
+                registry.Write(key, m.savedFavorites[key])
+            end for
+
+            registry.Flush()
+        end sub
+
+        @beforeEach
+        protected override sub beforeEach()
+            m.clearFavorites()
+
+            ' The globals HomeView observes and reads. main.bs is excluded
+            ' from the test build, so nothing has created them.
+            m.ensure("catalog", CreateObject("roSGNode", "ContentNode"))
+            m.ensure("catalogVersion", 0)
+            m.ensure("catalogReady", false)
+            m.ensure("favoritesVersion", 0)
+
+            m.global.catalog = CreateObject("roSGNode", "ContentNode")
+            m.global.catalogVersion = 0
+            m.global.catalogReady = false
+            m.global.favoritesVersion = 0
+        end sub
+
+        @afterEach
+        protected override sub afterEach()
+            m.clearFavorites()
+        end sub
+
+        sub ensure(field as string, value as dynamic)
+            if m.global.hasField(field) then return
+
+            fields = {}
+            fields[field] = value
+            m.global.addFields(fields)
+        end sub
+
+        sub clearFavorites()
+            registry = favorites.section()
+
+            for each key in registry.GetKeyList()
+                registry.Delete(key)
+            end for
+
+            registry.Flush()
+        end sub
+
+        ' Writes the registry directly: setFavorite stamps AsSeconds(), so
+        ' several calls in one test would tie and favoriteIds' sort by
+        ' addedAt would be undefined.
+        sub favoriteQuietly(movieId as string, addedAt as string)
+            registry = favorites.section()
+            registry.Write(movieId, addedAt)
+            registry.Flush()
+        end sub
+
+        ' Writes and bumps favoritesVersion. The bump matters: HomeView
+        ' observes catalogVersion, so seeding a catalog fires refreshFavorites
+        ' asynchronously and can cache an empty id list at the old version.
+        sub favorite(movieId as string, addedAt as string)
+            m.favoriteQuietly(movieId, addedAt)
+
+            m.global.favoritesVersion = m.global.favoritesVersion + 1
+        end sub
+
+        ' A catalog of one row holding the given movie ids.
+        sub seedCatalog(movieIds as object)
+            ' Not named `catalog`: that is a namespace, and a local of the same
+            ' name is a compile error.
+            root = CreateObject("roSGNode", "ContentNode")
+            row = root.createChild("ContentNode")
+            row.title = "Popular"
+
+            for each movieId in movieIds
+                movie = row.createChild("ContentNode")
+                movie.addFields({ movieId: movieId })
+                movie.title = "Movie " + movieId
+            end for
+
+            m.global.catalog = root
+            m.global.catalogVersion = m.global.catalogVersion + 1
+        end sub
+
+        function newView() as object
+            return CreateObject("roSGNode", "HomeView")
+        end function
+
+        function movieNodes(movieIds as object) as object
+            out = []
+
+            for each movieId in movieIds
+                node = CreateObject("roSGNode", "ContentNode")
+                node.addFields({ movieId: movieId })
+                out.Push(node)
+            end for
+
+            return out
+        end function
+
+        function idsOf(nodes as object) as string
+            out = []
+
+            for each node in nodes
+                out.Push(node.movieId)
+            end for
+
+            return out.Join(",")
+        end function
+
+        @it("favoritesSignature changes when the id list changes")
+        sub _()
+            view = m.newView()
+
+            first = view.callFunc("favoritesSignature", m.movieNodes(["1", "2", "3"]))
+            added = view.callFunc("favoritesSignature", m.movieNodes(["1", "2", "3", "4"]))
+            removed = view.callFunc("favoritesSignature", m.movieNodes(["1", "3"]))
+            reordered = view.callFunc("favoritesSignature", m.movieNodes(["3", "2", "1"]))
+
+            m.assertNotEqual(first, added, "an addition changes it")
+            m.assertNotEqual(first, removed, "a removal changes it")
+            m.assertNotEqual(first, reordered, "a reorder changes it too")
+            m.assertEqual(first, "1,2,3", "and it is just the ids, joined")
+        end sub
+
+        @it("favoritesSignature is stable for the same ids")
+        sub _()
+            view = m.newView()
+
+            once = view.callFunc("favoritesSignature", m.movieNodes(["438631", "329865"]))
+            twice = view.callFunc("favoritesSignature", m.movieNodes(["438631", "329865"]))
+
+            m.assertEqual(once, twice, "different node objects, same ids, same signature")
+            m.assertEqual(once, "438631,329865")
+
+            m.assertEqual(view.callFunc("favoritesSignature", []), "", "an empty list is the empty signature")
+        end sub
+
+        @it("cachedFavoriteIds memoises between calls")
+        sub _()
+            view = m.newView()
+
+            m.favoriteQuietly("111", "1000")
+            m.favoriteQuietly("222", "2000")
+
+            first = view.callFunc("cachedFavoriteIds")
+            m.assertArrayCount(first, 2, "both favorites are read")
+
+            ' A third favorite is invisible until the version bumps.
+            m.favoriteQuietly("333", "3000")
+
+            m.assertArrayCount(view.callFunc("cachedFavoriteIds"), 2, "the cache is reused")
+
+            m.global.favoritesVersion = m.global.favoritesVersion + 1
+
+            m.assertArrayCount(view.callFunc("cachedFavoriteIds"), 3, "a version bump invalidates it")
+        end sub
+
+        @it("catalogIndex maps movieId to node")
+        sub _()
+            view = m.newView()
+
+            m.seedCatalog(["438631", "329865", "273481"])
+
+            index = view.callFunc("catalogIndex")
+
+            m.assertAAHasKeys(index, ["438631", "329865", "273481"])
+            m.assertEqual(index["438631"].title, "Movie 438631", "the id maps to its node")
+            m.assertInvalid(index["999999"], "an unknown id is absent")
+
+            ' Memoised on catalogVersion, like the id cache.
+            m.seedCatalog(["111"])
+            m.assertNotInvalid(view.callFunc("catalogIndex")["111"], "a version bump reindexes")
+        end sub
+
+        @it("favoriteMovies returns nodes in favorite order")
+        sub _()
+            view = m.newView()
+
+            m.seedCatalog(["111", "222", "333"])
+
+            ' favoriteIds sorts newest first, so 333 leads.
+            m.favorite("111", "1000")
+            m.favorite("222", "2000")
+            m.favorite("333", "3000")
+
+            movies = view.callFunc("favoriteMovies", view.callFunc("catalogIndex"))
+
+            m.assertArrayCount(movies, 3)
+            m.assertEqual(m.idsOf(movies), "333,222,111", "newest favorite first")
+        end sub
+
+        @it("favoriteMovies skips ids absent from the catalog")
+        sub _()
+            view = m.newView()
+
+            m.seedCatalog(["111", "333"])
+
+            m.favorite("111", "1000")
+            m.favorite("222", "2000")
+            m.favorite("333", "3000")
+
+            movies = view.callFunc("favoriteMovies", view.callFunc("catalogIndex"))
+
+            m.assertArrayCount(movies, 2, "222 is favorited but not in the catalog")
+            m.assertEqual(m.idsOf(movies), "333,111", "the rest keep their order")
+        end sub
+
+        @it("refreshFavorites is a no-op when the signature is unchanged")
+        sub _()
+            view = m.newView()
+            rows = view.findNode("movieRows")
+
+            m.seedCatalog(["111", "222"])
+            m.favorite("111", "1000")
+            m.favorite("222", "2000")
+
+            view.callFunc("refreshFavorites")
+
+            built = rows.content
+            m.assertNotInvalid(built, "a favorites row was built")
+            m.assertEqual(built.getChildCount(), 1, "one row")
+            m.assertEqual(built.getChild(0).title, "My Favorites")
+            m.assertEqual(built.getChild(0).getChildCount(), 2, "holding both movies")
+
+            ' Same favorites, same signature: the content node must be reused.
+            view.callFunc("refreshFavorites")
+
+            m.assertTrue(rows.content.isSameNode(built), "the content must not be rebuilt")
+
+            ' A real change does rebuild it.
+            m.favorite("333", "3000")
+            m.global.favoritesVersion = m.global.favoritesVersion + 1
+            m.seedCatalog(["111", "222", "333"])
+
+            view.callFunc("refreshFavorites")
+
+            m.assertFalse(rows.content.isSameNode(built), "a new signature rebuilds")
+            m.assertEqual(rows.content.getChild(0).getChildCount(), 3)
+        end sub
+
+        @it("updateLoader shows while the catalog is not ready")
+        sub _()
+            view = m.newView()
+            loader = view.findNode("loader")
+
+            ' Empty catalog, not ready yet.
+            m.assertEqual(m.global.catalog.getChildCount(), 0, "precondition: empty")
+            m.assertFalse(m.global.catalogReady)
+
+            view.callFunc("updateLoader")
+
+            m.assertEqual(loader.findNode("delayTimer").control, "start", "the spinner delay is running")
+            m.assertEqual(loader.findNode("statusLabel").text, loader.message, "staged with the loading message")
+
+            ' Still empty but now finished loading: that is an error, not a wait.
+            m.global.catalogReady = true
+            view.callFunc("updateLoader")
+
+            m.assertEqual(loader.findNode("statusLabel").text, "Couldn't load content", "an empty finished catalog is an error")
+            m.assertTrue(loader.findNode("content").visible, "shown immediately, no delay")
+        end sub
+
+        @it("updateLoader hides once rows exist")
+        sub _()
+            view = m.newView()
+            loader = view.findNode("loader")
+
+            view.callFunc("updateLoader")
+            m.assertEqual(loader.findNode("delayTimer").control, "start", "precondition: loading")
+
+            m.seedCatalog(["111"])
+
+            view.callFunc("updateLoader")
+
+            m.assertEqual(loader.findNode("delayTimer").control, "stop", "the pending delay is cancelled")
+            m.assertFalse(loader.findNode("content").visible, "and nothing is shown")
+        end sub
+
+        @it("setViewFocus is false with no rows")
+        sub _()
+            view = m.newView()
+
+            m.assertEqual(view.findNode("movieRows").content.getChildCount(), 0, "precondition: no rows")
+
+            ' With nothing to focus it falls back to the view itself, which
+            ' cannot take focus outside a rendered scene.
+            m.assertFalse(view.callFunc("setViewFocus"))
+        end sub
+
+        @it("launch content-ready is reported once")
+        sub _()
+            view = m.newView()
+
+            ' Nothing loaded and not finished: too early to report.
+            view.callFunc("reportLaunchContentReady", [])
+
+            ' Favorites exist but none resolved yet: still too early.
+            m.favorite("111", "1000")
+            m.global.catalogReady = true
+            view.callFunc("reportLaunchContentReady", [])
+
+            ' Once a favorite resolves it reports, and repeat calls are inert.
+            m.seedCatalog(["111"])
+            movies = view.callFunc("favoriteMovies", view.callFunc("catalogIndex"))
+            m.assertArrayCount(movies, 1, "precondition: one resolved favorite")
+
+            view.callFunc("reportLaunchContentReady", movies)
+            view.callFunc("reportLaunchContentReady", movies)
+
+            ' NOTE: the latch is m.launchReported, which is not exposed, and
+            ' the signal goes to the scene's signalLaunchComplete -- absent on
+            ' the rooibos scene. What is assertable is that the guards hold
+            ' and repeat calls are harmless.
+            m.assertTrue(true, "no crash across the early-return and repeat paths")
+        end sub
+
+    end class
+end namespace

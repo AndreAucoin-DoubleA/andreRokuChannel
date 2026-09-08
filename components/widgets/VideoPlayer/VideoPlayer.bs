@@ -1,4 +1,6 @@
 import "pkg:/source/services/bookmarks.bs"
+import "pkg:/source/operations/videoTransport.bs"
+import "pkg:/source/operations/videoFormat.bs"
 import "pkg:/components/widgets/VideoPlayer/VideoPlayer.interface.bs"
 import "pkg:/source/services/a11y.bs"
 import "pkg:/source/theme/theme.bs"
@@ -6,6 +8,8 @@ import "pkg:/source/utils/logger.bs"
 import "pkg:/source/data/trickplay.bs"
 
 sub init()
+    m.ctx = videoTransport.newContext()
+
     m.top.notificationInterval = 1
     m.top.enableTrickPlay = false
 
@@ -53,20 +57,6 @@ sub init()
     m.previewTime = m.top.findNode("previewTime")
 
     m.overlayVisible = false
-    m.mode = videoPlayer.MODE_IDLE
-    m.scrubTarget = 0
-
-    m.scanDirection = 1
-    m.scanSpeedIndex = 0
-    m.wasPlaying = false
-
-    m.skipAnchor = 0
-
-    m.seekPending = false
-    m.seekTarget = 0
-    m.seekTicks = 0
-
-    m.previewIndex = -1
 
     applyTheme()
     resetProgressCache()
@@ -109,15 +99,7 @@ sub applyTheme()
 end sub
 
 sub resetProgressCache()
-    m.lastPosition = 0
-    m.videoDuration = 0
-    m.ticksSinceSave = 0
-    m.previewIndex = -1
-
-    m.seekPending = false
-    m.seekTarget = 0
-    m.seekTicks = 0
-    m.renderedDuration = -1
+    videoTransport.resetProgressCache(m.ctx)
 end sub
 
 sub onContentAssigned()
@@ -129,7 +111,7 @@ end sub
 sub onControlChanged()
     if m.top.control <> "stop" then return
 
-    m.mode = videoPlayer.MODE_IDLE
+    m.ctx.mode = videoPlayer.MODE_IDLE
     m.scanTimer.control = "stop"
     m.skipTimer.control = "stop"
 
@@ -142,9 +124,9 @@ end sub
 sub onStateChanged()
     state = m.top.state
 
-    m.pauseBadge.visible = (state = "paused" and m.top.trackProgress and m.mode <> videoPlayer.MODE_SCAN)
+    m.pauseBadge.visible = (state = "paused" and m.top.trackProgress and m.ctx.mode <> videoPlayer.MODE_SCAN)
 
-    if m.overlayVisible and m.mode = videoPlayer.MODE_IDLE
+    if m.overlayVisible and m.ctx.mode = videoPlayer.MODE_IDLE
         if state = "paused"
             m.hideTimer.control = "stop"
         else if state = "playing"
@@ -152,96 +134,58 @@ sub onStateChanged()
         end if
     end if
 
-    if state = "paused"
-        savePositionNow()
-        return
-    end if
-
-    if state = "finished"
-        savePositionNow()
-        resetProgressCache()
-    end if
+    videoTransport.applyStateSave(m.ctx, m.top)
 end sub
 
 sub onPositionChanged()
     if not m.top.trackProgress then return
 
-    m.lastPosition = m.top.position
-    m.videoDuration = m.top.duration
+    m.ctx.lastPosition = m.top.position
+    m.ctx.videoDuration = m.top.duration
 
     settleSeek()
 
-    if m.mode = videoPlayer.MODE_IDLE then renderAt(livePosition())
+    if m.ctx.mode = videoPlayer.MODE_IDLE then renderAt(livePosition())
 
-    m.ticksSinceSave = m.ticksSinceSave + 1
-    if m.ticksSinceSave < videoPlayer.SAVE_EVERY_TICKS then return
+    m.ctx.ticksSinceSave = m.ctx.ticksSinceSave + 1
+    if m.ctx.ticksSinceSave < videoPlayer.SAVE_EVERY_TICKS then return
 
-    m.ticksSinceSave = 0
+    m.ctx.ticksSinceSave = 0
     savePositionNow()
 end sub
 
 sub requestSeek(seconds as float)
-    m.seekTarget = seconds
-    m.seekPending = true
-    m.seekTicks = 0
-
-    m.top.seek = seconds
+    videoTransport.requestSeek(m.ctx, m.top, seconds)
 end sub
 
 function livePosition() as float
-    if m.seekPending then return m.seekTarget
-
-    return m.top.position
+    return videoTransport.livePosition(m.ctx, m.top)
 end function
 
 sub settleSeek()
-    if not m.seekPending then return
-
-    m.seekTicks = m.seekTicks + 1
-
-    if Abs(m.top.position - m.seekTarget) <= videoPlayer.SEEK_SETTLE_TOLERANCE
-        m.seekPending = false
-    else if m.seekTicks >= videoPlayer.SEEK_SETTLE_TICKS
-        m.seekPending = false
-    end if
+    videoTransport.settleSeek(m.ctx, m.top)
 end sub
 
 sub savePositionNow()
-    savePositionAt(livePosition())
+    videoTransport.savePositionNow(m.ctx, m.top)
 end sub
 
 sub savePositionAt(position as float)
-    if not m.top.trackProgress then return
-
-    duration = m.top.duration
-
-    if position <= 0 then position = m.lastPosition
-    if duration <= 0 then duration = m.videoDuration
-
-    if position <= 0 then return
-
-    bookmarks.savePosition(m.top.movieId, position, duration)
+    videoTransport.savePositionAt(m.ctx, m.top, position)
 end sub
 
 function commitProgress() as boolean
-    position = livePosition()
-
-    if m.mode <> videoPlayer.MODE_IDLE then position = m.scrubTarget
-
-    m.mode = videoPlayer.MODE_IDLE
     m.skipTimer.control = "stop"
     m.scanTimer.control = "stop"
 
-    savePositionAt(position)
-
-    return true
+    return videoTransport.commitProgress(m.ctx, m.top)
 end function
 
 function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
     if not m.top.trackProgress then return false
 
-    if m.mode = videoPlayer.MODE_SCAN then return onScanKey(key)
+    if m.ctx.mode = videoPlayer.MODE_SCAN then return onScanKey(key)
 
     if key = "fastforward" then return beginScan(1)
     if key = "rewind" then return beginScan(-1)
@@ -286,7 +230,7 @@ function onKeyEvent(key as string, press as boolean) as boolean
     end if
 
     if m.scrubZone.hasFocus() and key = "OK"
-        if m.mode = videoPlayer.MODE_SKIP
+        if m.ctx.mode = videoPlayer.MODE_SKIP
             commitSkip()
             return true
         end if
@@ -300,11 +244,11 @@ end function
 function skipBy(deltaSeconds as integer) as boolean
     if m.top.duration <= 0 then return true
 
-    if m.mode <> videoPlayer.MODE_SKIP
-        m.mode = videoPlayer.MODE_SKIP
-        m.skipAnchor = livePosition()
-        m.scrubTarget = m.skipAnchor
+    starting = (m.ctx.mode <> videoPlayer.MODE_SKIP)
 
+    videoTransport.applySkip(m.ctx, m.top, deltaSeconds)
+
+    if starting
         if not m.overlayVisible then showOverlay(true)
         focusScrub()
 
@@ -313,9 +257,7 @@ function skipBy(deltaSeconds as integer) as boolean
 
     m.skipClock.Mark()
 
-    m.scrubTarget = clampToDuration(m.scrubTarget + deltaSeconds)
-
-    renderAt(m.scrubTarget)
+    renderAt(m.ctx.scrubTarget)
 
     m.hideTimer.control = "stop"
 
@@ -323,25 +265,25 @@ function skipBy(deltaSeconds as integer) as boolean
 end function
 
 sub onSkipTick()
-    if m.mode <> videoPlayer.MODE_SKIP then return
+    if m.ctx.mode <> videoPlayer.MODE_SKIP then return
     if m.skipClock.TotalMilliseconds() < videoPlayer.SKIP_COMMIT_MS then return
 
     commitSkip()
 end sub
 
 function skipDelta() as float
-    return m.scrubTarget - m.skipAnchor
+    return videoTransport.skipDelta(m.ctx)
 end function
 
 sub commitSkip()
-    if m.mode <> videoPlayer.MODE_SKIP then return
+    if m.ctx.mode <> videoPlayer.MODE_SKIP then return
 
     m.skipTimer.control = "stop"
-    m.mode = videoPlayer.MODE_IDLE
+    m.ctx.mode = videoPlayer.MODE_IDLE
 
-    logger.info("VideoPlayer", `skip commit ${skipDelta()}s to ${m.scrubTarget}`)
+    logger.info("VideoPlayer", `skip commit ${skipDelta()}s to ${m.ctx.scrubTarget}`)
 
-    requestSeek(m.scrubTarget)
+    requestSeek(m.ctx.scrubTarget)
 
     announceSkip()
 
@@ -362,10 +304,11 @@ sub announceSkip()
 end sub
 
 sub cancelPendingSkip()
-    if m.mode <> videoPlayer.MODE_SKIP then return
+    if m.ctx.mode <> videoPlayer.MODE_SKIP then return
 
     m.skipTimer.control = "stop"
-    m.mode = videoPlayer.MODE_IDLE
+
+    videoTransport.cancelPendingSkip(m.ctx)
 end sub
 
 function onScanKey(key as string) as boolean
@@ -383,31 +326,16 @@ end function
 function beginScan(direction as integer) as boolean
     if m.top.duration <= 0 then return true
 
-    if m.mode <> videoPlayer.MODE_SCAN
-        cancelPendingSkip()
+    if m.ctx.mode <> videoPlayer.MODE_SCAN then m.skipTimer.control = "stop"
 
-        m.mode = videoPlayer.MODE_SCAN
-        m.scanDirection = direction
-        m.scanSpeedIndex = 0
-        m.scrubTarget = livePosition()
-        m.wasPlaying = (m.top.state = "playing")
+    videoTransport.applyScanStart(m.ctx, m.top, direction)
 
-        m.top.control = "pause"
-    else if direction = m.scanDirection
-        if m.scanSpeedIndex < videoPlayer.SCAN_MAX_INDEX
-            m.scanSpeedIndex = m.scanSpeedIndex + 1
-        end if
-    else
-        m.scanDirection = direction
-        m.scanSpeedIndex = 0
-    end if
-
-    logger.info("VideoPlayer", `scan dir ${m.scanDirection} rate ${scanRate()}x`)
+    logger.info("VideoPlayer", `scan dir ${m.ctx.scanDirection} rate ${scanRate()}x`)
 
     if not m.overlayVisible then showOverlay(true)
 
     focusScrub()
-    renderAt(m.scrubTarget)
+    renderAt(m.ctx.scrubTarget)
     announceScan()
 
     m.hideTimer.control = "stop"
@@ -418,52 +346,46 @@ end function
 
 sub announceScan()
     verb = "Fast forwarding"
-    if m.scanDirection < 0 then verb = "Rewinding"
+    if m.ctx.scanDirection < 0 then verb = "Rewinding"
 
     a11y.focus(`${verb} ${scanRate()} times`)
 end sub
 
 sub endScan()
-    if m.mode <> videoPlayer.MODE_SCAN then return
+    if m.ctx.mode <> videoPlayer.MODE_SCAN then return
 
-    logger.info("VideoPlayer", `scan end at ${m.scrubTarget}`)
+    logger.info("VideoPlayer", `scan end at ${m.ctx.scrubTarget}`)
 
-    m.mode = videoPlayer.MODE_IDLE
     m.scanTimer.control = "stop"
 
-    requestSeek(m.scrubTarget)
-
-    if m.wasPlaying then m.top.control = "resume"
+    videoTransport.applyScanEnd(m.ctx, m.top)
 
     hidePreview()
     restartHideTimer()
 end sub
 
 sub onScanTick()
-    if m.mode <> videoPlayer.MODE_SCAN then return
+    if m.ctx.mode <> videoPlayer.MODE_SCAN then return
 
     advance = scanRate() * videoPlayer.SCAN_TICK_SECONDS
-    m.scrubTarget = m.scrubTarget + (advance * m.scanDirection)
+    m.ctx.scrubTarget = m.ctx.scrubTarget + (advance * m.ctx.scanDirection)
 
     atEnd = false
-    if m.scrubTarget <= 0
-        m.scrubTarget = 0
+    if m.ctx.scrubTarget <= 0
+        m.ctx.scrubTarget = 0
         atEnd = true
-    else if m.scrubTarget >= m.top.duration
-        m.scrubTarget = m.top.duration
+    else if m.ctx.scrubTarget >= m.top.duration
+        m.ctx.scrubTarget = m.top.duration
         atEnd = true
     end if
 
-    renderAt(m.scrubTarget)
+    renderAt(m.ctx.scrubTarget)
 
     if atEnd then endScan()
 end sub
 
 function scanRate() as integer
-    if m.scanSpeedIndex <= 0 then return videoPlayer.SCAN_RATE_1
-    if m.scanSpeedIndex = 1 then return videoPlayer.SCAN_RATE_2
-
-    return videoPlayer.SCAN_RATE_3
+    return videoTransport.scanRate(m.ctx)
 end function
 
 function onPlayPauseKey() as boolean
@@ -478,13 +400,9 @@ function onPlayPauseKey() as boolean
 end function
 
 sub togglePlayPause()
-    if m.top.state = "playing"
-        logger.info("VideoPlayer", "pause")
-        m.top.control = "pause"
-    else if m.top.state = "paused"
-        logger.info("VideoPlayer", "resume")
-        m.top.control = "resume"
-    end if
+    logger.info("VideoPlayer", `toggle from ${m.top.state}`)
+
+    videoTransport.togglePlayPause(m.top)
 end sub
 
 sub onOverlayTextChanged()
@@ -510,7 +428,7 @@ sub focusScrub()
 
     m.scrubZone.setFocus(true)
 
-    if m.mode = videoPlayer.MODE_IDLE then a11y.focus("Progress Bar")
+    if m.ctx.mode = videoPlayer.MODE_IDLE then a11y.focus("Progress Bar")
 end sub
 
 sub focusPanel()
@@ -519,28 +437,17 @@ sub focusPanel()
 end sub
 
 function clampToDuration(seconds as float) as float
-    if seconds < 0 then return 0
-    if seconds > m.top.duration then return m.top.duration
-
-    return seconds
+    return videoFormat.clampToDuration(seconds, m.top.duration)
 end function
 
 function trackFraction(seconds as float) as float
-    duration = m.top.duration
-    if duration <= 0 then return 0
-
-    fraction = seconds / duration
-
-    if fraction < 0 then return 0
-    if fraction > 1 then return 1
-
-    return fraction
+    return videoFormat.trackFraction(seconds, m.top.duration)
 end function
 
 sub renderAt(seconds as float)
     renderScrub(seconds)
 
-    if m.mode <> videoPlayer.MODE_IDLE or videoPlayer.PREVIEW_WHILE_IDLE
+    if m.ctx.mode <> videoPlayer.MODE_IDLE or videoPlayer.PREVIEW_WHILE_IDLE
         renderPreview(seconds)
     end if
 end sub
@@ -556,8 +463,8 @@ sub renderScrub(seconds as float)
 
     m.scrubElapsed.text = clock(seconds)
 
-    if duration <> m.renderedDuration
-        m.renderedDuration = duration
+    if duration <> m.ctx.renderedDuration
+        m.ctx.renderedDuration = duration
         m.scrubDuration.text = clock(duration)
     end if
 end sub
@@ -565,7 +472,7 @@ end sub
 sub onTrickplayFeedChanged()
     if m.previewImage = invalid then return
 
-    m.previewIndex = -1
+    m.ctx.previewIndex = -1
     m.previewImage.uri = ""
     hidePreview()
 end sub
@@ -582,8 +489,8 @@ sub renderPreview(seconds as float)
 
     index = trickplay.frameIndex(feed, seconds)
 
-    if index <> m.previewIndex
-        m.previewIndex = index
+    if index <> m.ctx.previewIndex
+        m.ctx.previewIndex = index
         m.previewImage.uri = trickplay.frameUri(feed, index)
     end if
 
@@ -606,20 +513,11 @@ sub hidePreview()
 end sub
 
 function clock(seconds as float) as string
-    total = Int(seconds)
-    hrs = Int(total / 3600)
-    mins = Int((total mod 3600) / 60)
-    secs = total mod 60
-
-    if hrs > 0 then return hrs.ToStr() + ":" + pad(mins) + ":" + pad(secs)
-
-    return mins.ToStr() + ":" + pad(secs)
+    return videoFormat.clock(seconds)
 end function
 
 function pad(value as integer) as string
-    if value < 10 then return "0" + value.ToStr()
-
-    return value.ToStr()
+    return videoFormat.pad(value)
 end function
 
 
@@ -630,7 +528,7 @@ sub showOverlay(show as boolean)
     m.overlay.visible = show
 
     if show
-        if m.mode = videoPlayer.MODE_IDLE
+        if m.ctx.mode = videoPlayer.MODE_IDLE
             renderScrub(livePosition())
             focusPanel()
             a11y.focus("Player Controls")

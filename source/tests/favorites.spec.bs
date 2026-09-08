@@ -1,0 +1,211 @@
+namespace tests
+
+    @suite("favorites")
+    class FavoritesTests extends rooibos.BaseTestSuite
+
+        @describe("favorites")
+
+        @setup
+        protected override sub setup()
+            m.savedFavorites = {}
+
+            registry = favorites.section()
+            for each key in registry.GetKeyList()
+                m.savedFavorites[key] = registry.Read(key)
+            end for
+        end sub
+
+        @teardown
+        protected override sub tearDown()
+            registry = favorites.section()
+
+            for each key in registry.GetKeyList()
+                registry.Delete(key)
+            end for
+
+            for each key in m.savedFavorites
+                registry.Write(key, m.savedFavorites[key])
+            end for
+
+            registry.Flush()
+        end sub
+
+        @beforeEach
+        protected override sub beforeEach()
+            if not m.global.hasField("favoritesVersion")
+                m.global.addFields({ favoritesVersion: 0 })
+            end if
+            m.global.favoritesVersion = 0
+
+            if not m.global.hasField("analyticsTask")
+                probe = CreateObject("roSGNode", "ContentNode")
+                probe.addFields({ event: {} })
+                m.global.addFields({ analyticsTask: probe })
+            end if
+            m.global.analyticsTask.event = {}
+
+            m.clearSection()
+        end sub
+
+        @afterEach
+        protected override sub afterEach()
+            m.clearSection()
+        end sub
+
+        sub clearSection()
+            registry = favorites.section()
+
+            for each key in registry.GetKeyList()
+                registry.Delete(key)
+            end for
+
+            registry.Flush()
+        end sub
+
+        function keyCount() as integer
+            return favorites.section().GetKeyList().Count()
+        end function
+
+        function trackedEvent() as object
+            return m.global.analyticsTask.event
+        end function
+
+        @it("isFavorite is false for invalid and for an empty id")
+        @params(invalid)
+        @params("")
+        sub _(movieId as dynamic)
+            m.assertFalse(favorites.isFavorite(movieId))
+        end sub
+
+        @it("isFavorite is false for an unknown id")
+        @params("tst-never-written")
+        @params("0")
+        sub _(movieId as dynamic)
+            m.assertFalse(favorites.isFavorite(movieId))
+        end sub
+
+        @it("isFavorite is true after a write")
+        sub _()
+            m.assertFalse(favorites.isFavorite("tst-1"), "precondition: must start unfavorited")
+
+            favorites.setFavorite("tst-1", true)
+
+            m.assertTrue(favorites.isFavorite("tst-1"))
+        end sub
+
+        @it("setFavorite(id, true) writes a timestamp and flushes")
+        sub _()
+            now = CreateObject("roDateTime").AsSeconds()
+
+            favorites.setFavorite("tst-1", true)
+
+            stored = favorites.section().Read("tst-1")
+
+            m.assertNotEmpty(stored, "no value was written")
+            m.assertTrue(stored.ToInt() >= now, `stored ${stored} predates the call`)
+            m.assertTrue(stored.ToInt() <= now + 60, `stored ${stored} is not a current epoch second`)
+        end sub
+
+        @it("setFavorite(id, false) deletes the key")
+        sub _()
+            favorites.setFavorite("tst-1", true)
+            m.assertTrue(favorites.isFavorite("tst-1"), "precondition: must start favorited")
+
+            favorites.setFavorite("tst-1", false)
+
+            m.assertFalse(favorites.isFavorite("tst-1"))
+            m.assertEqual(m.keyCount(), 0, "the key should be gone, not blanked")
+        end sub
+
+        @it("setFavorite increments m.global.favoritesVersion")
+        sub _()
+            m.assertEqual(m.global.favoritesVersion, 0, "precondition: version starts at 0")
+
+            favorites.setFavorite("tst-1", true)
+            m.assertEqual(m.global.favoritesVersion, 1, "a write should bump the version")
+
+            favorites.setFavorite("tst-2", true)
+            m.assertEqual(m.global.favoritesVersion, 2)
+
+            favorites.setFavorite("tst-1", false)
+            m.assertEqual(m.global.favoritesVersion, 3, "a delete should bump the version too")
+        end sub
+
+        @it("setFavorite calls analytics.trackEvent once")
+        sub _()
+            m.assertEmpty(m.trackedEvent(), "precondition: no event yet")
+
+            favorites.setFavorite("tst-1", true)
+
+            event = m.trackedEvent()
+
+            m.assertNotEmpty(event, "no event was tracked")
+            m.assertAAHasKeys(event, ["name", "props", "ts"])
+            m.assertEqual(event.name, "favorite_toggled")
+        end sub
+
+        @it("the tracked event carries movieId, favorited and totalFavorites")
+        sub _()
+            favorites.setFavorite("tst-1", true)
+
+            props = m.trackedEvent().props
+
+            m.assertAAHasKeys(props, ["movieId", "favorited", "totalFavorites"])
+            m.assertEqual(props.movieId, "tst-1")
+            m.assertTrue(props.favorited)
+            m.assertEqual(props.totalFavorites, 1, "the count is taken after the write")
+
+            ' Unfavoriting reports the post-delete count, not the pre-delete one.
+            favorites.setFavorite("tst-1", false)
+
+            props = m.trackedEvent().props
+
+            m.assertEqual(props.movieId, "tst-1")
+            m.assertFalse(props.favorited)
+            m.assertEqual(props.totalFavorites, 0, "the count is taken after the delete")
+        end sub
+
+        @it("setFavorite with an invalid id does nothing")
+        @params(invalid)
+        @params("")
+        sub _(movieId as dynamic)
+            favorites.setFavorite(movieId, true)
+
+            m.assertEqual(m.keyCount(), 0, "nothing should have been written")
+            m.assertEqual(m.global.favoritesVersion, 0, "the version should not move")
+            m.assertEmpty(m.trackedEvent(), "no event should be tracked")
+        end sub
+
+        @it("favoriteIds() returns newest first")
+        sub _()
+            ' Written directly, not via setFavorite: setFavorite stamps
+            ' AsSeconds(), so three calls in one test would tie and the sort
+            ' order would be undefined.
+            registry = favorites.section()
+            registry.Write("tst-old", "1000")
+            registry.Write("tst-mid", "2000")
+            registry.Write("tst-new", "3000")
+            registry.Flush()
+
+            ids = favorites.favoriteIds()
+
+            m.assertArrayCount(ids, 3)
+            m.assertEqual(ids[0], "tst-new", "newest must come first")
+            m.assertEqual(ids[1], "tst-mid")
+            m.assertEqual(ids[2], "tst-old", "oldest must come last")
+        end sub
+
+        @it("favoriteIds() on an empty section returns an empty array")
+        sub _()
+            m.assertEqual(m.keyCount(), 0, "precondition: section must be empty")
+
+            ids = favorites.favoriteIds()
+
+            m.assertNotInvalid(ids, "an empty section should still return an array")
+            m.assertArrayCount(ids, 0)
+        end sub
+
+    end class
+end namespace
+
+

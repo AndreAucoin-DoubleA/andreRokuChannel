@@ -1,0 +1,46 @@
+namespace tests
+
+    @suite("logger")
+    class LoggerTests extends rooibos.BaseTestSuite
+        @describe("delegation (stub write)")
+
+        @it("error parses the ERROR label")
+        sub _()
+            m.expectCalled(logger.write("ERROR", "tokens", "file missing"))
+
+            logger.error("tokens", "file missing")
+        end sub
+
+        @it("warn passes the WARN label")
+        sub _()
+            m.expectCalled(logger.write("WARN", "routes", "no route with id x"))
+
+            logger.warn("routes", "no route with id x")
+        end sub
+
+        @it("info passes the INFO label")
+        sub _()
+            m.expectCalled(logger.write("INFO", "MainScene", "signalling AppLaunchComplete"))
+
+            logger.info("MainScene", "signalling AppLaunchComplete")
+        end sub
+
+        @it("debug passes the DEBUG label")
+        sub _()
+            m.expectCalled(logger.write("DEBUG", "a11y", "queue: {}"))
+
+            logger.debug("a11y", "queue: {}")
+        end sub
+
+        @it("write formats as [LABEL][tag] message")
+        sub _()
+            m.expectCalled(logger.write("ERROR", "tag-with-dashes", "message: with, punctuation"))
+            logger.error("tag-with-dashes", "message: with, punctuation")
+
+            m.expectCalled(logger.write("DEBUG", "", ""))
+            logger.debug("", "")
+        end sub
+
+
+    end class
+end namespace

@@ -12,7 +12,7 @@ namespace catalog
 
     interface GenreSource
         title as string
-        genreID as integer
+        genreId as integer
     end interface
 
 end namespace

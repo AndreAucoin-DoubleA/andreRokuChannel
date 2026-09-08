@@ -1,0 +1,189 @@
+namespace tests
+
+    @suite("bookmarks")
+    class BookmarksTests extends rooibos.BaseTestSuite
+
+        @describe("bookmarks")
+
+        @setup
+        protected override sub setup()
+            m.savedBookmarks = {}
+
+            registry = bookmarks.section()
+            for each key in registry.GetKeyList()
+                m.savedBookmarks[key] = registry.Read(key)
+            end for
+        end sub
+
+        @teardown
+        protected override sub tearDown()
+            registry = bookmarks.section()
+
+            for each key in registry.GetKeyList()
+                registry.Delete(key)
+            end for
+
+            for each key in m.savedBookmarks
+                registry.Write(key, m.savedBookmarks[key])
+            end for
+
+            registry.Flush()
+        end sub
+
+        @beforeEach
+        protected override sub beforeEach()
+            m.clearSection()
+        end sub
+
+        @afterEach
+        protected override sub afterEach()
+            m.clearSection()
+        end sub
+
+        sub clearSection()
+            registry = bookmarks.section()
+
+            for each key in registry.GetKeyList()
+                registry.Delete(key)
+            end for
+
+            registry.Flush()
+        end sub
+
+        sub seed(movieId as string, value as string)
+            registry = bookmarks.section()
+            registry.Write(movieId, value)
+            registry.Flush()
+        end sub
+
+        function keyCount() as integer
+            return bookmarks.section().GetKeyList().Count()
+        end function
+
+        function storedRaw(movieId as string) as dynamic
+            return bookmarks.section().Read(movieId)
+        end function
+
+        @it("positionFor is 0 for invalid and for an empty id")
+        @params(invalid)
+        @params("")
+        sub _(movieId as dynamic)
+            m.assertEqual(bookmarks.positionFor(movieId), 0)
+        end sub
+
+        @it("positionFor is 0 for an unknown id")
+        @params("tst-never-written")
+        @params("0")
+        sub _(movieId as dynamic)
+            m.assertEqual(bookmarks.positionFor(movieId), 0)
+        end sub
+
+        @it("positionFor returns the stored integer")
+        @params("42", 42)
+        @params("5", 5)
+        @params("0", 0)
+        @params("3600", 3600)
+        sub _(stored as string, expected as integer)
+            m.seed("tst-1", stored)
+
+            m.assertEqual(bookmarks.positionFor("tst-1"), expected)
+        end sub
+
+        @it("a position below the 5-second floor deletes the bookmark")
+        @params(4.9)
+        @params(0.0)
+        @params(-30.0)
+        sub _(position as float)
+            m.seed("tst-1", "42")
+            m.assertTrue(bookmarks.section().Exists("tst-1"), "precondition: bookmark must exist")
+
+            bookmarks.savePosition("tst-1", position, 100.0)
+
+            m.assertFalse(bookmarks.section().Exists("tst-1"), `position ${position} should have deleted it`)
+            m.assertEqual(bookmarks.positionFor("tst-1"), 0)
+        end sub
+
+        @it("a position within 10 seconds of the end deletes the bookmark")
+        @params(90.1)
+        @params(95.0)
+        @params(100.0)
+        @params(120.0)
+        sub _(position as float)
+            m.seed("tst-1", "42")
+            m.assertTrue(bookmarks.section().Exists("tst-1"), "precondition: bookmark must exist")
+
+            bookmarks.savePosition("tst-1", position, 100.0)
+
+            m.assertFalse(bookmarks.section().Exists("tst-1"), `position ${position} should have deleted it`)
+        end sub
+
+        @it("a position inside the window is written as a truncated integer")
+        @params(42.7, 42)
+        @params(42.2, 42)
+        @params(5.0, 5)
+        @params(5.9, 5)
+        @params(89.9, 89)
+        @params(90.0, 90)
+        sub _(position as float, expected as integer)
+            bookmarks.savePosition("tst-1", position, 100.0)
+
+            ' A fresh section object, so the value came from the registry store.
+            m.assertEqual(m.storedRaw("tst-1"), expected.ToStr(), "stored as a truncated string")
+            m.assertEqual(bookmarks.positionFor("tst-1"), expected)
+        end sub
+
+        @it("a duration of zero or less is ignored")
+        @params(0.0)
+        @params(-1.0)
+        @params(-100.0)
+        sub _(duration as float)
+            m.seed("tst-1", "42")
+
+            bookmarks.savePosition("tst-1", 42.0, duration)
+
+            m.assertEqual(m.storedRaw("tst-1"), "42", "an existing bookmark should be left alone")
+            m.assertEqual(m.keyCount(), 1)
+        end sub
+
+        @it("an invalid id is ignored")
+        @params(invalid)
+        @params("")
+        sub _(movieId as dynamic)
+            m.seed("tst-other", "42")
+
+            bookmarks.savePosition(movieId, 42.0, 100.0)
+
+            m.assertEqual(m.keyCount(), 1, "no key should have been added")
+            m.assertEqual(m.storedRaw("tst-other"), "42", "an unrelated bookmark must be untouched")
+        end sub
+
+        @it("clear deletes and flushes")
+        sub _()
+            m.seed("tst-1", "42")
+            m.seed("tst-2", "7")
+
+            bookmarks.clear("tst-1")
+
+            m.assertFalse(bookmarks.section().Exists("tst-1"), "the key should be gone")
+            m.assertEqual(bookmarks.positionFor("tst-1"), 0)
+
+            m.assertEqual(m.storedRaw("tst-2"), "7", "clear should not touch other ids")
+            m.assertEqual(m.keyCount(), 1)
+        end sub
+
+        @it("save then read round-trips the value")
+        @params(42.7, 42)
+        @params(5.0, 5)
+        @params(90.0, 90)
+        @params(60.0, 60)
+        sub _(position as float, expected as integer)
+            m.assertEqual(bookmarks.positionFor("tst-1"), 0, "precondition: nothing stored yet")
+
+            bookmarks.savePosition("tst-1", position, 100.0)
+
+            m.assertEqual(bookmarks.positionFor("tst-1"), expected)
+        end sub
+
+    end class
+end namespace
+

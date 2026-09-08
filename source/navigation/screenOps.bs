@@ -1,0 +1,78 @@
+import "pkg:/source/navigation/routes.bs"
+
+namespace screenOps
+
+    function newContext(top as object) as object
+        return { top: top, stacks: {}, activeStack: invalid }
+    end function
+
+    function rootInset() as object
+        return [160, 0]
+    end function
+
+    function showStack(ctx as object, id as string, resolve as function) as object
+        if ctx.top.activeStackId = id then return ctx.activeStack
+
+        entry = resolve(id)
+        if entry = invalid then return invalid
+
+        if ctx.activeStack <> invalid
+            ctx.activeStack.callFunc("suspendTop")
+            ctx.activeStack.visible = false
+        end if
+
+        stack = ctx.stacks[id]
+
+        if stack = invalid
+            stack = ctx.top.createChild("ViewStack")
+            ctx.stacks[id] = stack
+
+            stack.callFunc("setRoot", { view: entry.component, params: {}, inset: screenOps.rootInset() })
+            stack.observeField("stackDepth", "onStackDepthChanged")
+        else
+            stack.callFunc("resumeTop")
+        end if
+
+        stack.visible = true
+        ctx.activeStack = stack
+        ctx.top.activeStackId = id
+
+        screenOps.publishDepth(ctx)
+
+        return stack
+    end function
+
+    function focusActive(ctx as object) as boolean
+        if ctx.activeStack = invalid then return false
+
+        return ctx.activeStack.callFunc("focusTop")
+    end function
+
+    function suspendActive(ctx as object) as boolean
+        if ctx.activeStack = invalid then return false
+
+        return ctx.activeStack.callFunc("suspendTop")
+    end function
+
+    function resumeActive(ctx as object) as boolean
+        if ctx.activeStack = invalid then return false
+
+        return ctx.activeStack.callFunc("resumeTop")
+    end function
+
+    sub publishDepth(ctx as object)
+        if ctx.activeStack = invalid
+            ctx.top.activeDepth = 0
+            return
+        end if
+
+        ctx.top.activeDepth = ctx.activeStack.callFunc("depth")
+    end sub
+
+    function pushOnActive(ctx as object, request as object) as object
+        if ctx.activeStack = invalid then return invalid
+
+        return ctx.activeStack.callFunc("push", request)
+    end function
+
+end namespace

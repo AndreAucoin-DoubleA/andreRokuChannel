@@ -2,6 +2,24 @@
 <component name="MosaicPlayerView" extends="BaseView">
     <script type="text/brightscript" uri="pkg:/components/views/MosaicPlayerView/MosaicPlayerView.bs" />
 
+    <interface>
+        <!-- Exposed for tests: connection state, highlight and audio. -->
+        <function name="beginConnecting"/>
+        <function name="setReady"/>
+        <function name="showFailure"/>
+        <function name="closeErrorDialog"/>
+        <function name="onErrorDismissed"/>
+        <function name="onConnectWatchdog"/>
+        <function name="raiseScrim"/>
+        <function name="fadeScrim"/>
+        <function name="highlight"/>
+        <function name="requestAudio"/>
+        <function name="onAudioDebounce"/>
+        <function name="selectAudio"/>
+        <function name="onPlayerState"/>
+        <function name="onKeyEvent"/>
+    </interface>
+
     <children>
         <Rectangle id="backdrop" width="1920" height="1080" color="0x101114FF"/>
         <Video id="player" width="1920" height="1080" translation="[0,0]"/>

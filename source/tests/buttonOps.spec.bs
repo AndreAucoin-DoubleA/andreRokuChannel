@@ -1,0 +1,117 @@
+namespace tests
+
+    @suite("TextButton")
+    class TextButtonTests extends rooibos.BaseTestSuite
+
+        @describe("TextButton")
+
+        @beforeEach
+        protected override sub beforeEach()
+            probe = CreateObject("roSGNode", "ContentNode")
+            probe.addFields({ request: {} })
+
+            if m.global.hasField("speechTask")
+                m.global.speechTask = probe
+            else
+                m.global.addFields({ speechTask: probe })
+            end if
+        end sub
+
+        function newButton() as object
+            return CreateObject("roSGNode", "TextButton")
+        end function
+
+        function spokenText() as dynamic
+            return m.global.speechTask.request.focus
+        end function
+
+        @it("a text change updates the label")
+        @params("Play")
+        @params("Resume from 12:34")
+        @params("")
+        sub _(text as string)
+            button = m.newButton()
+
+            button.text = text
+
+            m.assertEqual(button.findNode("label").text, text, "the onChange handler should mirror text")
+        end sub
+
+        @it("width 0 auto-sizes to the text")
+        sub _()
+            button = m.newButton()
+
+            m.assertEqual(Int(button.width), 0, "the width field defaults to 0")
+
+            button.text = "Play"
+            button.width = 0
+
+            m.assertEqual(Int(button.findNode("customButton").width), 280, "falls back to the XML width")
+            m.assertEqual(Int(button.findNode("label").width), 280)
+        end sub
+
+        @it("a set width overrides auto-sizing")
+        @params(400)
+        @params(120)
+        @params(1000)
+        sub _(width as integer)
+            button = m.newButton()
+
+            button.width = width
+
+            m.assertEqual(Int(button.findNode("customButton").width), width, "the background must follow")
+            m.assertEqual(Int(button.findNode("label").width), width, "the label must follow so centring works")
+        end sub
+
+        @it("gaining focus announces the label")
+        sub _()
+            button = m.newButton()
+            button.text = "Play"
+
+            m.assertInvalid(m.spokenText(), "precondition: nothing announced yet")
+
+            buttonOps.announce(button)
+
+            m.assertEqual(m.spokenText(), "Play, button", "the role must be appended")
+        end sub
+
+        @it("audioGuideText is announced in preference to text")
+        sub _()
+            button = m.newButton()
+            button.text = "Play"
+            button.audioGuideText = "Resume Dune from 12 minutes"
+
+            buttonOps.announce(button)
+
+            m.assertEqual(m.spokenText(), "Resume Dune from 12 minutes, button")
+
+            silent = m.newButton()
+            buttonOps.announce(silent)
+
+            m.assertEqual(m.spokenText(), "Resume Dune from 12 minutes, button", "an unlabelled button must not announce")
+        end sub
+
+        @it("OK sets selected")
+        sub _()
+            button = m.newButton()
+
+            m.assertFalse(button.selected, "precondition: not selected")
+
+            m.assertTrue(buttonOps.handleKey(button, "OK", true), "OK must be consumed")
+            m.assertTrue(button.selected)
+        end sub
+
+        @it("back is not handled")
+        @params("back", true)
+        @params("up", true)
+        @params("ok", true)
+        @params("OK", false)
+        sub _(key as string, press as boolean)
+            button = m.newButton()
+
+            m.assertFalse(buttonOps.handleKey(button, key, press), `${key} press=${press} must not be handled`)
+            m.assertFalse(button.selected, "selected must stay false")
+        end sub
+
+    end class
+end namespace

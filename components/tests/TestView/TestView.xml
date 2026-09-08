@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="TestView" extends="BaseView">
+    <script type="text/brightscript" uri="pkg:/components/tests/TestView/TestView.bs"/>
+
+    <interface>
+        <field id="lifecycleLog" type="string"/>
+        <field id="loadedParams" type="assocarray"/>
+    </interface>
+</component>

@@ -1,0 +1,173 @@
+import "pkg:/source/services/bookmarks.bs"
+import "pkg:/source/operations/videoFormat.bs"
+import "pkg:/components/widgets/VideoPlayer/VideoPlayer.interface.bs"
+
+namespace videoTransport
+
+    function newContext() as object
+        return {
+            mode: videoPlayer.MODE_IDLE,
+            scrubTarget: 0.0,
+            skipAnchor: 0.0,
+            scanDirection: 1,
+            scanSpeedIndex: 0,
+            wasPlaying: false,
+            seekPending: false,
+            seekTarget: 0.0,
+            seekTicks: 0,
+            lastPosition: 0.0,
+            videoDuration: 0.0,
+            ticksSinceSave: 0,
+            renderedDuration: -1,
+            previewIndex: -1
+        }
+    end function
+
+    sub resetProgressCache(ctx as object)
+        ctx.lastPosition = 0
+        ctx.videoDuration = 0
+        ctx.ticksSinceSave = 0
+        ctx.previewIndex = -1
+
+        ctx.seekPending = false
+        ctx.seekTarget = 0
+        ctx.seekTicks = 0
+        ctx.renderedDuration = -1
+    end sub
+
+    function livePosition(ctx as object, node as object) as float
+        if ctx.seekPending then return ctx.seekTarget
+
+        return node.position
+    end function
+
+    sub requestSeek(ctx as object, node as object, seconds as float)
+        ctx.seekTarget = seconds
+        ctx.seekPending = true
+        ctx.seekTicks = 0
+
+        node.seek = seconds
+    end sub
+
+    sub settleSeek(ctx as object, node as object)
+        if not ctx.seekPending then return
+
+        ctx.seekTicks = ctx.seekTicks + 1
+
+        if Abs(node.position - ctx.seekTarget) <= videoPlayer.SEEK_SETTLE_TOLERANCE
+            ctx.seekPending = false
+        else if ctx.seekTicks >= videoPlayer.SEEK_SETTLE_TICKS
+            ctx.seekPending = false
+        end if
+    end sub
+
+    sub savePositionAt(ctx as object, node as object, position as float)
+        if not node.trackProgress then return
+
+        duration = node.duration
+
+        if position <= 0 then position = ctx.lastPosition
+        if duration <= 0 then duration = ctx.videoDuration
+
+        if position <= 0 then return
+
+        bookmarks.savePosition(node.movieId, position, duration)
+    end sub
+
+    sub savePositionNow(ctx as object, node as object)
+        videoTransport.savePositionAt(ctx, node, videoTransport.livePosition(ctx, node))
+    end sub
+
+    function commitProgress(ctx as object, node as object) as boolean
+        position = videoTransport.livePosition(ctx, node)
+
+        if ctx.mode <> videoPlayer.MODE_IDLE then position = ctx.scrubTarget
+
+        ctx.mode = videoPlayer.MODE_IDLE
+
+        videoTransport.savePositionAt(ctx, node, position)
+
+        return true
+    end function
+
+    sub applyStateSave(ctx as object, node as object)
+        state = node.state
+
+        if state = "paused"
+            videoTransport.savePositionNow(ctx, node)
+            return
+        end if
+
+        if state = "finished"
+            videoTransport.savePositionNow(ctx, node)
+            videoTransport.resetProgressCache(ctx)
+        end if
+    end sub
+
+    function skipDelta(ctx as object) as float
+        return ctx.scrubTarget - ctx.skipAnchor
+    end function
+
+    sub applySkip(ctx as object, node as object, deltaSeconds as integer)
+        if ctx.mode <> videoPlayer.MODE_SKIP
+            ctx.mode = videoPlayer.MODE_SKIP
+            ctx.skipAnchor = videoTransport.livePosition(ctx, node)
+            ctx.scrubTarget = ctx.skipAnchor
+        end if
+
+        ctx.scrubTarget = videoFormat.clampToDuration(ctx.scrubTarget + deltaSeconds, node.duration)
+    end sub
+
+    sub cancelPendingSkip(ctx as object)
+        if ctx.mode <> videoPlayer.MODE_SKIP then return
+
+        ctx.mode = videoPlayer.MODE_IDLE
+    end sub
+
+    function scanRate(ctx as object) as integer
+        if ctx.scanSpeedIndex <= 0 then return videoPlayer.SCAN_RATE_1
+        if ctx.scanSpeedIndex = 1 then return videoPlayer.SCAN_RATE_2
+
+        return videoPlayer.SCAN_RATE_3
+    end function
+
+    sub applyScanStart(ctx as object, node as object, direction as integer)
+        if ctx.mode <> videoPlayer.MODE_SCAN
+            videoTransport.cancelPendingSkip(ctx)
+
+            ctx.mode = videoPlayer.MODE_SCAN
+            ctx.scanDirection = direction
+            ctx.scanSpeedIndex = 0
+            ctx.scrubTarget = videoTransport.livePosition(ctx, node)
+            ctx.wasPlaying = (node.state = "playing")
+
+            node.control = "pause"
+        else if direction = ctx.scanDirection
+            if ctx.scanSpeedIndex < videoPlayer.SCAN_MAX_INDEX
+                ctx.scanSpeedIndex = ctx.scanSpeedIndex + 1
+            end if
+        else
+            ctx.scanDirection = direction
+            ctx.scanSpeedIndex = 0
+        end if
+    end sub
+
+    sub applyScanEnd(ctx as object, node as object)
+        if ctx.mode <> videoPlayer.MODE_SCAN then return
+
+        ctx.mode = videoPlayer.MODE_IDLE
+
+        videoTransport.requestSeek(ctx, node, ctx.scrubTarget)
+
+        if ctx.wasPlaying then node.control = "resume"
+    end sub
+
+    sub togglePlayPause(node as object)
+        if node.state = "playing"
+            node.control = "pause"
+        else if node.state = "paused"
+            node.control = "resume"
+        end if
+    end sub
+
+end namespace

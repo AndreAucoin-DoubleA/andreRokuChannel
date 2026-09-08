@@ -17,4 +17,10 @@ namespace analytics
         }
     end sub
 
+    sub SendEvent(event as object)
+        if event = invalid or event.name = invalid then return
+
+        logger.info("analytics", FormatJson(event))
+    end sub
+
 end namespace

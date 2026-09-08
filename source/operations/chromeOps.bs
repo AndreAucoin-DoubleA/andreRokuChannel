@@ -1,0 +1,127 @@
+import "pkg:/components/widgets/RowListChrome/RowListChrome.interface.bs"
+
+namespace chromeOps
+
+    function newContext(top as object) as object
+        return {
+            top: top,
+            rowList: invalid,
+            capLayer: top.findNode("capLayer"),
+            ring: top.findNode("ring"),
+            summaryTitle: top.findNode("summaryTitle"),
+            capColor: "0x202226FF",
+            geometryFields: ["itemSize", "rowItemSize", "itemSpacing", "numRows", "translation"],
+            visibilityFields: ["visible", "content", "focusedChild"],
+            motionFields: ["currFocusRow"]
+        }
+    end function
+
+    sub attach(ctx as object, rowList as object)
+        chromeOps.detach(ctx)
+
+        ctx.rowList = rowList
+        if ctx.rowList = invalid then return
+
+        for each field in ctx.geometryFields
+            ctx.rowList.observeField(field, "onGeometryChanged")
+        end for
+        for each field in ctx.visibilityFields
+            ctx.rowList.observeField(field, "onVisibilityChanged")
+        end for
+        for each field in ctx.motionFields
+            ctx.rowList.observeField(field, "onVertScroll")
+        end for
+
+        chromeOps.applyGeometry(ctx)
+        chromeOps.applyVisibility(ctx)
+        chromeOps.applyScroll(ctx)
+    end sub
+
+    sub detach(ctx as object)
+        if ctx.rowList = invalid then return
+
+        for each field in ctx.geometryFields
+            ctx.rowList.unobserveField(field)
+        end for
+        for each field in ctx.visibilityFields
+            ctx.rowList.unobserveField(field)
+        end for
+        for each field in ctx.motionFields
+            ctx.rowList.unobserveField(field)
+        end for
+
+        ctx.rowList = invalid
+    end sub
+
+    sub applyGeometry(ctx as object)
+        if ctx.rowList = invalid then return
+
+        sizes = ctx.rowList.rowItemSize
+        if sizes.Count() = 0 then return
+
+        itemWidth = sizes[0][0]
+        itemHeight = sizes[0][1]
+        rowHeight = ctx.rowList.itemSize[1]
+        rowPitch = rowHeight + ctx.rowList.itemSpacing[1]
+
+        left = ctx.rowList.translation[0]
+        posterTop = ctx.rowList.translation[1] + (rowHeight - itemHeight)
+        baseTop = posterTop - ctx.top.offsetY
+
+        ctx.ring.width = itemWidth
+        ctx.ring.height = itemHeight
+        ctx.ring.translation = [left, baseTop]
+
+        hSpacing = ctx.rowList.rowItemSpacing[0][0]
+        columns = ctx.top.summaryColumns
+        ctx.summaryTitle.width = (columns * itemWidth) + ((columns - 1) * hSpacing)
+        ctx.summaryTitle.translation = [left, posterTop + itemHeight + ctx.top.summaryGap]
+
+        ctx.capLayer.removeChildrenIndex(ctx.capLayer.getChildCount(), 0)
+
+        for row = 0 to ctx.rowList.numRows - 1
+            cap = ctx.capLayer.createChild("Poster")
+            cap.uri = "pkg:/images/row_corner_cap.png"
+            cap.blendColor = ctx.capColor
+            cap.width = rowListChrome.CAP_WIDTH
+            cap.height = itemHeight
+            cap.translation = [left, baseTop + (row * rowPitch)]
+        end for
+    end sub
+
+    sub applyScroll(ctx as object)
+        if ctx.rowList = invalid then return
+
+        if not chromeOps.canScrollVertically(ctx)
+            ctx.capLayer.visible = true
+            return
+        end if
+
+        row = ctx.rowList.currFocusRow
+        ctx.capLayer.visible = (Abs(row - Int(row)) < 0.01)
+    end sub
+
+    function canScrollVertically(ctx as object) as boolean
+        if not ctx.rowList.isInFocusChain() then return false
+
+        content = ctx.rowList.content
+        if content = invalid then return false
+
+        return content.getChildCount() > 1
+    end function
+
+    sub applyVisibility(ctx as object)
+        if ctx.rowList = invalid then return
+
+        content = ctx.rowList.content
+        hasRows = (content <> invalid and content.getChildCount() > 0)
+        shown = ctx.rowList.visible and hasRows
+
+        ctx.top.visible = shown
+        ctx.ring.visible = shown and ctx.rowList.isInFocusChain()
+        ctx.summaryTitle.visible = ctx.ring.visible
+
+        chromeOps.applyScroll(ctx)
+    end sub
+
+end namespace

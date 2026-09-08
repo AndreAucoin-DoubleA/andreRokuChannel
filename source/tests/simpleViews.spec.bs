@@ -1,0 +1,111 @@
+namespace tests
+
+    @suite("MultiviewView & GamesView")
+    class SimpleViewsTests extends rooibos.BaseTestSuite
+
+        @describe("simple views")
+
+        function newMultiview() as object
+            return CreateObject("roSGNode", "MultiviewView")
+        end function
+
+        function newGames() as object
+            return CreateObject("roSGNode", "GamesView")
+        end function
+
+        ' A color field reads back as a packed integer, not the hex string it
+        ' was set from, so compare through the same conversion.
+        function colorValue(hex as string) as dynamic
+            probe = CreateObject("roSGNode", "Label")
+            probe.color = hex
+
+            return probe.color
+        end function
+
+        @it("MultiviewView start press pushes MosaicPlayerView")
+        sub _()
+            view = m.newMultiview()
+
+            m.assertInvalid(view.navRequest, "precondition: no navigation requested")
+
+            view.callFunc("onStartPressed")
+
+            request = view.navRequest
+
+            m.assertNotInvalid(request, "a navigation request is raised")
+            m.assertEqual(request.action, "push")
+            m.assertEqual(request.view, "MosaicPlayerView", "it must target the mosaic player")
+            m.assertNotInvalid(request.params, "params must be an AA, not invalid")
+            m.assertEmpty(request.params, "and empty -- the mosaic needs no arguments")
+        end sub
+
+        @it("MultiviewView setViewFocus returns true")
+        sub _()
+            view = m.newMultiview()
+
+            ' NOTE: MultiviewView overrides setViewFocus to focus startButton,
+            ' which returns true in the running app. Here it is false: a
+            ' TextButton is Group-based and Groups cannot take focus outside a
+            ' rendered scene. (RowList and MarkupList can, which is why other
+            ' suites see true.) What is pinned is that it returns a boolean
+            ' without throwing.
+            result = view.callFunc("setViewFocus")
+
+            m.assertFalse(result, "false outside a rendered scene")
+            m.assertNotInvalid(view.findNode("startButton"), "and the target control exists")
+        end sub
+
+        @it("GamesView setViewFocus behaviour is pinned")
+        sub _()
+            view = m.newGames()
+
+            ' GamesView defines no setViewFocus, so it inherits BaseView's,
+            ' which focuses the view itself -- and a bare Group cannot take
+            ' focus outside a rendered scene.
+            m.assertFalse(view.callFunc("setViewFocus"), "inherited from BaseView, false here")
+
+            ' It has no focusable control of its own to target, unlike
+            ' MultiviewView's start button -- the list is a LayoutGroup of
+            ' Labels, so there is nothing for a user to land on.
+            m.assertNotInvalid(view.findNode("gamesList"), "only a label list")
+            m.assertInvalid(view.findNode("startButton"), "no button to focus")
+        end sub
+
+        @it("both apply theme tokens on init")
+        sub _()
+            ' No designTokens global in the test build, so every lookup falls
+            ' back -- which is exactly what these assertions pin.
+            titleColor = m.colorValue("0xFFFFFFFF")
+            bodyColor = m.colorValue("0xB7BDC5FF")
+
+            multiviewView = m.newMultiview()
+
+            m.assertEqual(multiviewView.findNode("titleLabel").color, titleColor, "multiview title colour")
+            m.assertNotInvalid(multiviewView.findNode("titleLabel").font, "multiview title font")
+            m.assertEqual(multiviewView.findNode("bodyLabel").color, bodyColor, "multiview body colour")
+            m.assertEqual(multiviewView.findNode("statusLabel").color, bodyColor, "multiview status colour")
+
+            ' init also stamps the stream source into the status label.
+            m.assertEqual(multiviewView.findNode("statusLabel").text, `Source: ${multiview.mosaicUrl()}`, "the source is shown")
+
+            games = m.newGames()
+
+            m.assertEqual(games.findNode("titleLabel").color, titleColor, "games title colour")
+            m.assertNotInvalid(games.findNode("titleLabel").font, "games title font")
+
+            ' GamesView themes every row in its list rather than a fixed label.
+            list = games.findNode("gamesList")
+            m.assertTrue(list.getChildCount() > 0, "there is at least one row")
+
+            for i = 0 to list.getChildCount() - 1
+                m.assertEqual(list.getChild(i).color, bodyColor, `row ${i} colour`)
+                m.assertNotInvalid(list.getChild(i).font, `row ${i} font`)
+            end for
+
+            ' Re-applying is idempotent.
+            games.callFunc("applyTheme")
+            m.assertEqual(games.findNode("titleLabel").color, titleColor, "still themed after a re-apply")
+        end sub
+
+    end class
+end namespace

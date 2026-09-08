@@ -1,0 +1,64 @@
+namespace navItemOps
+    function newContext(top as object) as object
+        return {
+            top: top,
+            icon: top.findNode("icon"),
+            label: top.findNode("label"),
+            highlight: top.findNode("highlight"),
+            collapseAnim: top.findNode("collapseAnim"),
+            fadeInterp: top.findNode("fadeInterp"),
+            highlightWidthInterp: top.findNode("highlightWidthInterp"),
+            labelColor: "0x8E949DFF",
+            labelColorFocused: "0xFFFFFFFF",
+            widthExpanded: 250.0,
+            widthCollapsed: 80.0
+        }
+    end function
+
+    function labelOpacity(collapsed as boolean) as float
+        if collapsed then return 0.0
+
+        return 1.0
+    end function
+
+    function highlightWidth(ctx as object, collapsed as boolean) as float
+        if collapsed then return ctx.widthCollapsed
+
+        return ctx.widthExpanded
+    end function
+
+    sub applyContent(ctx as object)
+        content = ctx.top.itemContent
+
+        ctx.label.text = content.title
+        ctx.icon.uri = content.hdPosterUrl
+    end sub
+
+    sub updateHighlight(ctx as object)
+        p = ctx.top.focusPercent
+
+        dimFactor = 1.0
+        if not ctx.top.listHasFocus then dimFactor = 0.45
+        ctx.highlight.opacity = p * dimFactor
+
+        if p > 0.5
+            ctx.label.color = ctx.labelColorFocused
+        else
+            ctx.label.color = ctx.labelColor
+        end if
+    end sub
+
+    sub applyCollapsed(ctx as object, collapsed as boolean)
+        ctx.fadeInterp.keyValue = [ctx.label.opacity, navItemOps.labelOpacity(collapsed)]
+        ctx.highlightWidthInterp.keyValue = [ctx.highlight.width, navItemOps.highlightWidth(ctx, collapsed)]
+
+        ctx.collapseAnim.control = "stop"
+        ctx.collapseAnim.control = "start"
+    end sub
+
+    sub applyInitial(ctx as object, collapsed as boolean)
+        ctx.label.opacity = navItemOps.labelOpacity(collapsed)
+        ctx.highlight.width = navItemOps.highlightWidth(ctx, collapsed)
+    end sub
+
+end namespace

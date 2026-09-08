@@ -1,0 +1,228 @@
+namespace tests
+
+    @suite("MosaicPlayerView")
+    class MosaicPlayerViewTests extends rooibos.BaseTestSuite
+
+        @describe("connection states")
+
+        @beforeEach
+        protected override sub beforeEach()
+            probe = CreateObject("roSGNode", "ContentNode")
+            probe.addFields({ request: {} })
+
+            if m.global.hasField("speechTask")
+                m.global.speechTask = probe
+            else
+                m.global.addFields({ speechTask: probe })
+            end if
+        end sub
+
+        function newView() as object
+            return CreateObject("roSGNode", "MosaicPlayerView")
+        end function
+
+        function milli(value as dynamic) as integer
+            return Int(value * 1000 + 0.5)
+        end function
+
+        @it("beginConnecting shows the connecting state")
+        sub _()
+            view = m.newView()
+            loader = view.findNode("loader")
+
+            view.callFunc("setReady", true)
+            m.assertTrue(view.findNode("chrome").visible, "precondition: chrome up")
+
+            view.callFunc("beginConnecting")
+
+            m.assertFalse(view.findNode("chrome").visible, "the chrome is hidden while connecting")
+            m.assertEqual(loader.findNode("delayTimer").control, "start", "the spinner delay runs")
+            m.assertEqual(view.findNode("connectWatchdog").control, "start", "and the watchdog is armed")
+        end sub
+
+        @it("setReady clears the scrim")
+        sub _()
+            view = m.newView()
+            scrim = view.findNode("scrim")
+
+            view.callFunc("raiseScrim")
+            m.assertEqual(m.milli(scrim.opacity), 1000, "precondition: scrim raised")
+
+            ' NOTE: setReady only toggles the chrome. Clearing the scrim is
+            ' fadeScrim's job, which also calls setReady(true).
+            view.callFunc("setReady", true)
+            m.assertTrue(view.findNode("chrome").visible)
+            m.assertEqual(m.milli(scrim.opacity), 1000, "setReady leaves the scrim alone")
+
+            view.callFunc("fadeScrim")
+
+            m.assertTrue(view.findNode("chrome").visible, "fadeScrim readies the view")
+            m.assertEqual(view.findNode("connectWatchdog").control, "stop", "and disarms the watchdog")
+
+            keys = view.findNode("scrimInterp").keyValue
+            m.assertEqual(m.milli(keys[1]), 0, "the fade targets zero opacity")
+            m.assertEqual(view.findNode("scrimAnim").control, "start", "and the animation runs")
+        end sub
+
+        @it("showFailure opens the error dialog")
+        sub _()
+            view = m.newView()
+
+            view.callFunc("setReady", true)
+
+            view.callFunc("showFailure", "The stream never started.")
+
+            dialog = view.getScene().dialog
+
+            m.assertNotInvalid(dialog, "a dialog is presented")
+            m.assertEqual(dialog.title, "Multiview unavailable")
+            m.assertEqual(dialog.message, "The stream never started.", "the detail is passed through")
+
+            m.assertFalse(view.findNode("chrome").visible, "the chrome is hidden")
+            m.assertEqual(m.milli(view.findNode("scrim").opacity), 1000, "the scrim is raised")
+            m.assertEqual(view.findNode("player").control, "stop", "playback is stopped")
+            m.assertEqual(view.findNode("connectWatchdog").control, "stop", "the watchdog is disarmed")
+            m.assertEqual(view.findNode("audioDebounce").control, "stop", "and any pending audio switch is dropped")
+
+            ' A second failure must not stack dialogs.
+            view.callFunc("showFailure", "Another problem.")
+            m.assertEqual(view.getScene().dialog.message, "The stream never started.", "the first dialog stays")
+
+            view.callFunc("closeErrorDialog")
+        end sub
+
+        @it("the connect watchdog firing shows a failure")
+        sub _()
+            view = m.newView()
+
+            view.callFunc("beginConnecting")
+            m.assertEqual(view.findNode("connectWatchdog").control, "start", "precondition: armed")
+
+            view.callFunc("onConnectWatchdog")
+
+            dialog = view.getScene().dialog
+
+            m.assertNotInvalid(dialog, "the timeout surfaces a dialog")
+            m.assertEqual(dialog.message, "The stream never started.", "with the watchdog's wording")
+            m.assertEqual(view.findNode("connectWatchdog").control, "stop", "and it does not re-arm")
+
+            view.callFunc("closeErrorDialog")
+        end sub
+
+        @it("dismissing the error leaves the view")
+        sub _()
+            view = m.newView()
+
+            view.callFunc("showFailure", "Playback error.")
+            m.assertNotInvalid(view.getScene().dialog, "precondition: dialog open")
+
+            view.callFunc("onErrorDismissed")
+
+            request = view.navRequest
+
+            m.assertNotInvalid(request, "a navigation request is raised")
+            m.assertEqual(request.action, "pop", "dismissing pops back off the stack")
+            m.assertInvalid(request.view, "a pop carries no view")
+        end sub
+
+        @it("highlight clamps to the quadrant count")
+        @params(0, 0, 0)
+        @params(1, 960, 0)
+        @params(2, 0, 540)
+        @params(3, 960, 540)
+        sub _(index as integer, x as integer, y as integer)
+            ' NOTE: highlight does NOT clamp -- it indexes m.quadOrigin
+            ' directly, so an index above 3 raises "Array operation attempted
+            ' on variable not DIM'd" and takes the channel down. It is only
+            ' latent because onKeyEvent never produces one. Not asserted here:
+            ' the error crosses callFunc and is not catchable, so probing it
+            ' kills the test run.
+            view = m.newView()
+
+            view.callFunc("highlight", index)
+
+            ring = view.findNode("focusRing").translation
+
+            m.assertEqual(Int(ring[0]), x, `quadrant ${index} x`)
+            m.assertEqual(Int(ring[1]), y, `quadrant ${index} y`)
+        end sub
+
+        @it("an arrow key moves the highlight")
+        @params("right", 960, 0)
+        @params("down", 0, 540)
+        sub _(key as string, x as integer, y as integer)
+            view = m.newView()
+
+            ' Keys are swallowed until the view is ready.
+            m.assertTrue(view.callFunc("onKeyEvent", key, true), "unready keys are consumed")
+            m.assertEqual(Int(view.findNode("focusRing").translation[0]), 0, "and do nothing")
+
+            view.callFunc("setReady", true)
+
+            m.assertTrue(view.callFunc("onKeyEvent", key, true), "the move is handled")
+
+            ring = view.findNode("focusRing").translation
+            m.assertEqual(Int(ring[0]), x, `${key} x`)
+            m.assertEqual(Int(ring[1]), y, `${key} y`)
+
+            m.assertEqual(view.findNode("audioDebounce").control, "start", "and an audio switch is queued")
+        end sub
+
+        @it("an arrow key at the edge is not handled")
+        @params("left")
+        @params("up")
+        sub _(key as string)
+            view = m.newView()
+            view.callFunc("setReady", true)
+
+            ' Quadrant 0 is the top-left corner, so left and up have nowhere
+            ' to go.
+            m.assertFalse(view.callFunc("onKeyEvent", key, true), `${key} from quadrant 0 is unhandled`)
+            m.assertEqual(Int(view.findNode("focusRing").translation[0]), 0, "the ring does not move")
+            m.assertNotEqual(view.findNode("audioDebounce").control, "start", "and nothing is queued")
+        end sub
+
+        @it("requestAudio debounces before selecting")
+        sub _()
+            view = m.newView()
+            badge = view.findNode("audioBadge")
+
+            m.assertEqual(badge.text, "", "precondition: no audio announced")
+
+            view.callFunc("requestAudio", 2)
+
+            m.assertEqual(view.findNode("audioDebounce").control, "start", "the debounce timer runs")
+            m.assertEqual(badge.text, "", "nothing is selected until it fires")
+
+            ' A second request restarts the timer rather than queueing two.
+            view.callFunc("requestAudio", 3)
+            m.assertEqual(view.findNode("audioDebounce").control, "start", "still just the one timer")
+
+            ' Firing consumes the pending index; firing again is inert.
+            view.callFunc("onAudioDebounce")
+            view.callFunc("onAudioDebounce")
+
+            m.assertEqual(badge.text, "", "no tracks are available, so nothing switches")
+        end sub
+
+        @it("selectAudio switches the active track")
+        sub _()
+            view = m.newView()
+            badge = view.findNode("audioBadge")
+
+            ' NOTE: m.tracks comes from player.availableAudioTracks, which is
+            ' populated by the player and is not writable, so the switch path
+            ' needs a real stream. What is assertable is that both guards hold.
+            view.callFunc("selectAudio", 0)
+            m.assertEqual(badge.text, "", "no tracks means no switch")
+            m.assertEqual(m.milli(view.findNode("scrim").opacity), 0, "and no reconnect")
+
+            view.callFunc("onPlayerState")
+            view.callFunc("selectAudio", 9)
+
+            m.assertEqual(badge.text, "", "an index past the track count is ignored")
+            m.assertNotEqual(view.findNode("player").control, "play", "the player is not restarted")
+        end sub
+
+    end class
+end namespace

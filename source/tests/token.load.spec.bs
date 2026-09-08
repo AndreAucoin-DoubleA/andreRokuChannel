@@ -1,0 +1,94 @@
+namespace tests
+
+    @suite("tokens.loadTokens")
+    class TokensLoadTests extends rooibos.BaseTestSuite
+
+        function realPath() as string
+            return "pkg:/tokens/tokens.json"
+        end function
+
+        function malformedPath() as string
+            return "pkg:/source/tests/fixtures/malformed.json"
+        end function
+
+        @describe("loadTokens")
+
+        @it("the real pkg:/tokens/tokens.json loads without error")
+        sub _()
+            map = tokens.loadTokens(m.realPath())
+
+            m.assertNotEmpty(map, "tokens.json failed to read, parse, or flatten")
+            m.assertTrue(map.Count() > 50, `only ${map.Count()} tokens flattened -- expected the whole file`)
+            m.assertAAHasKeys(map, [
+                "color.brand.primary"
+                "sized.nav.itemwidth"
+                "fontfamily.body"
+                "typography.navlabel"
+                "component.navitem.width"
+            ])
+        end sub
+
+        @it("a known token resolves to a normalised value")
+        @params("color.brand.primary", "0x6C3FA0FF")
+        @params("color.grey.850", "0x202226FF")
+        @params("color.surface.base", "0x202226FF")
+        @params("fontfamily.body", "Inter Regular")
+        sub _(key as string, expected as string)
+            map = tokens.loadTokens(m.realPath())
+
+            m.assertAAHasKey(map, key)
+            m.assertEqual(map[key], expected, `token ${key} did not normalise as expected`)
+        end sub
+
+        @it("a known dimension token resolves to a float")
+        @params("sized.nav.itemwidth", 250.0)
+        @params("component.navitem.width", 250.0)
+        @params("sized.button.height", 70.0)
+        sub _(key as string, expected as float)
+            map = tokens.loadTokens(m.realPath())
+
+            m.assertAAHasKey(map, key)
+            m.assertEqual(map[key], expected, `token ${key} did not normalise as expected`)
+        end sub
+
+        @it("a known typography token resolves to family plus a float size")
+        sub _()
+            map = tokens.loadTokens(m.realPath())
+
+            m.assertAAHasKey(map, "typography.navlabel")
+            m.assertEqual(map["typography.navlabel"], { fontFamily: "Inter Regular", fontSize: 28.0 })
+        end sub
+
+        @it("a missing path logs an error and returns an empty map")
+        @params("pkg:/tokens/does-not-exist.json")
+        @params("pkg:/source/tests/fixtures/nope.json")
+        @params("")
+        sub _(path as string)
+            map = tokens.loadTokens(path)
+
+            m.assertEmpty(map, `expected an empty map for ${path}`)
+        end sub
+
+        @it("malformed JSON logs an error and returns an empty map")
+        sub _()
+            raw = ReadAsciiFile(m.malformedPath())
+            m.assertNotEmpty(raw, "fixture is missing from the package")
+            m.assertInvalid(ParseJson(raw), "fixture parsed as valid JSON -- it must stay malformed")
+
+            m.assertEmpty(tokens.loadTokens(m.malformedPath()))
+        end sub
+
+        @it("every returned key is lowercase")
+        sub _()
+            map = tokens.loadTokens(m.realPath())
+
+            m.assertNotEmpty(map)
+
+            for each key in map
+                m.assertEqual(LCase(key), key, `key is not lowercase: ${key}`)
+            end for
+        end sub
+
+    end class
+end namespace
+

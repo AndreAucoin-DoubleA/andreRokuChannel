@@ -1,7 +1,4 @@
-import "pkg:/source/api/http.bs"
-import "pkg:/source/api/tmdb.bs"
-import "pkg:/source/data/movieContent.bs"
-import "pkg:/source/utils/logger.bs"
+import "pkg:/source/data/movieFetch.bs"
 import "pkg:/components/tasks/FetchMovieTask/FetchMovieTask.interface.bs"
 
 sub init()
@@ -9,22 +6,8 @@ sub init()
 end sub
 
 sub fetchMovie()
-    movieId = m.top.movieId
+    result = movieFetch.forId(m.top.movieId)
 
-    if movieId = ""
-        m.top.status = tasks.Status.failed
-        return
-    end if
-
-    json = http.getJson(tmdb.movieUrl(movieId))
-
-    if json = invalid or json.id = invalid
-        logger.warn("FetchMovieTask", `no movie for id ${movieId}`)
-        m.top.status = tasks.Status.failed
-        return
-    end if
-
-    m.top.movie = movieContent.fromJson(json)
-    m.top.status = tasks.Status.ok
+    if result.movie <> invalid then m.top.movie = result.movie
+    m.top.status = result.status
 end sub
-

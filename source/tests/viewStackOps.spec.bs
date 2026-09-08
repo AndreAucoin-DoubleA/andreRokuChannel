@@ -1,0 +1,347 @@
+namespace tests
+
+    @suite("viewStackOps")
+    class ViewStackOpsTests extends rooibos.BaseTestSuite
+
+        function newStack(maxDepth = 8 as integer) as object
+            stack = CreateObject("roSGNode", "ViewStack")
+            stack.maxDepth = maxDepth
+
+            return stack
+        end function
+
+        function req(params = invalid as object, inset = invalid as object) as object
+            return { view: "TestView", params: params, inset: inset }
+        end function
+
+        @describe("depth & peek")
+
+        @it("a new stack has depth 0")
+        sub _()
+            m.assertEqual(viewStackOps.depth(m.newStack()), 0)
+        end sub
+
+        @it("peek on an empty stack is invalid")
+        sub _()
+            m.assertInvalid(viewStackOps.peek(m.newStack()))
+        end sub
+
+        @it("publishDepth mirrors the child count onto stackDepth")
+        sub _()
+            stack = m.newStack()
+
+            m.assertEqual(stack.stackDepth, 0, "precondition: starts at 0")
+
+            viewStackOps.setRoot(stack, m.req())
+            m.assertEqual(stack.stackDepth, 1)
+
+            viewStackOps.push(stack, m.req())
+            m.assertEqual(stack.stackDepth, 2)
+
+            viewStackOps.pop(stack)
+            m.assertEqual(stack.stackDepth, 1)
+        end sub
+
+        @describe("setRoot & push")
+
+        @it("setRoot destroys every existing child first")
+        sub _()
+            stack = m.newStack()
+
+            first = viewStackOps.setRoot(stack, m.req())
+            second = viewStackOps.push(stack, m.req())
+            m.assertEqual(viewStackOps.depth(stack), 2, "precondition: two views")
+
+            viewStackOps.setRoot(stack, m.req())
+
+            m.assertEqual(viewStackOps.depth(stack), 1, "both old views must be gone")
+            m.assertTrue(Instr(1, first.lifecycleLog, "viewWillDisappear") > 0, "first was not torn down")
+            m.assertTrue(Instr(1, second.lifecycleLog, "viewWillDisappear") > 0, "second was not torn down")
+        end sub
+
+        @it("setRoot leaves depth at 1")
+        @params(1)
+        @params(2)
+        @params(3)
+        sub _(times as integer)
+            stack = m.newStack()
+
+            for i = 1 to times
+                viewStackOps.setRoot(stack, m.req())
+            end for
+
+            m.assertEqual(viewStackOps.depth(stack), 1)
+            m.assertEqual(stack.stackDepth, 1)
+        end sub
+
+        @it("push past maxDepth returns invalid and logs an error")
+        sub _()
+            stack = m.newStack(2)
+
+            viewStackOps.setRoot(stack, m.req())
+            m.assertNotInvalid(viewStackOps.push(stack, m.req()), "the second push should fit")
+
+            m.assertInvalid(viewStackOps.push(stack, m.req()), "the third push exceeds maxDepth 2")
+            m.assertEqual(viewStackOps.depth(stack), 2, "the rejected push must not add a child")
+        end sub
+
+        @it("push hides the current view and calls viewWillHide")
+        sub _()
+            stack = m.newStack()
+
+            first = viewStackOps.setRoot(stack, m.req())
+            m.assertTrue(first.visible, "precondition: root starts visible")
+
+            viewStackOps.push(stack, m.req())
+
+            m.assertFalse(first.visible, "the covered view must be hidden")
+            m.assertEqual(first.lifecycleLog, "viewDidLoad,viewWillAppear,viewWillHide")
+        end sub
+
+        @it("push focuses the new top")
+        sub _()
+            stack = m.newStack()
+
+            viewStackOps.setRoot(stack, m.req())
+            second = viewStackOps.push(stack, m.req())
+
+            m.assertEqual(second.lifecycleLog, "viewDidLoad,viewWillAppear,setViewFocus")
+        end sub
+
+        @it("pushEntry with an invalid request returns invalid")
+        sub _()
+            stack = m.newStack()
+
+            m.assertInvalid(viewStackOps.pushEntry(stack, invalid), "invalid request")
+            m.assertInvalid(viewStackOps.pushEntry(stack, {}), "request with no view")
+            m.assertEqual(viewStackOps.depth(stack), 0, "nothing should have been created")
+        end sub
+
+        @it("a component that is not a BaseView is removed and logged")
+        @params("Group")
+        @params("Rectangle")
+        @params("Label")
+        sub _(componentName as string)
+            stack = m.newStack()
+
+            view = viewStackOps.pushEntry(stack, { view: componentName })
+
+            m.assertInvalid(view, `${componentName} is not a BaseView`)
+            m.assertEqual(viewStackOps.depth(stack), 0, "the rejected child must be removed")
+        end sub
+
+        @it("an inset is applied as the view's translation")
+        sub _()
+            stack = m.newStack()
+
+            view = viewStackOps.pushEntry(stack, m.req(invalid, [160, 40]))
+
+            m.assertEqual(Int(view.translation[0]), 160)
+            m.assertEqual(Int(view.translation[1]), 40)
+        end sub
+
+        @it("viewDidLoad is called before viewWillAppear")
+        sub _()
+            stack = m.newStack()
+
+            view = viewStackOps.pushEntry(stack, m.req())
+
+            m.assertEqual(view.lifecycleLog, "viewDidLoad,viewWillAppear", "load must precede appear")
+        end sub
+
+        @it("params default to an empty AA when omitted")
+        sub _()
+            stack = m.newStack()
+
+            omitted = viewStackOps.pushEntry(stack, { view: "TestView" })
+            m.assertNotInvalid(omitted.loadedParams, "params must be an AA, not invalid")
+            m.assertEmpty(omitted.loadedParams)
+
+            supplied = viewStackOps.pushEntry(stack, m.req({ id: "438631" }))
+            m.assertEqual(supplied.loadedParams.id, "438631", "supplied params must pass through")
+        end sub
+
+        @it("navRequest is observed on the new view")
+        sub _()
+            stack = m.newStack()
+
+            view = viewStackOps.pushEntry(stack, m.req())
+
+            ' Registration itself is not readable back through any BrightScript
+            ' API, so this pins the preconditions that make it meaningful: the
+            ' view is a BaseView and carries the field being observed.
+            m.assertTrue(view.isSubtype("BaseView"))
+            m.assertTrue(view.hasField("navRequest"), "there must be a navRequest field to observe")
+        end sub
+
+        @describe("pop & reveal")
+
+        @it("pop at depth 1 returns false -- the root cannot be popped")
+        sub _()
+            stack = m.newStack()
+
+            viewStackOps.setRoot(stack, m.req())
+
+            m.assertFalse(viewStackOps.pop(stack))
+            m.assertEqual(viewStackOps.depth(stack), 1, "the root must survive")
+        end sub
+
+        @it("pop at depth 2 returns true")
+        sub _()
+            stack = m.newStack()
+
+            viewStackOps.setRoot(stack, m.req())
+            viewStackOps.push(stack, m.req())
+
+            m.assertTrue(viewStackOps.pop(stack))
+            m.assertEqual(viewStackOps.depth(stack), 1)
+        end sub
+
+        @it("destroyTop calls viewWillDisappear, unobserves, removes")
+        sub _()
+            stack = m.newStack()
+
+            viewStackOps.setRoot(stack, m.req())
+            second = viewStackOps.push(stack, m.req())
+
+            viewStackOps.destroyTop(stack)
+
+            m.assertEqual(viewStackOps.depth(stack), 1, "the top must be removed")
+            m.assertEqual(second.lifecycleLog, "viewDidLoad,viewWillAppear,setViewFocus,viewWillDisappear")
+
+            ' Safe on an empty stack too.
+            viewStackOps.destroyTop(stack)
+            viewStackOps.destroyTop(stack)
+            m.assertEqual(viewStackOps.depth(stack), 0)
+        end sub
+
+        @it("revealTop makes the view visible again")
+        sub _()
+            stack = m.newStack()
+
+            first = viewStackOps.setRoot(stack, m.req())
+            viewStackOps.push(stack, m.req())
+            m.assertFalse(first.visible, "precondition: hidden by the push")
+
+            viewStackOps.destroyTop(stack)
+            viewStackOps.revealTop(stack)
+
+            m.assertTrue(first.visible)
+        end sub
+
+        @it("revealTop resumes and then focuses")
+        sub _()
+            stack = m.newStack()
+
+            first = viewStackOps.setRoot(stack, m.req())
+            viewStackOps.push(stack, m.req())
+            viewStackOps.destroyTop(stack)
+
+            viewStackOps.revealTop(stack)
+
+            m.assertEqual(first.lifecycleLog, "viewDidLoad,viewWillAppear,viewWillHide,viewWillAppear,setViewFocus", "resume must precede focus")
+        end sub
+
+        @it("focusTop, resumeTop and suspendTop return false when empty")
+        sub _()
+            stack = m.newStack()
+
+            m.assertFalse(viewStackOps.focusTop(stack), "focusTop")
+            m.assertFalse(viewStackOps.resumeTop(stack), "resumeTop")
+            m.assertFalse(viewStackOps.suspendTop(stack), "suspendTop")
+        end sub
+
+        @describe("routing & keys")
+
+        @it("a push navRequest pushes")
+        sub _()
+            stack = m.newStack()
+
+            viewStackOps.setRoot(stack, m.req())
+
+            viewStackOps.handleNavRequest(stack, { action: "push", view: "TestView" })
+
+            m.assertEqual(viewStackOps.depth(stack), 2)
+        end sub
+
+        @it("a pop navRequest pops")
+        sub _()
+            stack = m.newStack()
+
+            viewStackOps.setRoot(stack, m.req())
+            viewStackOps.push(stack, m.req())
+
+            viewStackOps.handleNavRequest(stack, { action: "pop" })
+
+            m.assertEqual(viewStackOps.depth(stack), 1)
+        end sub
+
+        @it("a request with no action is ignored")
+        @params({ view: "TestView" })
+        @params({ params: {} })
+        sub _(request as object)
+            stack = m.newStack()
+
+            viewStackOps.setRoot(stack, m.req())
+
+            viewStackOps.handleNavRequest(stack, request)
+
+            m.assertEqual(viewStackOps.depth(stack), 1, "depth must not change")
+        end sub
+
+        @it("an invalid request is ignored")
+        sub _()
+            stack = m.newStack()
+
+            viewStackOps.setRoot(stack, m.req())
+
+            viewStackOps.handleNavRequest(stack, invalid)
+
+            m.assertEqual(viewStackOps.depth(stack), 1)
+        end sub
+
+        @it("back on key down pops")
+        sub _()
+            stack = m.newStack()
+
+            viewStackOps.setRoot(stack, m.req())
+            viewStackOps.push(stack, m.req())
+
+            m.assertTrue(viewStackOps.handleKey(stack, "back", true))
+            m.assertEqual(viewStackOps.depth(stack), 1)
+
+            ' At the root, back is not handled -- the scene should get it.
+            m.assertFalse(viewStackOps.handleKey(stack, "back", true), "back at the root must not be consumed")
+        end sub
+
+        @it("a key release returns false")
+        @params("back")
+        @params("up")
+        @params("OK")
+        sub _(key as string)
+            stack = m.newStack()
+
+            viewStackOps.setRoot(stack, m.req())
+            viewStackOps.push(stack, m.req())
+
+            m.assertFalse(viewStackOps.handleKey(stack, key, false), "a release must never be handled")
+            m.assertEqual(viewStackOps.depth(stack), 2, "a release must not pop")
+        end sub
+
+        @it("an unrelated key returns false")
+        @params("up")
+        @params("down")
+        @params("OK")
+        @params("Back")
+        sub _(key as string)
+            stack = m.newStack()
+
+            viewStackOps.setRoot(stack, m.req())
+            viewStackOps.push(stack, m.req())
+
+            m.assertFalse(viewStackOps.handleKey(stack, key, true))
+            m.assertEqual(viewStackOps.depth(stack), 2, "an unrelated key must not pop")
+        end sub
+
+    end class
+end namespace

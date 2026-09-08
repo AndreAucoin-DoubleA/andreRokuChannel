@@ -1,0 +1,25 @@
+{
+  "extends": "./bsconfig.json",
+  "plugins": [
+    "@rokucommunity/bslint",
+    "rooibos-roku"
+  ],
+  "files": [
+    "manifest",
+    "source/**/*",
+    "!source/main.bs",
+    "components/**/*",
+    "images/**/*",
+    "tokens/**/*",
+    "fonts/**/*"
+  ],
+  "rooibos": {
+    "failFast": false,
+    "showOnlyFailures": false,
+    "keepAppOpen": false,
+    "isGlobalMethodMockingEnabled": true,
+    "isGlobalMethodMockingEfficientMode": true
+  },
+  "stagingDir": "./build/staging-test",
+  "retainStagingDir": true
+}

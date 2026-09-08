@@ -4,19 +4,22 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "npx bsc --outDir ./build/staging",
-    "build:watch": "npx bsc --outDir ./build/staging --watch",
+    "build": "npx bsc",
+    "build:watch": "npx bsc --watch",
     "deploy": "npm run build && npx roku-deploy",
     "lint": "npx bslint",
     "lint:fix": "npx bslint --fix",
-    "lint:usage": "npx bslint --checkUsage"
+    "lint:usage": "npx bslint --checkUsage",
+    "build:test": "npx bsc --project ./bsconfig-test.json",
+    "test": "npx rooibos --project ./bsconfig-test.json --host $(node -p \"require('./bsconfig.local.json').host\") --password $(node -p \"require('./bsconfig.local.json').password\")"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "@rokucommunity/bslint": "^1.0.0-alpha.52",
-    "brighterscript": "^1.0.0-alpha.52"
+    "@rokucommunity/bslint": "^0.8.44",
+    "brighterscript": "^0.73.0",
+    "rooibos-roku": "^5.16.4"
   }
 }

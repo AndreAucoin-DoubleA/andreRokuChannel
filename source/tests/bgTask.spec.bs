@@ -1,0 +1,65 @@
+namespace tests
+
+    @suite("bgTask")
+    class BgTaskTests extends rooibos.BaseTestSuite
+
+        function newSpy() as object
+            return {
+                control: "none",
+                unobservedFields: [],
+                unobserveField: sub(field as string)
+                    m.unobservedFields.Push(field)
+                end sub
+            }
+        end function
+
+        function newTask() as object
+            return CreateObject("roSGNode", "Task")
+        end function
+
+        @describe("cancel")
+
+        @it("an invalid node returns invalid without throwing")
+        @params("status")
+        @params("state")
+        @params("")
+        sub _(field as string)
+            m.assertInvalid(bgTask.cancel(invalid, field))
+        end sub
+
+        @it("a real node is unobserved and its control set to stop")
+        sub _()
+            task = m.newTask()
+
+            m.assertNotEqual(task.control, "stop", "precondition: control must not start at stop")
+
+            bgTask.cancel(task, "state")
+
+            m.assertEqual(task.control, "stop", "control was not stopped")
+
+            spy = m.newSpy()
+
+            bgTask.cancel(spy, "status")
+
+            m.assertArrayCount(spy.unobservedFields, 1, "unobserveField was not called exactly once")
+            m.assertEqual(spy.unobservedFields[0], "status", "the field name was not forwarded")
+            m.assertEqual(spy.control, "stop")
+        end sub
+
+        @it("the return value is always invalid, for reassignment")
+        sub _()
+            m.assertInvalid(bgTask.cancel(invalid, "state"), "invalid input")
+            m.assertInvalid(bgTask.cancel(m.newTask(), "state"), "real node")
+            m.assertInvalid(bgTask.cancel(m.newSpy(), "status"), "spy")
+
+            handle = m.newTask()
+            m.assertNotInvalid(handle, "precondition: handle must start populated")
+
+            handle = bgTask.cancel(handle, "state")
+
+            m.assertInvalid(handle, "the handle should be cleared by reassignment")
+        end sub
+
+    end class
+end namespace
+

@@ -1,0 +1,200 @@
+namespace tests
+
+    @suite("screenOps")
+    class ScreenOpsTests extends rooibos.BaseTestSuite
+
+        function newCtx() as object
+            return screenOps.newContext(CreateObject("roSGNode", "ScreenManager"))
+        end function
+
+        function resolver() as function
+            return function(id as string) as object
+                if id = "home" then return { id: "home", label: "Home", icon: "", component: "TestView" }
+                if id = "movies" then return { id: "movies", label: "Movies", icon: "", component: "TestView" }
+                if id = "games" then return { id: "games", label: "Games", icon: "", component: "TestView" }
+
+                return invalid
+            end function
+        end function
+
+        function rootOf(stack as object) as object
+            return stack.getChild(0)
+        end function
+
+        @describe("stack management")
+
+        @it("init starts with no stacks and no active stack")
+        sub _()
+            ctx = m.newCtx()
+
+            m.assertEmpty(ctx.stacks, "stacks should start empty")
+            m.assertInvalid(ctx.activeStack, "there should be no active stack")
+            m.assertEqual(ctx.top.activeStackId, "", "activeStackId should start empty")
+            m.assertEqual(ctx.top.activeDepth, 0)
+        end sub
+
+        @it("showing the already-active id returns early")
+        sub _()
+            ctx = m.newCtx()
+
+            stack = screenOps.showStack(ctx, "home", m.resolver())
+            before = m.rootOf(stack).lifecycleLog
+
+            again = screenOps.showStack(ctx, "home", m.resolver())
+
+            m.assertTrue(again.isSameNode(stack), "the same stack should come back")
+            m.assertEqual(ctx.top.getChildCount(), 1, "no second stack should be created")
+
+            ' Returning early means resumeTop never ran, so the log is untouched.
+            m.assertEqual(m.rootOf(stack).lifecycleLog, before, "resumeTop should not have run")
+        end sub
+
+        @it("an unknown route id returns invalid")
+        @params("settings")
+        @params("")
+        @params("Home")
+        sub _(id as string)
+            ctx = m.newCtx()
+
+            m.assertInvalid(screenOps.showStack(ctx, id, m.resolver()))
+            m.assertEqual(ctx.top.getChildCount(), 0, "nothing should have been created")
+            m.assertInvalid(ctx.activeStack)
+        end sub
+
+        @it("a first show creates a ViewStack and calls setRoot")
+        sub _()
+            ctx = m.newCtx()
+
+            stack = screenOps.showStack(ctx, "home", m.resolver())
+
+            m.assertNotInvalid(stack)
+            m.assertSubType(stack, "ViewStack")
+            m.assertEqual(ctx.top.getChildCount(), 1)
+            m.assertEqual(stack.getChildCount(), 1, "setRoot should have created the root view")
+            m.assertEqual(m.rootOf(stack).lifecycleLog, "viewDidLoad,viewWillAppear")
+            m.assertTrue(stack.visible)
+            m.assertNotInvalid(ctx.stacks["home"], "the stack should be cached by id")
+        end sub
+
+        @it("the root is created with the [160, 0] inset")
+        sub _()
+            ctx = m.newCtx()
+
+            stack = screenOps.showStack(ctx, "home", m.resolver())
+            root = m.rootOf(stack)
+
+            m.assertEqual(Int(root.translation[0]), 160, "the sidebar inset")
+            m.assertEqual(Int(root.translation[1]), 0)
+        end sub
+
+        @it("a second show resumes rather than recreating")
+        sub _()
+            ctx = m.newCtx()
+
+            home = screenOps.showStack(ctx, "home", m.resolver())
+            screenOps.showStack(ctx, "movies", m.resolver())
+
+            back = screenOps.showStack(ctx, "home", m.resolver())
+
+            m.assertTrue(back.isSameNode(home), "the cached stack should be reused")
+            m.assertEqual(ctx.top.getChildCount(), 2, "no third stack should be created")
+            m.assertEqual(m.rootOf(home).lifecycleLog, "viewDidLoad,viewWillAppear,viewWillHide,viewWillAppear", "resumeTop should have run")
+        end sub
+
+        @it("showing a new stack suspends and hides the previous one")
+        sub _()
+            ctx = m.newCtx()
+
+            home = screenOps.showStack(ctx, "home", m.resolver())
+            m.assertTrue(home.visible, "precondition: home starts visible")
+
+            screenOps.showStack(ctx, "movies", m.resolver())
+
+            m.assertFalse(home.visible, "the previous stack must be hidden")
+            m.assertEqual(m.rootOf(home).lifecycleLog, "viewDidLoad,viewWillAppear,viewWillHide", "suspendTop should have run")
+        end sub
+
+        @it("activeStackId is updated")
+        sub _()
+            ctx = m.newCtx()
+
+            screenOps.showStack(ctx, "home", m.resolver())
+            m.assertEqual(ctx.top.activeStackId, "home")
+
+            screenOps.showStack(ctx, "movies", m.resolver())
+            m.assertEqual(ctx.top.activeStackId, "movies")
+
+            ' A rejected id must not move it.
+            screenOps.showStack(ctx, "settings", m.resolver())
+            m.assertEqual(ctx.top.activeStackId, "movies", "an unknown id must not change the active id")
+        end sub
+
+        @it("focusActive is false with no active stack")
+        sub _()
+            m.assertFalse(screenOps.focusActive(m.newCtx()))
+        end sub
+
+        @it("suspendActive is false with no active stack")
+        sub _()
+            m.assertFalse(screenOps.suspendActive(m.newCtx()))
+        end sub
+
+        @it("resumeActive is false with no active stack")
+        sub _()
+            m.assertFalse(screenOps.resumeActive(m.newCtx()))
+        end sub
+
+        @it("activeDepth is 0 with no active stack")
+        sub _()
+            ctx = m.newCtx()
+
+            ctx.top.activeDepth = 99
+
+            screenOps.publishDepth(ctx)
+
+            m.assertEqual(ctx.top.activeDepth, 0, "an empty manager must publish 0")
+        end sub
+
+        @it("activeDepth mirrors the active stack's depth")
+        sub _()
+            ctx = m.newCtx()
+
+            screenOps.showStack(ctx, "home", m.resolver())
+
+            m.assertEqual(ctx.top.activeDepth, 1, "one root view")
+
+            screenOps.pushOnActive(ctx, { view: "TestView" })
+            screenOps.publishDepth(ctx)
+
+            m.assertEqual(ctx.top.activeDepth, 2)
+        end sub
+
+        @it("a child stack depth change republishes activeDepth")
+        sub _()
+            ctx = m.newCtx()
+
+            screenOps.showStack(ctx, "home", m.resolver())
+            m.assertEqual(ctx.top.activeDepth, 1)
+
+            ' publishDepth is exactly what onStackDepthChanged calls, so this is
+            ' the observer's effect. The registration itself fires only through
+            ' the message loop and is not observable synchronously.
+            screenOps.pushOnActive(ctx, { view: "TestView" })
+            screenOps.publishDepth(ctx)
+            m.assertEqual(ctx.top.activeDepth, 2, "a push should raise it")
+
+            viewStackOps.pop(ctx.activeStack)
+            screenOps.publishDepth(ctx)
+            m.assertEqual(ctx.top.activeDepth, 1, "a pop should lower it")
+        end sub
+
+        @it("pushOnActive is invalid with no active stack")
+        sub _()
+            ctx = m.newCtx()
+
+            m.assertInvalid(screenOps.pushOnActive(ctx, { view: "TestView" }))
+            m.assertEqual(ctx.top.getChildCount(), 0, "nothing should have been created")
+        end sub
+
+    end class
+end namespace

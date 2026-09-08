@@ -1,0 +1,69 @@
+namespace tests
+
+    @suite("movieFetch")
+    class MovieFetchTests extends rooibos.BaseTestSuite
+
+        @describe("fetchMovie")
+
+        @it("an empty movieId sets status failed without a request")
+        sub _()
+            m.expectNotCalled(http.getJson(""))
+
+            result = movieFetch.forId("")
+
+            m.assertEqual(result.status, "failed")
+            m.assertInvalid(result.movie)
+        end sub
+
+        @it("an invalid response sets status failed and warns")
+        sub _()
+            m.stubCall(http.getJson, function(url as string, timeoutMs = 8000 as integer) as dynamic
+                return invalid
+            end function)
+
+            result = movieFetch.forId("438631")
+
+            m.assertEqual(result.status, "failed")
+            m.assertInvalid(result.movie)
+        end sub
+
+        @it("a response with no id sets status failed")
+        sub _()
+            m.stubCall(http.getJson, function(url as string, timeoutMs = 8000 as integer) as dynamic
+                return { title: "Dune", overview: "no id field" }
+            end function)
+
+            result = movieFetch.forId("438631")
+
+            m.assertEqual(result.status, "failed")
+            m.assertInvalid(result.movie)
+        end sub
+
+        @it("a valid response sets the movie node and status ok")
+        sub _()
+            m.stubCall(http.getJson, function(url as string, timeoutMs = 8000 as integer) as dynamic
+                return { id: 438631, title: "Dune", overview: "Paul Atreides.", vote_average: 8.5, release_date: "2021-10-22" }
+            end function)
+
+            result = movieFetch.forId("438631")
+
+            m.assertEqual(result.status, "ok")
+            m.assertSubType(result.movie, "ContentNode")
+        end sub
+
+        @it("the built movie node carries the expected title")
+        sub _()
+            m.stubCall(http.getJson, function(url as string, timeoutMs = 8000 as integer) as dynamic
+                return { id: 438631, title: "Dune", overview: "Paul Atreides.", vote_average: 8.5, release_date: "2021-10-22" }
+            end function)
+
+            movie = movieFetch.forId("438631").movie
+
+            m.assertEqual(movie.title, "Dune")
+            m.assertEqual(movie.movieId, "438631")
+            m.assertEqual(movie.releaseDate, "2021-10-22")
+            m.assertEqual(movie.audioGuideText, "Dune, released 2021, rated 8 out of 10")
+        end sub
+
+    end class
+end namespace

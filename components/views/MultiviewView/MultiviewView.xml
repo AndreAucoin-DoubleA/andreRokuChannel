@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component name="MultiviewView" extends="BaseView">
     <script type="text/brightscript" uri="pkg:/components/views/MultiviewView/MultiviewView.bs" />
+
+    <interface>
+        <!-- Exposed for tests. -->
+        <function name="onStartPressed"/>
+        <function name="applyTheme"/>
+    </interface>
     <children>
         <Label
             id="titleLabel"

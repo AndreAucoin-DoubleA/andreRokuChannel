@@ -1,0 +1,203 @@
+namespace tests
+
+    @suite("movieRows")
+    class MovieRowsTests extends rooibos.BaseTestSuite
+
+        function fakeRows(count as integer) as object
+            rows = []
+
+            for i = 0 to count - 1
+                rows.Push({ title: `Row ${i}`, url: `https://api/${i}` })
+            end for
+
+            return rows
+        end function
+
+        function newNode() as object
+            return CreateObject("roSGNode", "ContentNode")
+        end function
+
+        @describe("slice & urlsOf")
+
+        @it("a slice inside the bounds returns exactly count items")
+        @params(0, 5, "Row 0", "Row 4")
+        @params(10, 3, "Row 10", "Row 12")
+        @params(45, 1, "Row 45", "Row 45")
+        sub _(start as integer, count as integer, firstTitle as string, lastTitle as string)
+            part = movieRows.slice(m.fakeRows(46), start, count)
+
+            m.assertArrayCount(part, count)
+            m.assertEqual(part[0].title, firstTitle)
+            m.assertEqual(part[part.Count() - 1].title, lastTitle)
+        end sub
+
+        @it("a count past the end returns the remainder")
+        @params(44, 10, 2)
+        @params(40, 100, 6)
+        @params(0, 1000, 46)
+        sub _(start as integer, count as integer, expected as integer)
+            part = movieRows.slice(m.fakeRows(46), start, count)
+
+            m.assertArrayCount(part, expected)
+            m.assertEqual(part[part.Count() - 1].title, "Row 45", "the remainder must end at the last row")
+        end sub
+
+        @it("a start past the end returns empty")
+        @params(46)
+        @params(47)
+        @params(999)
+        sub _(start as integer)
+            m.assertArrayCount(movieRows.slice(m.fakeRows(46), start, 5), 0)
+        end sub
+
+        @it("urlsOf preserves order")
+        sub _()
+            batch = [
+                { title: "A", url: "https://api/a" }
+                { title: "B", url: "https://api/b" }
+                { title: "C", url: "https://api/c" }
+            ]
+
+            urls = movieRows.urlsOf(batch)
+
+            m.assertArrayCount(urls, 3)
+            m.assertEqual(urls[0], "https://api/a")
+            m.assertEqual(urls[1], "https://api/b")
+            m.assertEqual(urls[2], "https://api/c")
+        end sub
+
+        @describe("batching")
+
+        @it("a batchSize below 1 falls back to 5")
+        @params(0, 5)
+        @params(-1, 5)
+        @params(-100, 5)
+        @params(1, 1)
+        @params(7, 7)
+        sub _(requested as integer, expected as integer)
+            m.assertEqual(movieRows.effectiveBatchSize(requested), expected)
+
+            ' And the fallback really shapes the batches, not just the number.
+            first = movieRows.batches(m.fakeRows(46), requested)[0]
+            m.assertArrayCount(first, expected)
+        end sub
+
+        @it("every one of the 46 rows is covered across batches")
+        @params(5)
+        @params(7)
+        @params(1)
+        @params(46)
+        @params(100)
+        @params(0)
+        sub _(batchSize as integer)
+            rows = catalog.rows()
+            m.assertArrayCount(rows, 46, "catalog.rows() should be 2 pages x 23")
+
+            seen = {}
+            flattened = []
+
+            for each batch in movieRows.batches(rows, batchSize)
+                m.assertTrue(batch.Count() > 0, "no batch may be empty")
+
+                for each row in batch
+                    m.assertFalse(seen.DoesExist(row.title), `row visited twice: ${row.title}`)
+                    seen[row.title] = true
+                    flattened.Push(row.title)
+                end for
+            end for
+
+            m.assertArrayCount(flattened, 46, "every row must appear exactly once")
+
+            for index = 0 to rows.Count() - 1
+                m.assertEqual(flattened[index], rows[index].title, `order broke at index ${index}`)
+            end for
+        end sub
+
+        @it("loadComplete is set true at the end")
+        sub _()
+            node = CreateObject("roSGNode", "PopulateMoviesTask")
+
+            m.assertFalse(node.loadComplete, "precondition: must start false")
+
+            movieRows.fetchInto(node, m.fakeRows(12), 5, function(urls as object, timeoutMs = 8000 as integer) as object
+                responses = []
+                for each url in urls
+                    responses.Push({ results: [{ id: 1, title: "M" }] })
+                end for
+                return responses
+            end function)
+
+            m.assertTrue(node.loadComplete, "loadComplete must be set after the last batch")
+            m.assertNotInvalid(node.rowBatch, "rowBatch should hold the final batch")
+            m.assertEqual(node.rowBatch.getChildCount(), 2, "the last batch of 12 at size 5 has 2 rows")
+        end sub
+
+        @it("buildBatchNode creates one row per populated entry")
+        sub _()
+            batch = [
+                { title: "A", url: "https://api/a" }
+                { title: "B", url: "https://api/b" }
+                { title: "C", url: "https://api/c" }
+                { title: "D", url: "https://api/d" }
+            ]
+            responses = [
+                { results: [{ id: 1, title: "M1" }] }
+                invalid
+                { results: [] }
+                { results: [{ id: 2, title: "M2" }, { id: 3, title: "M3" }] }
+            ]
+
+            node = movieRows.buildBatchNode(batch, responses)
+
+            m.assertEqual(node.getChildCount(), 2, "only the two populated entries become rows")
+            m.assertEqual(node.getChild(0).title, "A")
+            m.assertEqual(node.getChild(1).title, "D", "titles must not shift when an entry is skipped")
+            m.assertEqual(node.getChild(1).getChildCount(), 2)
+        end sub
+
+        @describe("appendRow")
+
+        @it("an invalid response is skipped and logged")
+        sub _()
+            root = m.newNode()
+
+            movieRows.appendRow(root, "Movie - Popular", invalid)
+
+            m.assertEqual(root.getChildCount(), 0, "no row should be created")
+        end sub
+
+        @it("an empty results array is skipped and logged")
+        @params({ results: [] })
+        @params({ page: 1 })
+        sub _(json as object)
+            root = m.newNode()
+
+            movieRows.appendRow(root, "Movie - Popular", json)
+
+            m.assertEqual(root.getChildCount(), 0, "no row should be created")
+        end sub
+
+        @it("a populated row is titled and gets one child per result")
+        sub _()
+            root = m.newNode()
+
+            movieRows.appendRow(root, "Movie - Popular", { results: [
+                { id: 438631, title: "Dune" }
+                { id: 329865, title: "Arrival" }
+                { id: 273481, title: "Sicario" }
+            ] })
+
+            m.assertEqual(root.getChildCount(), 1)
+
+            row = root.getChild(0)
+
+            m.assertEqual(row.title, "Movie - Popular")
+            m.assertEqual(row.getChildCount(), 3)
+            m.assertEqual(row.getChild(0).title, "Dune")
+            m.assertEqual(row.getChild(1).title, "Arrival")
+            m.assertEqual(row.getChild(2).title, "Sicario")
+            m.assertEqual(row.getChild(0).movieId, "438631", "children are built by movieContent.fromJson")
+        end sub
+
+    end class
+end namespace

@@ -1,4 +1,5 @@
 import "pkg:/source/utils/logger.bs"
+import "pkg:/source/services/analytics.bs"
 
 sub init()
     m.top.functionName = "runLoop"
@@ -13,15 +14,7 @@ sub runLoop()
         msg = wait(0, port)
 
         if type(msg) = "roSGNodeEvent" and msg.GetField() = "event"
-            sendEvent(msg.GetData())
+            analytics.sendEvent(msg.GetData())
         end if
     end while
-end sub
-
-sub sendEvent(event as object)
-    if event = invalid or event.name = invalid then return
-
-    body = FormatJson(event)
-
-    logger.info("analytics", body)
 end sub

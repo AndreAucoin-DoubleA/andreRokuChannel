@@ -1,0 +1,81 @@
+import "pkg:/source/services/a11y.bs"
+
+namespace rowListOps
+    function newContext(top as object) as object
+        return {
+            top: top,
+            rowList: top.findNode("rowList"),
+            decor: top.findNode("decor"),
+            lastAnnouncedRow: -1
+        }
+    end function
+
+    function hasRows(ctx as object) as boolean
+        content = ctx.top.content
+        if content = invalid then return false
+
+        return content.getChildCount() > 0
+    end function
+
+    function movieAt(ctx as object, sel as object) as object
+        if sel = invalid or sel.Count() < 2 then return invalid
+
+        content = ctx.top.content
+        if content = invalid then return invalid
+
+        row = content.getChild(sel[0])
+        if row = invalid then return invalid
+
+        return row.getChild(sel[1])
+    end function
+
+    sub applySpacing(ctx as object)
+        ctx.rowList.itemSpacing = [0, ctx.top.rowSpacing]
+    end sub
+
+    sub applyContent(ctx as object)
+        ctx.rowList.content = ctx.top.content
+        ctx.lastAnnouncedRow = -1
+    end sub
+
+    sub rowItemFocused(ctx as object)
+        movie = rowListOps.movieAt(ctx, ctx.rowList.rowItemFocused)
+        if movie = invalid then return
+
+        ctx.decor.summaryText = movie.title
+        rowListOps.announceFocus(ctx)
+
+        ctx.top.focusedMovie = movie
+    end sub
+
+    sub announceFocus(ctx as object)
+        if not ctx.rowList.isInFocusChain() then return
+
+        sel = ctx.rowList.rowItemFocused
+        if sel = invalid or sel.Count() < 2 then return
+
+        newRow = (sel[0] <> ctx.lastAnnouncedRow)
+        ctx.lastAnnouncedRow = sel[0]
+        a11y.announceRowItem(ctx.rowList, ctx.top.content, newRow)
+    end sub
+
+    sub rowItemSelected(ctx as object)
+        sel = ctx.rowList.rowItemSelected
+
+        movie = rowListOps.movieAt(ctx, sel)
+        if movie = invalid then return
+
+        ctx.top.selectedRow = ctx.top.content.getChild(sel[0])
+        ctx.top.selectedIndex = sel[1]
+        ctx.top.selectedmovie = movie
+    end sub
+
+    function focusRows(ctx as object) as boolean
+        result = ctx.rowList.setFocus(true)
+        ctx.lastAnnouncedRow = -1
+
+        rowListOps.announceFocus(ctx)
+
+        return result
+    end function
+end namespace

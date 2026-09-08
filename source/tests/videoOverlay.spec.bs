@@ -1,0 +1,171 @@
+namespace tests
+
+    @suite("VideoPlayer overlay")
+    class VideoOverlayTests extends rooibos.BaseTestSuite
+
+        @describe("overlay & trickplay")
+
+        function newPlayer(duration = 100.0 as float) as object
+            player = CreateObject("roSGNode", "VideoPlayer")
+            player.duration = duration
+
+            return player
+        end function
+
+        function feedOf(frames as object, interval = 10 as integer) as object
+            return { intervalSeconds: interval, frames: frames }
+        end function
+
+        function threeFrames() as object
+            return m.feedOf(["f0.png", "f1.png", "f2.png"])
+        end function
+
+        function milli(value as dynamic) as integer
+            return Int(value * 1000 + 0.5)
+        end function
+
+        @it("an empty trickplay feed hides the preview")
+        @params(0)
+        @params(1)
+        sub _(variant as integer)
+            player = m.newPlayer()
+            card = player.findNode("previewCard")
+
+            if variant = 0
+                player.trickplayFeed = trickplay.emptyFeed()
+            else
+                player.trickplayFeed = {}
+            end if
+
+            card.visible = true
+
+            player.callFunc("renderPreview", 50.0)
+
+            m.assertFalse(card.visible, "an empty feed must hide the preview card")
+        end sub
+
+        @it("a populated feed shows a frame at the scrub position")
+        sub _()
+            player = m.newPlayer()
+            card = player.findNode("previewCard")
+            image = player.findNode("previewImage")
+
+            player.trickplayFeed = m.threeFrames()
+            m.assertFalse(card.visible, "precondition: hidden by the feed change")
+
+            player.callFunc("renderPreview", 15.0)
+
+            m.assertTrue(card.visible, "the card must be shown")
+            m.assertEqual(image.uri, "f1.png", "15s at a 10s interval is frame 1")
+            m.assertEqual(player.findNode("previewTime").text, "0:15", "the time label follows the scrub")
+
+            m.assertEqual(Int(card.translation[1]), videoPlayer.PREVIEW_Y, "parked above the scrub bar")
+        end sub
+
+        @it("the frame chosen matches trickplay.frameIndex")
+        @params(0.0)
+        @params(9.9)
+        @params(10.0)
+        @params(15.0)
+        @params(25.0)
+        @params(99.0)
+        sub _(seconds as float)
+            player = m.newPlayer()
+            image = player.findNode("previewImage")
+
+            feed = m.threeFrames()
+            player.trickplayFeed = feed
+
+            player.callFunc("renderPreview", seconds)
+
+            expectedIndex = trickplay.frameIndex(feed, seconds)
+
+            m.assertEqual(image.uri, trickplay.frameUri(feed, expectedIndex), `frame for ${seconds}s`)
+        end sub
+
+        @it("overlay text changes re-render the panel")
+        sub _()
+            player = m.newPlayer()
+
+            player.overlayTitle = "Dune"
+            player.overlayInfo = "2021 - rated 8"
+            player.overlayButtonText = "More Info"
+
+            m.assertEqual(player.findNode("overlayTitleLabel").text, "Dune")
+            m.assertEqual(player.findNode("overlayInfoLabel").text, "2021 - rated 8")
+            m.assertEqual(player.findNode("overlayButton").text, "More Info")
+
+            player.overlayTitle = "Arrival"
+            m.assertEqual(player.findNode("overlayTitleLabel").text, "Arrival")
+        end sub
+
+        @it("showOverlay restarts the hide timer")
+        sub _()
+            player = m.newPlayer()
+            overlay = player.findNode("overlay")
+            hideTimer = player.findNode("overlayHideTimer")
+
+            m.assertFalse(overlay.visible, "precondition: hidden")
+
+            player.callFunc("showOverlay", true)
+
+            m.assertTrue(overlay.visible)
+            m.assertEqual(hideTimer.control, "start", "the auto-hide countdown must run")
+
+            player.callFunc("showOverlay", true)
+            m.assertEqual(hideTimer.control, "start")
+        end sub
+
+        @it("the hide timer firing hides the overlay")
+        sub _()
+            player = m.newPlayer()
+            overlay = player.findNode("overlay")
+            card = player.findNode("previewCard")
+
+            player.trickplayFeed = m.threeFrames()
+            player.callFunc("showOverlay", true)
+            player.callFunc("renderPreview", 50.0)
+
+            m.assertTrue(overlay.visible, "precondition: shown")
+            m.assertTrue(card.visible, "precondition: preview shown")
+
+            player.callFunc("onHideTimerFire")
+
+            m.assertFalse(overlay.visible, "the overlay must go away")
+            m.assertFalse(card.visible, "and take the preview with it")
+            m.assertEqual(player.findNode("overlayHideTimer").control, "stop", "the timer must not re-arm")
+            m.assertFalse(player.findNode("scrubKnob").visible, "the knob is hidden with the overlay")
+        end sub
+
+        @it("focusScrub and focusPanel move focus")
+        sub _()
+            player = m.newPlayer()
+            scrubZone = player.findNode("scrubZone")
+            scrubKnob = player.findNode("scrubKnob")
+            button = player.findNode("overlayButton")
+
+            player.callFunc("focusScrub")
+
+            m.assertTrue(scrubZone.hasFocus(), "the scrub zone takes focus")
+            m.assertTrue(scrubKnob.visible, "and the knob appears")
+
+            player.callFunc("focusPanel")
+
+            m.assertTrue(button.hasFocus(), "focus moves to the button panel")
+            m.assertFalse(scrubKnob.visible, "and the knob is hidden again")
+            m.assertTrue(button.isInFocusChain(), "the panel is the focus target")
+        end sub
+
+        @it("the overlay button press raises overlayButtonSelected")
+        sub _()
+            player = m.newPlayer()
+
+            m.assertFalse(player.overlayButtonSelected, "precondition: not selected")
+
+            player.callFunc("onOverlayButtonPressed")
+
+            m.assertTrue(player.overlayButtonSelected, "the view is notified through the field")
+        end sub
+
+    end class
+end namespace

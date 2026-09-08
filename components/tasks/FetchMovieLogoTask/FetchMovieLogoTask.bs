@@ -1,30 +1,9 @@
-import "pkg:/source/api/http.bs"
-import "pkg:/source/api/tmdb.bs"
-import "pkg:/source/utils/strings.bs"
+import "pkg:/source/data/movieLogo.bs"
 
 sub init()
     m.top.functionName = "fetchLogo"
 end sub
 
 sub fetchLogo()
-    m.top.logoUrl = resolveLogoUrl(m.top.movieId)
+    m.top.logoUrl = movieLogo.forId(m.top.movieId)
 end sub
-
-function resolveLogoUrl(movieId as string) as string
-    if movieId = "" then return ""
-
-    json = http.getJson(tmdb.movieImagesUrl(movieId))
-
-    if json = invalid or json.logos = invalid or json.logos.Count() = 0 then return ""
-
-    return tmdb.imageUrl(tmdb.LOGO, strings.fromValue(preferredLogo(json.logos).file_path))
-end function
-
-
-function preferredLogo(logos as object) as object
-    for each logo in logos
-        if logo.iso_639_1 = "en" then return logo
-    end for
-
-    return logos[0]
-end function

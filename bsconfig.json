@@ -4,13 +4,18 @@
   "files": [
     "manifest",
     "source/**/*",
+    "!source/tests/**/*",
     "components/**/*",
+    "!components/tests/**/*",
     "images/**/*",
     "tokens/**/*",
     "fonts/**/*"
   ],
-  "plugins": ["@rokucommunity/bslint"],
+  "plugins": [
+    "@rokucommunity/bslint"
+  ],
   "lintConfig": "bslint.json",
   "sourceMap": true,
-  "pruneEmptyCodeFiles": true
+  "stagingDir": "./build/staging",
+  "retainStagingDir": true
 }

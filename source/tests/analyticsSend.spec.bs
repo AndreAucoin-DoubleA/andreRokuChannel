@@ -1,0 +1,32 @@
+namespace tests
+    @suite("analytics.sendEvent")
+    class AnalyticsSendTests extends rooibos.BaseTestSuite
+
+        @describe("sendEvent")
+
+        @it("An invalid event does nothing")
+        sub _()
+            m.expectNotCalled(logger.info("", ""))
+
+            analytics.SendEvent(invalid)
+        end sub
+
+        @it("an event with no name does nothing")
+        sub _()
+            m.expectNotCalled(logger.info("", ""))
+
+            analytics.sendEvent({})
+            analytics.sendEvent({ props: { movieId: "438631" } })
+            analytics.sendEvent({ ts: "2026-09-04T12:00:00Z", props: {} })
+        end sub
+
+        @it("a named event is serialised and logged")
+        sub _()
+            m.expectCalled(logger.info("analytics", `{"name":"favorite_toggled","props":{"movieid":"438631"},"ts":"2026-09-04T12:00:00Z"}`))
+            m.expectCalled(logger.info("analytics", `{"name":"app_launched"}`))
+
+            analytics.sendEvent({ name: "favorite_toggled", props: { movieId: "438631" }, ts: "2026-09-04T12:00:00Z" })
+            analytics.sendEvent({ name: "app_launched" })
+        end sub
+    end class
+end namespace

@@ -1,0 +1,187 @@
+namespace tests
+
+    @suite("RowListChrome")
+    class RowListChromeTests extends rooibos.BaseTestSuite
+
+        @describe("RowListChrome")
+
+        function newCtx() as object
+            return chromeOps.newContext(CreateObject("roSGNode", "RowListChrome"))
+        end function
+
+        function fakeRowList(content = invalid as object, inFocusChain = true as boolean, visible = true as boolean) as object
+            return {
+                itemSize: [1880, 290],
+                rowItemSize: [[376, 220]],
+                itemSpacing: [0, 40],
+                rowItemSpacing: [[30, 0]],
+                numRows: 3,
+                translation: [160, 100],
+                currFocusRow: 0.0,
+                content: content,
+                visible: visible,
+                focused: inFocusChain,
+                observed: [],
+                unobserved: [],
+                observeField: function(field as string, callback as string) as boolean
+                    m.observed.Push(field + "->" + callback)
+                    return true
+                end function,
+                unobserveField: function(field as string) as boolean
+                    m.unobserved.Push(field)
+                    return true
+                end function,
+                isInFocusChain: function() as boolean
+                    return m.focused
+                end function
+            }
+        end function
+
+        function contentWith(rows as integer) as object
+            content = CreateObject("roSGNode", "ContentNode")
+
+            for i = 1 to rows
+                row = content.createChild("ContentNode")
+                row.title = `Row ${i}`
+            end for
+
+            return content
+        end function
+
+        @it("attaching a rowList observes its fields")
+        sub _()
+            ctx = m.newCtx()
+            rowList = m.fakeRowList(m.contentWith(3))
+
+            m.assertInvalid(ctx.rowList, "precondition: nothing attached")
+
+            chromeOps.attach(ctx, rowList)
+
+            m.assertNotInvalid(ctx.rowList, "the rowList must be held for later detach")
+            m.assertArrayCount(rowList.observed, 9, "five geometry, three visibility, one motion")
+
+            m.assertArrayContains(rowList.observed, "itemSize->onGeometryChanged")
+            m.assertArrayContains(rowList.observed, "rowItemSize->onGeometryChanged")
+            m.assertArrayContains(rowList.observed, "itemSpacing->onGeometryChanged")
+            m.assertArrayContains(rowList.observed, "numRows->onGeometryChanged")
+            m.assertArrayContains(rowList.observed, "translation->onGeometryChanged")
+
+            m.assertArrayContains(rowList.observed, "visible->onVisibilityChanged")
+            m.assertArrayContains(rowList.observed, "content->onVisibilityChanged")
+            m.assertArrayContains(rowList.observed, "focusedChild->onVisibilityChanged")
+
+            m.assertArrayContains(rowList.observed, "currFocusRow->onVertScroll")
+
+            m.assertArrayCount(rowList.unobserved, 0, "a first attach has nothing to unobserve")
+        end sub
+
+        @it("detach removes those observers")
+        sub _()
+            ctx = m.newCtx()
+            rowList = m.fakeRowList(m.contentWith(3))
+
+            chromeOps.attach(ctx, rowList)
+
+            chromeOps.detach(ctx)
+
+            m.assertInvalid(ctx.rowList, "the handle must be released")
+            m.assertArrayCount(rowList.unobserved, 9, "every observed field must be unobserved")
+
+            for each field in ["itemSize", "rowItemSize", "itemSpacing", "numRows", "translation", "visible", "content", "focusedChild", "currFocusRow"]
+                m.assertArrayContains(rowList.unobserved, field, `${field} was left observed`)
+            end for
+
+            chromeOps.detach(ctx)
+            m.assertArrayCount(rowList.unobserved, 9, "a second detach must be a no-op")
+        end sub
+
+        @it("canScrollVertically is false when content fits")
+        sub _()
+            ctx = m.newCtx()
+
+            ctx.rowList = m.fakeRowList(m.contentWith(1))
+            m.assertFalse(chromeOps.canScrollVertically(ctx), "one row")
+
+            ctx.rowList = m.fakeRowList(m.contentWith(0))
+            m.assertFalse(chromeOps.canScrollVertically(ctx), "no rows")
+
+            ctx.rowList = m.fakeRowList(invalid)
+            m.assertFalse(chromeOps.canScrollVertically(ctx), "no content node")
+
+            ctx.rowList = m.fakeRowList(m.contentWith(5), false)
+            m.assertFalse(chromeOps.canScrollVertically(ctx), "not in the focus chain")
+        end sub
+
+        @it("canScrollVertically is true when it overflows")
+        @params(2)
+        @params(3)
+        @params(46)
+        sub _(rows as integer)
+            ctx = m.newCtx()
+            ctx.rowList = m.fakeRowList(m.contentWith(rows))
+
+            m.assertTrue(chromeOps.canScrollVertically(ctx), `${rows} rows should overflow`)
+        end sub
+
+        @it("a geometry change recomputes the summary layout")
+        sub _()
+            ctx = m.newCtx()
+            ctx.rowList = m.fakeRowList(m.contentWith(3))
+
+            chromeOps.applyGeometry(ctx)
+
+            m.assertEqual(Int(ctx.ring.width), 376, "the ring matches the poster width")
+            m.assertEqual(Int(ctx.ring.height), 220)
+            m.assertEqual(Int(ctx.ring.translation[0]), 160, "aligned to the row's left edge")
+            m.assertEqual(Int(ctx.ring.translation[1]), 162, "posterTop minus offsetY")
+
+            m.assertEqual(Int(ctx.summaryTitle.translation[0]), 160)
+            m.assertEqual(Int(ctx.summaryTitle.translation[1]), 420, "below the poster row")
+
+            m.assertEqual(ctx.capLayer.getChildCount(), 3, "one cap per row")
+            m.assertEqual(Int(ctx.capLayer.getChild(0).width), 27, "rowListChrome.CAP_WIDTH")
+            m.assertEqual(Int(ctx.capLayer.getChild(0).translation[1]), 162)
+            m.assertEqual(Int(ctx.capLayer.getChild(1).translation[1]), 492, "pitched by 330")
+            m.assertEqual(Int(ctx.capLayer.getChild(2).translation[1]), 822)
+
+            chromeOps.applyGeometry(ctx)
+            m.assertEqual(ctx.capLayer.getChildCount(), 3, "caps must be rebuilt, not appended")
+        end sub
+
+        @it("summaryColumns affects the computed width")
+        @params(1, 376)
+        @params(2, 782)
+        @params(3, 1188)
+        @params(4, 1594)
+        sub _(columns as integer, expectedWidth as integer)
+            ctx = m.newCtx()
+            ctx.rowList = m.fakeRowList(m.contentWith(3))
+
+            ctx.top.summaryColumns = columns
+
+            chromeOps.applyGeometry(ctx)
+
+            m.assertEqual(Int(ctx.summaryTitle.width), expectedWidth)
+        end sub
+
+        @it("becoming invisible detaches")
+        sub _()
+            ctx = m.newCtx()
+            rowList = m.fakeRowList(m.contentWith(3))
+
+            chromeOps.attach(ctx, rowList)
+            m.assertTrue(ctx.top.visible, "precondition: shown")
+
+            rowList.visible = false
+            chromeOps.applyVisibility(ctx)
+
+            m.assertFalse(ctx.top.visible, "the chrome must hide with the list")
+            m.assertFalse(ctx.ring.visible)
+            m.assertFalse(ctx.summaryTitle.visible)
+
+            m.assertNotInvalid(ctx.rowList, "it stays attached while hidden")
+            m.assertArrayCount(rowList.unobserved, 0, "nothing is unobserved on hide")
+        end sub
+
+    end class
+end namespace

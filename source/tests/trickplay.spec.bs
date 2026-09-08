@@ -1,0 +1,146 @@
+namespace tests
+
+    @suite("trickplay")
+    class TrickplayTests extends rooibos.BaseTestSuite
+
+        function framesFeed(count as integer, intervalSeconds as integer) as object
+            frames = []
+
+            for i = 0 to count - 1
+                frames.Push(`frame${i}.png`)
+            end for
+
+            return {
+                intervalSeconds: intervalSeconds,
+                frames: frames
+            }
+        end function
+
+        @describe("feed construction")
+
+        @it("emptyFeed() defaults to a 10-second interval")
+        sub _()
+            m.assertEqual(trickplay.emptyFeed().intervalSeconds, 10)
+        end sub
+
+        @it("emptyFeed() has no frames")
+        sub _()
+            m.assertArrayCount(trickplay.emptyFeed().frames, 0)
+        end sub
+
+        @it("singleFrameFeed('') substitutes the placeholder image")
+        sub _()
+            feed = trickplay.singleFrameFeed("")
+
+            m.assertArrayCount(feed.frames, 1)
+            m.assertEqual(feed.frames[0], "pkg:/images/poster_placeholder_landscape.png")
+        end sub
+
+        @it("singleFrameFeed(uri) keeps the supplied uri")
+        sub _()
+            feed = trickplay.singleFrameFeed("https://cdn.example.com/tp/0.jpg")
+
+            m.assertArrayCount(feed.frames, 1)
+            m.assertEqual(feed.frames[0], "https://cdn.example.com/tp/0.jpg")
+        end sub
+
+        @describe("isEmpty")
+
+        @it("invalid feed is empty")
+        sub _()
+            m.assertTrue(trickplay.isEmpty(invalid))
+        end sub
+
+        @it("a feed with invalid frame is empty")
+        sub _()
+            m.assertTrue(trickplay.isEmpty({ intervalSeconds: 10, frames: invalid }))
+        end sub
+
+        @it("a feed with zero frames is empty")
+        sub _()
+            m.assertTrue(trickplay.isEmpty(trickplay.emptyFeed()))
+        end sub
+
+        @it("a feed with one frame is not empty")
+        sub _()
+            m.assertFalse(trickplay.isEmpty(trickplay.singleFrameFeed("frame0.png")))
+        end sub
+
+        @describe("frameIndex")
+
+        @it("an empty feed returns -1")
+        sub _()
+            m.assertEqual(trickplay.frameIndex(trickplay.emptyFeed(), 30.0), -1)
+        end sub
+
+        @it("a zero interval returns 0 instead of dividing")
+        sub _()
+            feed = m.framesFeed(5, 0)
+
+            m.assertEqual(trickplay.frameIndex(feed, 42.0), 0)
+        end sub
+
+        @it("second 0 maps to frame 0")
+        sub _()
+            m.assertEqual(trickplay.frameIndex(m.framesFeed(5, 10), 0.0), 0)
+        end sub
+
+        @it("mid-range seconds floor to the right frame")
+        @params(9.9, 0)
+        @params(10.0, 1)
+        @params(19.9, 1)
+        @params(20.0, 2)
+        @params(25.5, 2)
+        @params(30.0, 3)
+        sub _(seconds as float, expected as integer)
+            m.assertEqual(trickplay.frameIndex(m.framesFeed(5, 10), seconds), expected)
+        end sub
+
+        @it("negative seconds clamp to 0")
+        @params(-0.5)
+        @params(-10.0)
+        @params(-999.0)
+        sub _(seconds as float)
+            m.assertEqual(trickplay.frameIndex(m.framesFeed(5, 10), seconds), 0)
+        end sub
+
+        @it("seconds past the end clamp to the last frame")
+        @params(40.0)
+        @params(60.0)
+        @params(100000.0)
+        sub _(seconds as float)
+            m.assertEqual(trickplay.frameIndex(m.framesFeed(5, 10), seconds), 4)
+        end sub
+
+        @describe("frameUri")
+
+        @it("an empty feed returns empty")
+        sub _()
+            m.assertEqual(trickplay.frameUri(trickplay.emptyFeed(), 0), "")
+        end sub
+
+        @it("a negative index returns empty")
+        sub _()
+            m.assertEqual(trickplay.frameUri(m.framesFeed(3, 10), -1), "")
+        end sub
+
+        @it("an index at or past the count returns empty")
+        @params(3)
+        @params(4)
+        @params(99)
+        sub _(index as integer)
+            m.assertEqual(trickplay.frameUri(m.framesFeed(3, 10), index), "")
+        end sub
+
+        @it("a valid index returns its uri")
+        @params(0, "frame0.png")
+        @params(1, "frame1.png")
+        @params(2, "frame2.png")
+        sub _(index as integer, expected as string)
+            m.assertEqual(trickplay.frameUri(m.framesFeed(3, 10), index), expected)
+        end sub
+
+
+    end class
+end namespace
+
