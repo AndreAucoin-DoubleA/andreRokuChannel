@@ -1,5 +1,5 @@
 import "pkg:/source/theme/theme.bs"
-import "pkg:/source/widgets/rowListOps.bs"
+import "pkg:/source/operations/rowListOps.bs"
 
 sub init()
     m.ctx = rowListOps.newContext(m.top)

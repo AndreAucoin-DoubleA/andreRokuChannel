@@ -1,5 +1,5 @@
 import "pkg:/source/services/a11y.bs"
-import "pkg:/source/widgets/favoriteOps.bs"
+import "pkg:/source/operations/favoriteOps.bs"
 
 sub init()
     m.favIcon = m.top.findNode("favIcon")

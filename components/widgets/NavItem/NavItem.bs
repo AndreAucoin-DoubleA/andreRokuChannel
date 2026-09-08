@@ -1,5 +1,5 @@
 import "pkg:/source/theme/theme.bs"
-import "pkg:/source/widgets/navItemOps.bs"
+import "pkg:/source/operations/navItemOps.bs"
 
 sub init()
     m.ctx = navItemOps.newContext(m.top)

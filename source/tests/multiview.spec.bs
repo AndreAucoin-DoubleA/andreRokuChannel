@@ -45,7 +45,7 @@ namespace tests
 
         @it("host() is a hardcoded LAN address -- pin it so a move is deliberate")
         sub _()
-            m.assertEqual(multiview.host(), "http://172.16.12.10:8000")
+            m.assertEqual(multiview.host(), "http://192.168.2.227:8000")
 
             m.assertNotEqual(Right(multiview.host(), 1), "/", "host() must not end in a slash")
         end sub

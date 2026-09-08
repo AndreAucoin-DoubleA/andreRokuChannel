@@ -1,5 +1,5 @@
 import "pkg:/source/theme/theme.bs"
-import "pkg:/source/widgets/loadingOps.bs"
+import "pkg:/source/operations/loadingOps.bs"
 
 sub init()
     m.ctx = loadingOps.newContext(m.top)

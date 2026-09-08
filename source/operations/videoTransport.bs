@@ -1,5 +1,5 @@
 import "pkg:/source/services/bookmarks.bs"
-import "pkg:/source/widgets/videoFormat.bs"
+import "pkg:/source/operations/videoFormat.bs"
 import "pkg:/components/widgets/VideoPlayer/VideoPlayer.interface.bs"
 
 namespace videoTransport

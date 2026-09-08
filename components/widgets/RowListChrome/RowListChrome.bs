@@ -1,5 +1,5 @@
 import "pkg:/source/theme/theme.bs"
-import "pkg:/source/widgets/chromeOps.bs"
+import "pkg:/source/operations/chromeOps.bs"
 
 sub init()
     m.ctx = chromeOps.newContext(m.top)
