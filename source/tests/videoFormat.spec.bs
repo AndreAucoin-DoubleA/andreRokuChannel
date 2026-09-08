@@ -1,0 +1,110 @@
+namespace tests
+
+    @suite("VideoPlayer formatting")
+    class VideoFormatTests extends rooibos.BaseTestSuite
+
+        @describe("clock & geometry")
+
+        function milli(value as dynamic) as integer
+            return Int(value * 1000 + 0.5)
+        end function
+
+        @it("clock(0) is 0:00")
+        @params(0.0, "0:00")
+        @params(0.9, "0:00")
+        @params(9.0, "0:09")
+        @params(59.0, "0:59")
+        sub _(seconds as float, expected as string)
+            m.assertEqual(videoFormat.clock(seconds), expected)
+        end sub
+
+        @it("clock(65) is 1:05")
+        @params(60.0, "1:00")
+        @params(65.0, "1:05")
+        @params(65.9, "1:05")
+        @params(599.0, "9:59")
+        @params(3599.0, "59:59")
+        sub _(seconds as float, expected as string)
+            m.assertEqual(videoFormat.clock(seconds), expected, "under an hour there is no hour field")
+        end sub
+
+        @it("clock(3661) includes the hour")
+        @params(3600.0, "1:00:00")
+        @params(3661.0, "1:01:01")
+        @params(7325.0, "2:02:05")
+        @params(36000.0, "10:00:00")
+        sub _(seconds as float, expected as string)
+            m.assertEqual(videoFormat.clock(seconds), expected)
+        end sub
+
+        @it("pad(5) is 05")
+        @params(0, "00")
+        @params(5, "05")
+        @params(9, "09")
+        sub _(value as integer, expected as string)
+            m.assertEqual(videoFormat.pad(value), expected, "single digits gain a leading zero")
+        end sub
+
+        @it("pad(15) is unchanged")
+        @params(10, "10")
+        @params(15, "15")
+        @params(59, "59")
+        @params(100, "100")
+        sub _(value as integer, expected as string)
+            m.assertEqual(videoFormat.pad(value), expected, "two digits and up are left alone")
+        end sub
+
+        @it("clampToDuration floors at 0")
+        @params(-0.5, 0)
+        @params(-1.0, 0)
+        @params(-9999.0, 0)
+        @params(0.0, 0)
+        sub _(seconds as float, expectedMilli as integer)
+            m.assertEqual(m.milli(videoFormat.clampToDuration(seconds, 100.0)), expectedMilli, "scrubbing back past the start")
+        end sub
+
+        @it("clampToDuration ceilings at the duration")
+        @params(100.5, 100000)
+        @params(9999.0, 100000)
+        @params(100.0, 100000)
+        @params(99.5, 99500)
+        sub _(seconds as float, expectedMilli as integer)
+            m.assertEqual(m.milli(videoFormat.clampToDuration(seconds, 100.0)), expectedMilli, "scrubbing past the end")
+        end sub
+
+        @it("trackFraction is 0 at the start")
+        @params(0.0)
+        @params(-1.0)
+        @params(-500.0)
+        sub _(seconds as float)
+            m.assertEqual(m.milli(videoFormat.trackFraction(seconds, 100.0)), 0)
+        end sub
+
+        @it("trackFraction is 1 at the end")
+        @params(100.0)
+        @params(100.5)
+        @params(9999.0)
+        sub _(seconds as float)
+            m.assertEqual(m.milli(videoFormat.trackFraction(seconds, 100.0)), 1000)
+        end sub
+
+        @it("trackFraction with zero duration is 0")
+        @params(0.0)
+        @params(-1.0)
+        @params(-100.0)
+        sub _(duration as float)
+            ' A live stream or a video that has not loaded yet reports no
+            ' duration, and dividing by it would throw.
+            m.assertEqual(m.milli(videoFormat.trackFraction(50.0, duration)), 0, "no divide by zero")
+        end sub
+
+        @it("trackFraction interpolates between")
+        @params(25.0, 250)
+        @params(50.0, 500)
+        @params(75.0, 750)
+        sub _(seconds as float, expectedMilli as integer)
+            m.assertEqual(m.milli(videoFormat.trackFraction(seconds, 100.0)), expectedMilli, "the scrub bar fill")
+        end sub
+
+    end class
+end namespace

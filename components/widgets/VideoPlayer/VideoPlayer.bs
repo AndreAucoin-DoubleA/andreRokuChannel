@@ -1,4 +1,5 @@
 import "pkg:/source/services/bookmarks.bs"
+import "pkg:/source/widgets/videoFormat.bs"
 import "pkg:/components/widgets/VideoPlayer/VideoPlayer.interface.bs"
 import "pkg:/source/services/a11y.bs"
 import "pkg:/source/theme/theme.bs"
@@ -519,22 +520,11 @@ sub focusPanel()
 end sub
 
 function clampToDuration(seconds as float) as float
-    if seconds < 0 then return 0
-    if seconds > m.top.duration then return m.top.duration
-
-    return seconds
+    return videoFormat.clampToDuration(seconds, m.top.duration)
 end function
 
 function trackFraction(seconds as float) as float
-    duration = m.top.duration
-    if duration <= 0 then return 0
-
-    fraction = seconds / duration
-
-    if fraction < 0 then return 0
-    if fraction > 1 then return 1
-
-    return fraction
+    return videoFormat.trackFraction(seconds, m.top.duration)
 end function
 
 sub renderAt(seconds as float)
@@ -606,20 +596,11 @@ sub hidePreview()
 end sub
 
 function clock(seconds as float) as string
-    total = Int(seconds)
-    hrs = Int(total / 3600)
-    mins = Int((total mod 3600) / 60)
-    secs = total mod 60
-
-    if hrs > 0 then return hrs.ToStr() + ":" + pad(mins) + ":" + pad(secs)
-
-    return mins.ToStr() + ":" + pad(secs)
+    return videoFormat.clock(seconds)
 end function
 
 function pad(value as integer) as string
-    if value < 10 then return "0" + value.ToStr()
-
-    return value.ToStr()
+    return videoFormat.pad(value)
 end function
 
 

@@ -1,0 +1,38 @@
+namespace videoFormat
+
+    function pad(value as integer) as string
+        if value < 10 then return "0" + value.ToStr()
+
+        return value.ToStr()
+    end function
+
+    function clock(seconds as float) as string
+        total = Int(seconds)
+        hrs = Int(total / 3600)
+        mins = Int((total mod 3600) / 60)
+        secs = total mod 60
+
+        if hrs > 0 then return hrs.ToStr() + ":" + videoFormat.pad(mins) + ":" + videoFormat.pad(secs)
+
+        return mins.ToStr() + ":" + videoFormat.pad(secs)
+    end function
+
+    function clampToDuration(seconds as float, duration as float) as float
+        if seconds < 0 then return 0
+        if seconds > duration then return duration
+
+        return seconds
+    end function
+
+    function trackFraction(seconds as float, duration as float) as float
+        if duration <= 0 then return 0
+
+        fraction = seconds / duration
+
+        if fraction < 0 then return 0
+        if fraction > 1 then return 1
+
+        return fraction
+    end function
+
+end namespace
