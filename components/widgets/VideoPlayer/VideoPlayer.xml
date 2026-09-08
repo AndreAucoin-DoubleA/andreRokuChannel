@@ -13,6 +13,16 @@
         <field id="overlayButtonSelected" type="boolean" alwaysNotify="true"/>
 
         <function name="commitProgress"/>
+
+        <!-- Exposed for tests: overlay and trickplay internals. -->
+        <function name="showOverlay"/>
+        <function name="renderPreview"/>
+        <function name="hidePreview"/>
+        <function name="focusScrub"/>
+        <function name="focusPanel"/>
+        <function name="onOverlayTextChanged"/>
+        <function name="onHideTimerFire"/>
+        <function name="onOverlayButtonPressed"/>
     </interface>
 
     <children>
