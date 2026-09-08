@@ -93,8 +93,6 @@ namespace tests
         @params(-1.0)
         @params(-100.0)
         sub _(duration as float)
-            ' A live stream or a video that has not loaded yet reports no
-            ' duration, and dividing by it would throw.
             m.assertEqual(m.milli(videoFormat.trackFraction(50.0, duration)), 0, "no divide by zero")
         end sub
 

@@ -1,0 +1,326 @@
+namespace tests
+
+    @suite("VideoPlayer transport")
+    class VideoTransportTests extends rooibos.BaseTestSuite
+
+        @describe("skip, scan & progress")
+
+        @setup
+        protected override sub setup()
+            ' savePositionAt writes real bookmarks, so back the section up.
+            m.savedBookmarks = {}
+
+            registry = bookmarks.section()
+            for each key in registry.GetKeyList()
+                m.savedBookmarks[key] = registry.Read(key)
+            end for
+        end sub
+
+        @teardown
+        protected override sub tearDown()
+            registry = bookmarks.section()
+
+            for each key in registry.GetKeyList()
+                registry.Delete(key)
+            end for
+
+            for each key in m.savedBookmarks
+                registry.Write(key, m.savedBookmarks[key])
+            end for
+
+            registry.Flush()
+        end sub
+
+        @beforeEach
+        protected override sub beforeEach()
+            registry = bookmarks.section()
+
+            for each key in registry.GetKeyList()
+                registry.Delete(key)
+            end for
+
+            registry.Flush()
+        end sub
+
+        @afterEach
+        protected override sub afterEach()
+            m.beforeEach()
+        end sub
+
+        ' The transport only reads and writes plain Video fields, so a real
+        ' player node is unnecessary.
+        function fakeNode(overrides = {} as object) as object
+            node = {
+                position: 0.0,
+                duration: 100.0,
+                state: "playing",
+                trackProgress: true,
+                movieId: "tst-1",
+                seek: -1.0,
+                control: ""
+            }
+
+            for each key in overrides
+                node[key] = overrides[key]
+            end for
+
+            return node
+        end function
+
+        function milli(value as dynamic) as integer
+            return Int(value * 1000 + 0.5)
+        end function
+
+        @it("skipDelta on a first press is the base step")
+        @params(10)
+        @params(-10)
+        sub _(delta as integer)
+            ctx = videoTransport.newContext()
+            node = m.fakeNode({ position: 30.0 })
+
+            m.assertEqual(ctx.mode, videoPlayer.MODE_IDLE, "precondition: idle")
+
+            videoTransport.applySkip(ctx, node, delta)
+
+            m.assertEqual(ctx.mode, videoPlayer.MODE_SKIP, "the first press enters skip mode")
+            m.assertEqual(m.milli(ctx.skipAnchor), 30000, "anchored at the live position")
+            m.assertEqual(m.milli(videoTransport.skipDelta(ctx)), delta * 1000)
+        end sub
+
+        @it("skipDelta accelerates on repeats")
+        sub _()
+            ctx = videoTransport.newContext()
+            node = m.fakeNode({ position: 30.0 })
+
+            videoTransport.applySkip(ctx, node, 10)
+            m.assertEqual(m.milli(videoTransport.skipDelta(ctx)), 10000, "one press")
+
+            videoTransport.applySkip(ctx, node, 10)
+            m.assertEqual(m.milli(videoTransport.skipDelta(ctx)), 20000, "two presses")
+
+            videoTransport.applySkip(ctx, node, 10)
+            m.assertEqual(m.milli(videoTransport.skipDelta(ctx)), 30000, "three presses")
+
+            ' NOTE: the step itself does not accelerate -- skipBy is always
+            ' called with SKIP_SECONDS. What grows is the accumulated delta,
+            ' and the anchor stays put across repeats.
+            m.assertEqual(m.milli(ctx.skipAnchor), 30000, "the anchor must not move on repeats")
+            m.assertEqual(m.milli(ctx.scrubTarget), 60000)
+        end sub
+
+        @it("cancelPendingSkip resets the accumulator")
+        sub _()
+            ctx = videoTransport.newContext()
+            node = m.fakeNode({ position: 30.0 })
+
+            videoTransport.applySkip(ctx, node, 10)
+            videoTransport.applySkip(ctx, node, 10)
+            m.assertEqual(m.milli(videoTransport.skipDelta(ctx)), 20000, "precondition: 20s accumulated")
+
+            videoTransport.cancelPendingSkip(ctx)
+
+            m.assertEqual(ctx.mode, videoPlayer.MODE_IDLE, "back to idle")
+
+            ' Leaving skip mode is what resets the accumulator: the next press
+            ' re-anchors at the current position instead of continuing.
+            node.position = 50.0
+            videoTransport.applySkip(ctx, node, 10)
+
+            m.assertEqual(m.milli(ctx.skipAnchor), 50000, "re-anchored at the new position")
+            m.assertEqual(m.milli(videoTransport.skipDelta(ctx)), 10000, "the delta starts over")
+        end sub
+
+        @it("a committed skip seeks to the clamped position")
+        sub _()
+            ctx = videoTransport.newContext()
+            node = m.fakeNode({ position: 95.0 })
+
+            ' 95 + 10 would overshoot a 100s video.
+            videoTransport.applySkip(ctx, node, 10)
+            m.assertEqual(m.milli(ctx.scrubTarget), 100000, "clamped to the duration")
+
+            videoTransport.requestSeek(ctx, node, ctx.scrubTarget)
+
+            m.assertEqual(m.milli(node.seek), 100000, "the player is told to seek there")
+            m.assertTrue(ctx.seekPending)
+            m.assertEqual(ctx.seekTicks, 0, "the settle counter restarts")
+
+            ' And the same at the other rail.
+            other = videoTransport.newContext()
+            back = m.fakeNode({ position: 3.0 })
+            videoTransport.applySkip(other, back, -10)
+
+            m.assertEqual(m.milli(other.scrubTarget), 0, "floored at zero")
+        end sub
+
+        @it("scanRate increases with hold duration")
+        sub _()
+            ctx = videoTransport.newContext()
+            node = m.fakeNode({ position: 30.0 })
+
+            videoTransport.applyScanStart(ctx, node, 1)
+            m.assertEqual(videoTransport.scanRate(ctx), videoPlayer.SCAN_RATE_1, "first press is 8x")
+
+            videoTransport.applyScanStart(ctx, node, 1)
+            m.assertEqual(videoTransport.scanRate(ctx), videoPlayer.SCAN_RATE_2, "second is 24x")
+
+            videoTransport.applyScanStart(ctx, node, 1)
+            m.assertEqual(videoTransport.scanRate(ctx), videoPlayer.SCAN_RATE_3, "third is 60x")
+
+            videoTransport.applyScanStart(ctx, node, 1)
+            m.assertEqual(videoTransport.scanRate(ctx), videoPlayer.SCAN_RATE_3, "and it caps there")
+            m.assertEqual(ctx.scanSpeedIndex, videoPlayer.SCAN_MAX_INDEX)
+
+            ' Reversing direction starts the ramp again.
+            videoTransport.applyScanStart(ctx, node, -1)
+            m.assertEqual(ctx.scanDirection, -1)
+            m.assertEqual(videoTransport.scanRate(ctx), videoPlayer.SCAN_RATE_1, "reversing resets the rate")
+        end sub
+
+        @it("beginScan and endScan restore normal playback")
+        @params("playing", "resume")
+        @params("paused", "pause")
+        sub _(startState as string, expectedControl as string)
+            ctx = videoTransport.newContext()
+            node = m.fakeNode({ position: 30.0, state: startState })
+
+            videoTransport.applyScanStart(ctx, node, 1)
+
+            m.assertEqual(ctx.mode, videoPlayer.MODE_SCAN)
+            m.assertEqual(node.control, "pause", "scanning always pauses the stream")
+            m.assertEqual(ctx.wasPlaying, startState = "playing", "whether to resume is remembered")
+
+            ctx.scrubTarget = 55.0
+            videoTransport.applyScanEnd(ctx, node)
+
+            m.assertEqual(ctx.mode, videoPlayer.MODE_IDLE, "back to idle")
+            m.assertEqual(m.milli(node.seek), 55000, "the scanned-to position is seeked")
+            m.assertEqual(node.control, expectedControl, "only a stream that was playing resumes")
+        end sub
+
+        @it("livePosition reports the seek target while seeking")
+        sub _()
+            ctx = videoTransport.newContext()
+            node = m.fakeNode({ position: 10.0 })
+
+            videoTransport.requestSeek(ctx, node, 80.0)
+
+            ' The player has not caught up yet, so position still reads 10.
+            m.assertEqual(m.milli(videoTransport.livePosition(ctx, node)), 80000, "the target wins while pending")
+        end sub
+
+        @it("livePosition reports the real position when idle")
+        @params(0.0)
+        @params(42.5)
+        @params(100.0)
+        sub _(position as float)
+            ctx = videoTransport.newContext()
+            node = m.fakeNode({ position: position })
+
+            m.assertFalse(ctx.seekPending, "precondition: not seeking")
+            m.assertEqual(m.milli(videoTransport.livePosition(ctx, node)), m.milli(position))
+
+            ' Once the seek settles, position takes over again.
+            videoTransport.requestSeek(ctx, node, 80.0)
+            node.position = 80.0
+            videoTransport.settleSeek(ctx, node)
+
+            m.assertFalse(ctx.seekPending, "within tolerance the seek is settled")
+            m.assertEqual(m.milli(videoTransport.livePosition(ctx, node)), 80000)
+        end sub
+
+        @it("commitProgress delegates to bookmarks")
+        sub _()
+            ctx = videoTransport.newContext()
+            node = m.fakeNode({ position: 42.0 })
+
+            m.assertEqual(bookmarks.positionFor("tst-1"), 0, "precondition: nothing saved")
+
+            m.assertTrue(videoTransport.commitProgress(ctx, node), "commitProgress always reports handled")
+
+            m.assertEqual(bookmarks.positionFor("tst-1"), 42, "the live position is written")
+            m.assertEqual(ctx.mode, videoPlayer.MODE_IDLE, "and any skip or scan is closed out")
+        end sub
+
+        @it("commitProgress is skipped when trackProgress is false")
+        sub _()
+            ctx = videoTransport.newContext()
+            node = m.fakeNode({ position: 42.0, trackProgress: false })
+
+            m.assertTrue(videoTransport.commitProgress(ctx, node), "it still reports handled")
+
+            m.assertEqual(bookmarks.positionFor("tst-1"), 0, "but nothing is written")
+            m.assertEqual(bookmarks.section().GetKeyList().Count(), 0)
+        end sub
+
+        @it("resetProgressCache clears the last saved position")
+        sub _()
+            ctx = videoTransport.newContext()
+
+            ctx.lastPosition = 42.0
+            ctx.videoDuration = 100.0
+            ctx.ticksSinceSave = 9
+            ctx.previewIndex = 3
+            ctx.seekPending = true
+            ctx.seekTarget = 80.0
+            ctx.seekTicks = 2
+            ctx.renderedDuration = 100.0
+
+            videoTransport.resetProgressCache(ctx)
+
+            m.assertEqual(m.milli(ctx.lastPosition), 0)
+            m.assertEqual(m.milli(ctx.videoDuration), 0)
+            m.assertEqual(ctx.ticksSinceSave, 0)
+            m.assertEqual(ctx.previewIndex, -1)
+            m.assertFalse(ctx.seekPending, "a pending seek must not survive")
+            m.assertEqual(m.milli(ctx.seekTarget), 0)
+            m.assertEqual(ctx.seekTicks, 0)
+            m.assertEqual(m.milli(ctx.renderedDuration), -1000)
+        end sub
+
+        @it("a finished state clears the bookmark")
+        sub _()
+            ctx = videoTransport.newContext()
+
+            ' Something was saved mid-film.
+            registry = bookmarks.section()
+            registry.Write("tst-1", "42")
+            registry.Flush()
+            m.assertEqual(bookmarks.positionFor("tst-1"), 42, "precondition: resume point exists")
+
+            ' Finishing saves at the end, and bookmarks drops anything within
+            ' 10 seconds of the duration.
+            node = m.fakeNode({ position: 95.0, state: "finished" })
+            videoTransport.applyStateSave(ctx, node)
+
+            m.assertEqual(bookmarks.positionFor("tst-1"), 0, "the resume point is gone")
+            m.assertFalse(bookmarks.section().Exists("tst-1"), "the key is deleted, not blanked")
+            m.assertEqual(ctx.previewIndex, -1, "and the progress cache is reset")
+        end sub
+
+        @it("togglePlayPause flips the control field")
+        @params("playing", "pause")
+        @params("paused", "resume")
+        sub _(state as string, expected as string)
+            node = m.fakeNode({ state: state })
+
+            videoTransport.togglePlayPause(node)
+
+            m.assertEqual(node.control, expected)
+        end sub
+
+        @it("togglePlayPause ignores states that are neither")
+        @params("finished")
+        @params("buffering")
+        @params("error")
+        @params("none")
+        sub _(state as string)
+            node = m.fakeNode({ state: state })
+
+            videoTransport.togglePlayPause(node)
+
+            m.assertEqual(node.control, "", `${state} must not be toggled`)
+        end sub
+
+    end class
+end namespace
