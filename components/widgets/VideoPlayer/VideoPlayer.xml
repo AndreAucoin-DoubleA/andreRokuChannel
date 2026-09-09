@@ -33,7 +33,7 @@
                 width="1920"
                 height="520"
                 loadDisplayMode="scaleToFill"
-                uri="pkg:/images/bottom_fade.png"/>
+                uri="pkg:/assets/images/bottom_fade.png"/>
 
             <Group id="infoPanel" translation="[96,655]">
                 <Label id="overlayTitleLabel" width="1500"/>
@@ -50,8 +50,8 @@
                         width="320"
                         height="180"
                         loadDisplayMode="scaleToFill"
-                        loadingBitmapUri="pkg:/images/poster_placeholder_landscape.png"
-                        failedBitmapUri="pkg:/images/poster_placeholder_landscape.png"/>
+                        loadingBitmapUri="pkg:/assets/images/poster_placeholder_landscape.png"
+                        failedBitmapUri="pkg:/assets/images/poster_placeholder_landscape.png"/>
                     <Rectangle id="previewTimeBg" width="320" height="34" translation="[0,146]"/>
                     <Label id="previewTime" width="320" height="34" translation="[0,146]"
                         horizAlign="center" vertAlign="center"/>

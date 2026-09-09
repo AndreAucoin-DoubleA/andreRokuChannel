@@ -1,7 +1,23 @@
+import "pkg:/source/generated/localConfig.bs"
+
 namespace multiview
 
+    const FALLBACK_HOST = "http://127.0.0.1:8000"
+
     function host() as string
-        return "http://192.168.2.227:8000"
+        return normalizeHost(localConfig.multiviewHost())
+    end function
+
+    function normalizeHost(configured as string) as string
+        result = configured
+
+        while Len(result) > 0 and Right(result, 1) = "/"
+            result = Left(result, Len(result) - 1)
+        end while
+
+        if result = "" then return FALLBACK_HOST
+
+        return result
     end function
 
     function mosaicUrl() as string
@@ -18,4 +34,3 @@ namespace multiview
     end function
 
 end namespace
-

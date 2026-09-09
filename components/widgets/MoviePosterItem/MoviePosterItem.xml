@@ -10,7 +10,7 @@
         <MaskGroup
             id="posterMask"
             translation="[10,10]"
-            maskUri="pkg:/images/poster_mask_landscape.png"
+            maskUri="pkg:/assets/images/poster_mask_landscape.png"
             maskSize="[356,200]"
             maskOffset="[0,0]">
             <Poster
@@ -20,8 +20,8 @@
                 loadDisplayMode="scaleToZoom"
                 loadWidth="356"
                 loadHeight="200"
-                loadingBitmapUri="pkg:/images/poster_placeholder_landscape.png"
-                failedBitmapUri="pkg:/images/poster_placeholder_landscape.png"/>
+                loadingBitmapUri="pkg:/assets/images/poster_placeholder_landscape.png"
+                failedBitmapUri="pkg:/assets/images/poster_placeholder_landscape.png"/>
         </MaskGroup>
     </children>
 </component>

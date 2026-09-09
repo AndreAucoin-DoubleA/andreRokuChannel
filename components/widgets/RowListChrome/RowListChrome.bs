@@ -5,7 +5,7 @@ sub init()
     m.ctx = chromeOps.newContext(m.top)
 
     t = theme.current()
-    m.ctx.ring.uri = "pkg:/images/item_focus_ring.png"
+    m.ctx.ring.uri = "pkg:/assets/images/item_focus_ring.png"
     m.ctx.ring.blendColor = t.color("component.moviePoster.focusRingColor", "0x8B5CD6FF")
     m.ctx.capColor = t.color("component.scene.backgroundColor", "0x202226FF")
 

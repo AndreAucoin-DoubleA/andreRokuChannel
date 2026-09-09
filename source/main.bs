@@ -26,7 +26,7 @@ sub Main(args as object)
     globals.addFields({
         navCollapsed: true,
         screenReaderOn: deviceInfo.IsAudioGuideEnabled(),
-        designTokens: tokens.loadTokens("pkg:/tokens/tokens.json"),
+        designTokens: tokens.loadTokens("pkg:/assets/tokens/tokens.json"),
         catalog: CreateObject("roSGNode", "ContentNode"),
         catalogVersion: 0,
         catalogReady: false,

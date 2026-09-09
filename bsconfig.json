@@ -7,9 +7,7 @@
     "!source/tests/**/*",
     "components/**/*",
     "!components/tests/**/*",
-    "images/**/*",
-    "tokens/**/*",
-    "fonts/**/*"
+    "assets/**/*"
   ],
   "plugins": [
     "@rokucommunity/bslint"

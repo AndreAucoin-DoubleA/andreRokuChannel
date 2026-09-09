@@ -33,7 +33,7 @@ namespace tests
             feed = trickplay.singleFrameFeed("")
 
             m.assertArrayCount(feed.frames, 1)
-            m.assertEqual(feed.frames[0], "pkg:/images/poster_placeholder_landscape.png")
+            m.assertEqual(feed.frames[0], "pkg:/assets/images/poster_placeholder_landscape.png")
         end sub
 
         @it("singleFrameFeed(uri) keeps the supplied uri")

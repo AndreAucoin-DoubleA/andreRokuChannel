@@ -81,7 +81,7 @@ namespace chromeOps
 
         for row = 0 to ctx.rowList.numRows - 1
             cap = ctx.capLayer.createChild("Poster")
-            cap.uri = "pkg:/images/row_corner_cap.png"
+            cap.uri = "pkg:/assets/images/row_corner_cap.png"
             cap.blendColor = ctx.capColor
             cap.width = rowListChrome.CAP_WIDTH
             cap.height = itemHeight

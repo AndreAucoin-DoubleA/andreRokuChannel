@@ -22,7 +22,7 @@
                 height="1080"
                 opacity="0"
                 loadDisplayMode="scaleToFill"
-                uri="pkg:/images/nav_fade.png"/>
+                uri="pkg:/assets/images/nav_fade.png"/>
 
             <Animation id="navFadeAnim" duration="0.2" easeFunction="outQuad">
                 <FloatFieldInterpolator
@@ -45,7 +45,7 @@
                 width="1920"
                 height="200"
                 loadDisplayMode="scaleToFill"
-                uri="pkg:/images/bottom_fade.png"/>
+                uri="pkg:/assets/images/bottom_fade.png"/>
         </Group>
 
         <LoadingIndicator

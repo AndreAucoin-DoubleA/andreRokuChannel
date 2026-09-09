@@ -18,9 +18,9 @@ sub onFavoritedChanged()
     if m.favIcon = invalid then return
 
     if m.top.favorited
-        m.favIcon.uri = "pkg:/images/favorite_filled.png"
+        m.favIcon.uri = "pkg:/assets/images/favorite_filled.png"
     else
-        m.favIcon.uri = "pkg:/images/favorite_empty.png"
+        m.favIcon.uri = "pkg:/assets/images/favorite_empty.png"
     end if
 end sub
 

@@ -43,11 +43,24 @@ namespace tests
             end for
         end sub
 
-        @it("host() is a hardcoded LAN address -- pin it so a move is deliberate")
+        @it("host() is a well-formed origin with an explicit port and no trailing slash")
         sub _()
-            m.assertEqual(multiview.host(), "http://192.168.2.227:8000")
+            host = multiview.host()
 
-            m.assertNotEqual(Right(multiview.host(), 1), "/", "host() must not end in a slash")
+            m.assertNotEmpty(host, "host() is empty -- did scripts/genLocalConfig.js run?")
+            m.assertEqual(Left(host, 7), "http://", "host() must be an http origin")
+            m.assertNotEqual(Right(host, 1), "/", "host() must not end in a slash")
+            m.assertTrue(Instr(8, host, ":") > 0, "host() must carry an explicit port")
+        end sub
+
+        @it("normalizeHost() strips trailing slashes and falls back when unset")
+        @params("http://10.0.0.5:8000", "http://10.0.0.5:8000")
+        @params("http://10.0.0.5:8000/", "http://10.0.0.5:8000")
+        @params("http://10.0.0.5:8000///", "http://10.0.0.5:8000")
+        @params("", "http://127.0.0.1:8000")
+        @params("/", "http://127.0.0.1:8000")
+        sub _(configured as string, expected as string)
+            m.assertEqual(multiview.normalizeHost(configured), expected)
         end sub
 
     end class

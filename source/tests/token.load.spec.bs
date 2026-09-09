@@ -4,7 +4,7 @@ namespace tests
     class TokensLoadTests extends rooibos.BaseTestSuite
 
         function realPath() as string
-            return "pkg:/tokens/tokens.json"
+            return "pkg:/assets/tokens/tokens.json"
         end function
 
         function malformedPath() as string
@@ -13,7 +13,7 @@ namespace tests
 
         @describe("loadTokens")
 
-        @it("the real pkg:/tokens/tokens.json loads without error")
+        @it("the real pkg:/assets/tokens/tokens.json loads without error")
         sub _()
             map = tokens.loadTokens(m.realPath())
 
@@ -60,7 +60,7 @@ namespace tests
         end sub
 
         @it("a missing path logs an error and returns an empty map")
-        @params("pkg:/tokens/does-not-exist.json")
+        @params("pkg:/assets/tokens/does-not-exist.json")
         @params("pkg:/source/tests/fixtures/nope.json")
         @params("")
         sub _(path as string)
