@@ -9,7 +9,7 @@ ui_resolutions=fhd
 rsg_version=1.3
 
 #Channel Icon
-mm_icon_focus_hd=pkg:/assets/images/channel-poster_hd.png
+mm_icon_focus_hd=pkg:/assets/images/shubi-channel-poster-720x480.png
 
 #Splash Screen
 splash_screen_hd=pkg:/assets/images/splash_hd.jpg
