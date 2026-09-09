@@ -41,7 +41,6 @@ namespace tests
             m.clear(favorites.section())
             m.clear(bookmarks.section())
 
-            ' m.global fields the view reads; main.bs is not in the test build.
             if not m.global.hasField("screenReaderOn")
                 m.global.addFields({ screenReaderOn: false })
             end if
@@ -97,7 +96,6 @@ namespace tests
             return movie
         end function
 
-        ' A content row of three movies, for the nextSibling cases.
         function rowOf(titles as object) as object
             row = CreateObject("roSGNode", "ContentNode")
 
@@ -126,7 +124,6 @@ namespace tests
         sub _()
             view = m.newView()
 
-            ' Both optional buttons start hidden.
             m.assertEqual(m.ids(view.callFunc("focusChain")), "playButton", "play only")
 
             view.findNode("restartButton").visible = true
@@ -135,7 +132,6 @@ namespace tests
             view.findNode("nextButton").visible = true
             m.assertEqual(m.ids(view.callFunc("focusChain")), "playButton,restartButton,nextButton", "next is last")
 
-            ' Hiding restart closes the gap rather than leaving a hole.
             view.findNode("restartButton").visible = false
             m.assertEqual(m.ids(view.callFunc("focusChain")), "playButton,nextButton")
         end sub
@@ -146,7 +142,6 @@ namespace tests
             view.findNode("restartButton").visible = true
             view.findNode("nextButton").visible = true
 
-            ' With nothing focused it falls back to the play button.
             m.assertEqual(view.callFunc("focusedColumnControl").id, "playButton", "the default")
 
             view.findNode("nextButton").setFocus(true)
@@ -156,9 +151,6 @@ namespace tests
             m.assertEqual(view.callFunc("focusedColumnControl").id, "restartButton")
         end sub
 
-        ' A fresh view per step: outside a rendered scene there is no focus
-        ' chain, so an earlier setFocus is never cleared and moveFocus would
-        ' keep matching the first control in the chain.
         function focusedView(startId as string) as object
             view = m.newView()
             view.findNode("restartButton").visible = true
@@ -204,11 +196,9 @@ namespace tests
 
             m.assertInvalid(m.announced(), "precondition: nothing announced")
 
-            ' With no metadata yet it is just the screen name.
             view.callFunc("announceScreen")
             m.assertEqual(m.announced(), "Movie Details", "the screen name alone")
 
-            ' Once a movie is applied the metadata is appended.
             view.callFunc("applyMovie", m.newMovie())
             view.callFunc("announceScreen")
 
@@ -238,7 +228,6 @@ namespace tests
             view.callFunc("viewDidLoad", { movie: row.getChild(2), row: row, index: 2 })
             m.assertInvalid(view.callFunc("nextSibling"), "the last movie has no sibling")
 
-            ' No row or index at all is also invalid.
             bare = m.newView()
             bare.callFunc("viewDidLoad", { movie: m.newMovie() })
             m.assertInvalid(bare.callFunc("nextSibling"), "params without a row")
@@ -256,7 +245,6 @@ namespace tests
             m.assertEqual(view.findNode("desc").text, "Paul Atreides leads nomadic tribes.")
             m.assertEqual(view.findNode("detailsBack").uri, "https://image.tmdb.org/t/p/w1280/b.jpg", "the backdrop follows")
 
-            ' An invalid movie is a no-op rather than a crash.
             view.callFunc("applyMovie", invalid)
             m.assertEqual(view.findNode("meta").text, "Dune  -  Rating: 8.5  -  Released: 2021-10-22", "left untouched")
         end sub
@@ -288,9 +276,6 @@ namespace tests
             m.global.screenReaderOn = true
             withReader = view.callFunc("autoplayAllowed")
 
-            ' NOTE: autoplayAllowed reads roDeviceInfo -- the OS version and
-            ' IsAutoplayEnabled -- not m.global.screenReaderOn. The screen
-            ' reader only affects ambientDelay. This pins the real behaviour.
             m.assertEqual(withReader, baseline, "the screen reader does not gate autoplay")
         end sub
 
@@ -326,7 +311,6 @@ namespace tests
             view = m.newView()
             view.callFunc("applyMovie", m.newMovie())
 
-            ' restoreDetails is what back invokes once fullscreen is active.
             view.callFunc("showDetailsChrome", false)
             m.assertFalse(view.findNode("meta").visible, "precondition: chrome hidden")
 
@@ -345,7 +329,6 @@ namespace tests
             view.callFunc("applyMovie", m.newMovie())
             video = view.findNode("videoPlayer")
 
-            ' A non-fullscreen failure resets but shows no dialog.
             video.state = "error"
             view.callFunc("onVideoStateChanged")
 

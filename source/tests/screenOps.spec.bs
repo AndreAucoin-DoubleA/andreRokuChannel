@@ -45,7 +45,6 @@ namespace tests
             m.assertTrue(again.isSameNode(stack), "the same stack should come back")
             m.assertEqual(ctx.top.getChildCount(), 1, "no second stack should be created")
 
-            ' Returning early means resumeTop never ran, so the log is untouched.
             m.assertEqual(m.rootOf(stack).lifecycleLog, before, "resumeTop should not have run")
         end sub
 
@@ -124,7 +123,6 @@ namespace tests
             screenOps.showStack(ctx, "movies", m.resolver())
             m.assertEqual(ctx.top.activeStackId, "movies")
 
-            ' A rejected id must not move it.
             screenOps.showStack(ctx, "settings", m.resolver())
             m.assertEqual(ctx.top.activeStackId, "movies", "an unknown id must not change the active id")
         end sub
@@ -176,9 +174,6 @@ namespace tests
             screenOps.showStack(ctx, "home", m.resolver())
             m.assertEqual(ctx.top.activeDepth, 1)
 
-            ' publishDepth is exactly what onStackDepthChanged calls, so this is
-            ' the observer's effect. The registration itself fires only through
-            ' the message loop and is not observable synchronously.
             screenOps.pushOnActive(ctx, { view: "TestView" })
             screenOps.publishDepth(ctx)
             m.assertEqual(ctx.top.activeDepth, 2, "a push should raise it")
