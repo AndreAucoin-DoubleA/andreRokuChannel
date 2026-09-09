@@ -12,8 +12,9 @@ rsg_version=1.3
 mm_icon_focus_hd=pkg:/assets/images/shubi-channel-poster-720x480.png
 
 #Splash Screen
-splash_screen_hd=pkg:/assets/images/splash_hd.jpg
-splash_screen_fhd=pkg:/assets/images/splash_fhd.jpg
+splash_screen_sd=pkg:/assets/images/splash-720x480.jpg
+splash_screen_hd=pkg:/assets/images/splash-1280x720.jpg
+splash_screen_fhd=pkg:/assets/images/splash-1920x1080.jpg
 
 #Instant Resume
 sdk_instant_resume=1
