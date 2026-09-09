@@ -6,3 +6,4 @@ out/
 .DS_Store
 bsconfig.local.json
 rokudeploy.json
+source/generated/
