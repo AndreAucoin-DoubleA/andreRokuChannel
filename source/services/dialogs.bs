@@ -1,0 +1,32 @@
+import "pkg:/source/utils/logger.bs"
+
+namespace dialogs
+
+    function show(top as object, title as string, message as string, onDismiss as string) as object
+        dialog = CreateObject("roSGNode", "Dialog")
+        dialog.title = title
+        dialog.message = message
+        dialog.buttons = ["OK"]
+
+        dialog.observeField("buttonSelected", onDismiss)
+        dialog.observeField("wasClosed", onDismiss)
+
+        scene = top.getScene()
+        if scene = invalid
+            logger.warn("dialogs", `no scene for "${message}" - dialog not presented`)
+        else
+            scene.dialog = dialog
+        end if
+
+        return dialog
+    end function
+
+    sub close(dialog as object)
+        if dialog = invalid then return
+
+        dialog.unobserveField("buttonSelected")
+        dialog.unobserveField("wasClosed")
+        dialog.close = true
+    end sub
+
+end namespace

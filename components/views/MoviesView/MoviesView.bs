@@ -5,6 +5,7 @@ import "pkg:/components/views/MoviesView/MoviesView.interface.bs"
 sub init()
     m.movieRows = m.top.findNode("movieRows")
     m.loader = m.top.findNode("loader")
+    m.loader.observeField("errorDismissed", "onLoadErrorDismissed")
     m.heroGroup = m.top.findNode("heroGroup")
     m.backdrop = m.top.findNode("itemSelectBackground")
     m.movieLogo = m.top.findNode("movieLogo")
@@ -78,6 +79,10 @@ sub onCatalogFinished()
 
     m.loader.callFunc("showError", "Couldn't load movies")
     releaseInputGate()
+end sub
+
+sub onLoadErrorDismissed()
+    popView()
 end sub
 
 sub onMovieFocused()

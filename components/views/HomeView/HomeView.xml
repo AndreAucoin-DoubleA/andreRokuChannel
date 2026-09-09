@@ -31,7 +31,7 @@
 
         <LoadingIndicator
             id="loader"
-            translation="[752,492]"
+            translation="[750,490]"
             message="Loading..."
             errorMessage="Couldn't load content"/>
     </children>

@@ -257,13 +257,12 @@ namespace tests
             view.callFunc("updateLoader")
 
             m.assertEqual(loader.findNode("delayTimer").control, "start", "the spinner delay is running")
-            m.assertEqual(loader.findNode("statusLabel").text, loader.message, "staged with the loading message")
 
             m.global.catalogReady = true
             view.callFunc("updateLoader")
 
-            m.assertEqual(loader.findNode("statusLabel").text, "Couldn't load content", "an empty finished catalog is an error")
-            m.assertTrue(loader.findNode("content").visible, "shown immediately, no delay")
+            m.assertFalse(loader.findNode("content").visible, "an empty finished catalog raises the dialog, not inline text")
+            m.assertEqual(loader.findNode("delayTimer").control, "stop", "the pending delay is cancelled")
         end sub
 
         @it("updateLoader hides once rows exist")

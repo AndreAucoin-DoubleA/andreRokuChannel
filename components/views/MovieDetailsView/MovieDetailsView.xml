@@ -87,5 +87,11 @@
 
         <TextButton id="nextButton" text="Next in row" width="260"
             translation="[110,640]" visible="false"/>
+        
+        <LoadingIndicator
+            id="videoLoad"
+            translation="[910,490]"
+            timeout="0"
+            errorMessage="Couldn't load content"/>
     </children>
 </component>

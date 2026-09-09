@@ -18,6 +18,7 @@ sub init()
     m.launchBeaconFired = false
     m.launchReason = invalid
     m.launchError = m.top.findNode("launchError")
+    m.launchError.observeField("errorDismissed", "onLaunchErrorDismissed")
     m.launchTimeout = m.top.findNode("launchTimeout")
     m.launchTimeout.observeField("fire", "onLaunchTimeout")
     m.launchTimeout.control = "start"
@@ -294,6 +295,10 @@ sub onLaunchTimeout()
     m.launchReason = "timeout-failed"
     m.launchError.callFunc("showError", "Couldn't load content")
     signalLaunchComplete()
+end sub
+
+sub onLaunchErrorDismissed()
+    startCatalogLoad()
 end sub
 
 sub signalLaunchComplete()

@@ -6,6 +6,7 @@ sub init()
     m.bodyLabel = m.top.findNode("bodyLabel")
     m.movieRows = m.top.findNode("movieRows")
     m.loader = m.top.findNode("loader")
+    m.loader.observeField("errorDismissed", "onLoadErrorDismissed")
 
     m.rootContent = CreateObject("roSGNode", "ContentNode")
     m.movieRows.content = m.rootContent
@@ -80,6 +81,10 @@ sub updateLoader()
     end if
 
     m.loader.callFunc("show")
+end sub
+
+sub onLoadErrorDismissed()
+    popView()
 end sub
 
 sub onCatalogReady()

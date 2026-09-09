@@ -53,7 +53,7 @@
 
         <LoadingIndicator
             id="loader"
-            translation="[752,492]"
+            translation="[750,490]"
             message="Loading movies..."
             errorMessage="Couldn't load movies"/>
 

@@ -1,24 +1,14 @@
-import "pkg:/source/theme/theme.bs"
 import "pkg:/source/operations/loadingOps.bs"
 
 sub init()
     m.ctx = loadingOps.newContext(m.top)
 
-    m.ctx.spinner.poster.uri = "pkg:/assets/images/spinner.png"
-    m.ctx.spinner.poster.width = 96
-    m.ctx.spinner.poster.height = 96
+    m.ctx.spinner.poster.uri = "pkg:/assets/images/shubi-spinner.png"
+    m.ctx.spinner.poster.width = 100
+    m.ctx.spinner.poster.height = 100
 
     m.ctx.delayTimer.observeField("fire", "onDelayFired")
     m.ctx.timeoutTimer.observeField("fire", "onTimeoutFired")
-
-    applyTheme()
-end sub
-
-sub applyTheme()
-    t = theme.current()
-
-    m.ctx.statusLabel.color = t.color("component.page.statusTextColor", "0xB7BDC5FF")
-    m.ctx.statusLabel.font = t.font("component.page.statusTextTypography", "font:MediumSystemFont")
 end sub
 
 sub show()
@@ -41,3 +31,7 @@ sub onTimeoutFired()
     loadingOps.showError(m.ctx, m.top.errorMessage)
 end sub
 
+sub onErrorDialogDismissed()
+    loadingOps.dismissError(m.ctx)
+    m.top.errorDismissed = true
+end sub

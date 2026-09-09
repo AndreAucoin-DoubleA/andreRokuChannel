@@ -12,6 +12,7 @@ sub init()
 
     m.top.notificationInterval = 1
     m.top.enableTrickPlay = false
+    m.top.enableUI = false
 
     m.top.observeField("content", "onContentAssigned")
     m.top.observeField("control", "onControlChanged")

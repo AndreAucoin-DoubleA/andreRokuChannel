@@ -35,7 +35,6 @@ namespace tests
 
             m.assertFalse(ctx.content.visible, "the delay must elapse before anything shows")
             m.assertTrue(ctx.active, "but it is now active")
-            m.assertEqual(ctx.statusLabel.text, ctx.top.message, "the message is staged")
             m.assertTrue(ctx.spinner.visible, "the spinner is staged inside the hidden content")
             m.assertEqual(ctx.delayTimer.control, "start", "the delay timer must be running")
             m.assertEqual(ctx.timeoutTimer.control, "start", "the timeout timer must be running")
@@ -86,7 +85,7 @@ namespace tests
             m.assertEqual(ctx.spinner.control, "stop", "the spinner must stop animating")
         end sub
 
-        @it("showError displays the error message")
+        @it("showError raises a dialog carrying the message")
         @params("Network unavailable", "Network unavailable")
         @params("", "Something went wrong")
         sub _(text as string, expected as string)
@@ -94,28 +93,45 @@ namespace tests
 
             loadingOps.showError(ctx, text)
 
-            m.assertEqual(ctx.statusLabel.text, expected, "an empty text falls back to errorMessage")
-            m.assertTrue(ctx.content.visible, "the error must be shown")
-            m.assertFalse(ctx.spinner.visible, "the spinner must be hidden in the error state")
+            m.assertNotInvalid(ctx.errorDialog, "a dialog must be raised")
+            m.assertEqual(ctx.errorDialog.message, expected, "an empty text falls back to errorMessage")
+            m.assertEqual(ctx.errorDialog.title, ctx.top.errorTitle, "the dialog is titled from errorTitle")
+            m.assertEqual(ctx.errorDialog.buttons, ["OK"], "the dialog is dismissable")
             m.assertEqual(m.announced(), expected, "the error is announced")
         end sub
 
-        @it("the timeout firing shows the error state")
+        @it("showError leaves nothing on screen behind the dialog")
         sub _()
             ctx = m.newCtx()
 
             loadingOps.show(ctx)
             loadingOps.reveal(ctx)
-            m.assertTrue(ctx.spinner.visible, "precondition: loading with a spinner")
+            m.assertTrue(ctx.content.visible, "precondition: loading is on screen")
 
             loadingOps.showError(ctx, ctx.top.errorMessage)
 
-            m.assertEqual(ctx.statusLabel.text, "Something went wrong")
-            m.assertTrue(ctx.content.visible, "the error stays on screen")
-            m.assertFalse(ctx.spinner.visible, "loading must give way to the error")
+            m.assertFalse(ctx.content.visible, "the spinner group must be hidden")
+            m.assertEqual(ctx.spinner.control, "stop", "the spinner must stop animating")
             m.assertEqual(ctx.delayTimer.control, "stop", "showError hides first, stopping the timers")
             m.assertEqual(ctx.timeoutTimer.control, "stop")
             m.assertFalse(ctx.active)
+        end sub
+
+        @it("dismissError clears the dialog so a later error can raise a new one")
+        sub _()
+            ctx = m.newCtx()
+
+            loadingOps.showError(ctx, "first")
+            first = ctx.errorDialog
+
+            loadingOps.dismissError(ctx)
+
+            m.assertTrue(first.close, "the dialog must be closed")
+            m.assertInvalid(ctx.errorDialog, "the reference must be released")
+
+            loadingOps.showError(ctx, "second")
+            m.assertNotInvalid(ctx.errorDialog, "a later error raises a fresh dialog")
+            m.assertEqual(ctx.errorDialog.message, "second")
         end sub
 
     end class

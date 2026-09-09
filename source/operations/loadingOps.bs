@@ -1,4 +1,5 @@
 import "pkg:/source/services/a11y.bs"
+import "pkg:/source/services/dialogs.bs"
 
 namespace loadingOps
 
@@ -7,10 +8,10 @@ namespace loadingOps
             top: top,
             content: top.findNode("content"),
             spinner: top.findNode("spinner"),
-            statusLabel: top.findNode("statusLabel"),
             delayTimer: top.findNode("delayTimer"),
             timeoutTimer: top.findNode("timeoutTimer"),
-            active: false
+            active: false,
+            errorDialog: invalid
         }
     end function
 
@@ -18,7 +19,6 @@ namespace loadingOps
         if ctx.active then return
         ctx.active = true
 
-        ctx.statusLabel.text = ctx.top.message
         ctx.spinner.visible = true
 
         ctx.delayTimer.duration = ctx.top.showDelay
@@ -52,12 +52,14 @@ namespace loadingOps
         message = text
         if message = "" then message = ctx.top.errorMessage
 
-        ctx.statusLabel.text = message
-        ctx.spinner.visible = false
-        ctx.content.visible = true
+        ctx.errorDialog = dialogs.show(ctx.top, ctx.top.errorTitle, message, "onErrorDialogDismissed")
 
         a11y.context(message)
     end sub
 
-end namespace
+    sub dismissError(ctx as object)
+        dialogs.close(ctx.errorDialog)
+        ctx.errorDialog = invalid
+    end sub
 
+end namespace

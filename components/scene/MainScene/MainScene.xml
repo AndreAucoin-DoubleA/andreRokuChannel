@@ -50,13 +50,13 @@
 
         <LoadingIndicator
             id="deepLinkLoader"
-            translation="[912,492]"
+            translation="[910,490]"
             message="Opening..."
             errorMessage="We couldn't open that link."/>
 
         <LoadingIndicator
             id="launchError"
-            translation="[912,492]"
+            translation="[910,490]"
             timeout="0"
             errorMessage="Couldn't load content"/>
     </children>

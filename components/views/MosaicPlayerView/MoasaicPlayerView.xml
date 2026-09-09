@@ -56,7 +56,7 @@
 
         <LoadingIndicator
             id="loader"
-            translation="[912,492]"
+            translation="[910,490]"
             message="Connecting to multiview..."
             timeout="0"/>
     </children>

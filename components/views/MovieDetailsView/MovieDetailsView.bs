@@ -39,6 +39,8 @@ sub init()
 
     m.video.observeField("overlayButtonSelected", "onOverlayButtonSelected")
 
+    m.videoLoad = m.top.findNode("videoLoad")
+
     m.bgActive = false
     m.fullscreenActive = false
     m.bgPlayed = false
@@ -285,6 +287,12 @@ end sub
 
 sub onVideoStateChanged()
     state = m.video.state
+
+    if state = "buffering"
+        m.videoLoad.callFunc("show")
+    else
+        m.videoLoad.callFunc("hide")
+    end if
 
     if state = "error"
         failedFullScreen = m.fullscreenActive
