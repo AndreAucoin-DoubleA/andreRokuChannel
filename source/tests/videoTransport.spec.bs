@@ -7,7 +7,6 @@ namespace tests
 
         @setup
         protected override sub setup()
-            ' savePositionAt writes real bookmarks, so back the section up.
             m.savedBookmarks = {}
 
             registry = bookmarks.section()
@@ -47,8 +46,6 @@ namespace tests
             m.beforeEach()
         end sub
 
-        ' The transport only reads and writes plain Video fields, so a real
-        ' player node is unnecessary.
         function fakeNode(overrides = {} as object) as object
             node = {
                 position: 0.0,
@@ -101,9 +98,6 @@ namespace tests
             videoTransport.applySkip(ctx, node, 10)
             m.assertEqual(m.milli(videoTransport.skipDelta(ctx)), 30000, "three presses")
 
-            ' NOTE: the step itself does not accelerate -- skipBy is always
-            ' called with SKIP_SECONDS. What grows is the accumulated delta,
-            ' and the anchor stays put across repeats.
             m.assertEqual(m.milli(ctx.skipAnchor), 30000, "the anchor must not move on repeats")
             m.assertEqual(m.milli(ctx.scrubTarget), 60000)
         end sub
@@ -121,8 +115,6 @@ namespace tests
 
             m.assertEqual(ctx.mode, videoPlayer.MODE_IDLE, "back to idle")
 
-            ' Leaving skip mode is what resets the accumulator: the next press
-            ' re-anchors at the current position instead of continuing.
             node.position = 50.0
             videoTransport.applySkip(ctx, node, 10)
 
@@ -135,7 +127,6 @@ namespace tests
             ctx = videoTransport.newContext()
             node = m.fakeNode({ position: 95.0 })
 
-            ' 95 + 10 would overshoot a 100s video.
             videoTransport.applySkip(ctx, node, 10)
             m.assertEqual(m.milli(ctx.scrubTarget), 100000, "clamped to the duration")
 
@@ -145,7 +136,6 @@ namespace tests
             m.assertTrue(ctx.seekPending)
             m.assertEqual(ctx.seekTicks, 0, "the settle counter restarts")
 
-            ' And the same at the other rail.
             other = videoTransport.newContext()
             back = m.fakeNode({ position: 3.0 })
             videoTransport.applySkip(other, back, -10)
@@ -171,7 +161,6 @@ namespace tests
             m.assertEqual(videoTransport.scanRate(ctx), videoPlayer.SCAN_RATE_3, "and it caps there")
             m.assertEqual(ctx.scanSpeedIndex, videoPlayer.SCAN_MAX_INDEX)
 
-            ' Reversing direction starts the ramp again.
             videoTransport.applyScanStart(ctx, node, -1)
             m.assertEqual(ctx.scanDirection, -1)
             m.assertEqual(videoTransport.scanRate(ctx), videoPlayer.SCAN_RATE_1, "reversing resets the rate")
@@ -205,7 +194,6 @@ namespace tests
 
             videoTransport.requestSeek(ctx, node, 80.0)
 
-            ' The player has not caught up yet, so position still reads 10.
             m.assertEqual(m.milli(videoTransport.livePosition(ctx, node)), 80000, "the target wins while pending")
         end sub
 
@@ -220,7 +208,6 @@ namespace tests
             m.assertFalse(ctx.seekPending, "precondition: not seeking")
             m.assertEqual(m.milli(videoTransport.livePosition(ctx, node)), m.milli(position))
 
-            ' Once the seek settles, position takes over again.
             videoTransport.requestSeek(ctx, node, 80.0)
             node.position = 80.0
             videoTransport.settleSeek(ctx, node)
@@ -282,14 +269,11 @@ namespace tests
         sub _()
             ctx = videoTransport.newContext()
 
-            ' Something was saved mid-film.
             registry = bookmarks.section()
             registry.Write("tst-1", "42")
             registry.Flush()
             m.assertEqual(bookmarks.positionFor("tst-1"), 42, "precondition: resume point exists")
 
-            ' Finishing saves at the end, and bookmarks drops anything within
-            ' 10 seconds of the duration.
             node = m.fakeNode({ position: 95.0, state: "finished" })
             videoTransport.applyStateSave(ctx, node)
 

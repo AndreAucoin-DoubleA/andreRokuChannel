@@ -33,8 +33,6 @@ namespace tests
         protected override sub beforeEach()
             m.clearFavorites()
 
-            ' The globals HomeView observes and reads. main.bs is excluded
-            ' from the test build, so nothing has created them.
             m.ensure("catalog", CreateObject("roSGNode", "ContentNode"))
             m.ensure("catalogVersion", 0)
             m.ensure("catalogReady", false)
@@ -69,28 +67,19 @@ namespace tests
             registry.Flush()
         end sub
 
-        ' Writes the registry directly: setFavorite stamps AsSeconds(), so
-        ' several calls in one test would tie and favoriteIds' sort by
-        ' addedAt would be undefined.
         sub favoriteQuietly(movieId as string, addedAt as string)
             registry = favorites.section()
             registry.Write(movieId, addedAt)
             registry.Flush()
         end sub
 
-        ' Writes and bumps favoritesVersion. The bump matters: HomeView
-        ' observes catalogVersion, so seeding a catalog fires refreshFavorites
-        ' asynchronously and can cache an empty id list at the old version.
         sub favorite(movieId as string, addedAt as string)
             m.favoriteQuietly(movieId, addedAt)
 
             m.global.favoritesVersion = m.global.favoritesVersion + 1
         end sub
 
-        ' A catalog of one row holding the given movie ids.
         sub seedCatalog(movieIds as object)
-            ' Not named `catalog`: that is a namespace, and a local of the same
-            ' name is a compile error.
             root = CreateObject("roSGNode", "ContentNode")
             row = root.createChild("ContentNode")
             row.title = "Popular"
@@ -169,7 +158,6 @@ namespace tests
             first = view.callFunc("cachedFavoriteIds")
             m.assertArrayCount(first, 2, "both favorites are read")
 
-            ' A third favorite is invisible until the version bumps.
             m.favoriteQuietly("333", "3000")
 
             m.assertArrayCount(view.callFunc("cachedFavoriteIds"), 2, "the cache is reused")
@@ -191,7 +179,6 @@ namespace tests
             m.assertEqual(index["438631"].title, "Movie 438631", "the id maps to its node")
             m.assertInvalid(index["999999"], "an unknown id is absent")
 
-            ' Memoised on catalogVersion, like the id cache.
             m.seedCatalog(["111"])
             m.assertNotInvalid(view.callFunc("catalogIndex")["111"], "a version bump reindexes")
         end sub
@@ -202,7 +189,6 @@ namespace tests
 
             m.seedCatalog(["111", "222", "333"])
 
-            ' favoriteIds sorts newest first, so 333 leads.
             m.favorite("111", "1000")
             m.favorite("222", "2000")
             m.favorite("333", "3000")
@@ -246,12 +232,10 @@ namespace tests
             m.assertEqual(built.getChild(0).title, "My Favorites")
             m.assertEqual(built.getChild(0).getChildCount(), 2, "holding both movies")
 
-            ' Same favorites, same signature: the content node must be reused.
             view.callFunc("refreshFavorites")
 
             m.assertTrue(rows.content.isSameNode(built), "the content must not be rebuilt")
 
-            ' A real change does rebuild it.
             m.favorite("333", "3000")
             m.global.favoritesVersion = m.global.favoritesVersion + 1
             m.seedCatalog(["111", "222", "333"])
@@ -267,7 +251,6 @@ namespace tests
             view = m.newView()
             loader = view.findNode("loader")
 
-            ' Empty catalog, not ready yet.
             m.assertEqual(m.global.catalog.getChildCount(), 0, "precondition: empty")
             m.assertFalse(m.global.catalogReady)
 
@@ -276,7 +259,6 @@ namespace tests
             m.assertEqual(loader.findNode("delayTimer").control, "start", "the spinner delay is running")
             m.assertEqual(loader.findNode("statusLabel").text, loader.message, "staged with the loading message")
 
-            ' Still empty but now finished loading: that is an error, not a wait.
             m.global.catalogReady = true
             view.callFunc("updateLoader")
 
@@ -306,8 +288,6 @@ namespace tests
 
             m.assertEqual(view.findNode("movieRows").content.getChildCount(), 0, "precondition: no rows")
 
-            ' With nothing to focus it falls back to the view itself, which
-            ' cannot take focus outside a rendered scene.
             m.assertFalse(view.callFunc("setViewFocus"))
         end sub
 
@@ -315,15 +295,12 @@ namespace tests
         sub _()
             view = m.newView()
 
-            ' Nothing loaded and not finished: too early to report.
             view.callFunc("reportLaunchContentReady", [])
 
-            ' Favorites exist but none resolved yet: still too early.
             m.favorite("111", "1000")
             m.global.catalogReady = true
             view.callFunc("reportLaunchContentReady", [])
 
-            ' Once a favorite resolves it reports, and repeat calls are inert.
             m.seedCatalog(["111"])
             movies = view.callFunc("favoriteMovies", view.callFunc("catalogIndex"))
             m.assertArrayCount(movies, 1, "precondition: one resolved favorite")
@@ -331,10 +308,6 @@ namespace tests
             view.callFunc("reportLaunchContentReady", movies)
             view.callFunc("reportLaunchContentReady", movies)
 
-            ' NOTE: the latch is m.launchReported, which is not exposed, and
-            ' the signal goes to the scene's signalLaunchComplete -- absent on
-            ' the rooibos scene. What is assertable is that the guards hold
-            ' and repeat calls are harmless.
             m.assertTrue(true, "no crash across the early-return and repeat paths")
         end sub
 

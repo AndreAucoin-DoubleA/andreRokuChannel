@@ -167,9 +167,6 @@ namespace tests
 
             view = viewStackOps.pushEntry(stack, m.req())
 
-            ' Registration itself is not readable back through any BrightScript
-            ' API, so this pins the preconditions that make it meaningful: the
-            ' view is a BaseView and carries the field being observed.
             m.assertTrue(view.isSubtype("BaseView"))
             m.assertTrue(view.hasField("navRequest"), "there must be a navRequest field to observe")
         end sub
@@ -209,7 +206,6 @@ namespace tests
             m.assertEqual(viewStackOps.depth(stack), 1, "the top must be removed")
             m.assertEqual(second.lifecycleLog, "viewDidLoad,viewWillAppear,setViewFocus,viewWillDisappear")
 
-            ' Safe on an empty stack too.
             viewStackOps.destroyTop(stack)
             viewStackOps.destroyTop(stack)
             m.assertEqual(viewStackOps.depth(stack), 0)
@@ -309,8 +305,6 @@ namespace tests
 
             m.assertTrue(viewStackOps.handleKey(stack, "back", true))
             m.assertEqual(viewStackOps.depth(stack), 1)
-
-            ' At the root, back is not handled -- the scene should get it.
             m.assertFalse(viewStackOps.handleKey(stack, "back", true), "back at the root must not be consumed")
         end sub
 

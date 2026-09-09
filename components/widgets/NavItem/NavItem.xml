@@ -11,7 +11,7 @@
     <children>
         <Poster
             id="highlight"
-            uri="pkg:/images/highlight_rounded.9.png"
+            uri="pkg:/assets/images/highlight_rounded.9.png"
             width="250"
             height="70"
             opacity="0.0"/>

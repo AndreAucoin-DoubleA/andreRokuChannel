@@ -42,7 +42,7 @@
             width="1920"
             height="1080"
             loadDisplayMode="scaleToFill"
-            uri="pkg:/images/details_bottom_fade_overlay.png"/>
+            uri="pkg:/assets/images/details_bottom_fade_overlay.png"/>
 
         <Animation id="backdropFadeAnim" duration="0.4" easeFunction="inOutQuad">
             <FloatFieldInterpolator

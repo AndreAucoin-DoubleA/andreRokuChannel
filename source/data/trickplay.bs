@@ -3,7 +3,7 @@ import "pkg:/source/data/trickplay.interface.bs"
 namespace trickplay
 
     const DEFAULT_INTERVAL_SECONDS = 10
-    const PLACEHOLDER_URI = "pkg:/images/poster_placeholder_landscape.png"
+    const PLACEHOLDER_URI = "pkg:/assets/images/poster_placeholder_landscape.png"
 
     function emptyFeed() as trickplay.Feed
         return {

@@ -155,7 +155,6 @@ namespace tests
             m.assertTrue(props.favorited)
             m.assertEqual(props.totalFavorites, 1, "the count is taken after the write")
 
-            ' Unfavoriting reports the post-delete count, not the pre-delete one.
             favorites.setFavorite("tst-1", false)
 
             props = m.trackedEvent().props
@@ -178,9 +177,6 @@ namespace tests
 
         @it("favoriteIds() returns newest first")
         sub _()
-            ' Written directly, not via setFavorite: setFavorite stamps
-            ' AsSeconds(), so three calls in one test would tie and the sort
-            ' order would be undefined.
             registry = favorites.section()
             registry.Write("tst-old", "1000")
             registry.Write("tst-mid", "2000")

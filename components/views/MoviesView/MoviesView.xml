@@ -6,7 +6,7 @@
             <MaskGroup
                 id="itemSelectBackgroundMask"
                 translation="[460, 0]"
-                maskUri="pkg:/images/backdrop_corner_fade.png"
+                maskUri="pkg:/assets/images/backdrop_corner_fade.png"
                 maskSize="[1460,680]"
                 maskOffset="[0,0]">
                 <Poster
@@ -63,6 +63,6 @@
             width="400"
             height="1080"
             loadDisplayMode="scaleToFill"
-            uri="pkg:/images/movies_right_fade.png"/>
+            uri="pkg:/assets/images/movies_right_fade.png"/>
     </children>
 </component>

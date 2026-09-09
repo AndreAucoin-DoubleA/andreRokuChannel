@@ -77,7 +77,6 @@ namespace tests
         sub _(requested as integer, expected as integer)
             m.assertEqual(movieRows.effectiveBatchSize(requested), expected)
 
-            ' And the fallback really shapes the batches, not just the number.
             first = movieRows.batches(m.fakeRows(46), requested)[0]
             m.assertArrayCount(first, expected)
         end sub

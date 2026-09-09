@@ -9,9 +9,7 @@
     "source/**/*",
     "!source/main.bs",
     "components/**/*",
-    "images/**/*",
-    "tokens/**/*",
-    "fonts/**/*"
+    "assets/**/*"
   ],
   "rooibos": {
     "failFast": false,

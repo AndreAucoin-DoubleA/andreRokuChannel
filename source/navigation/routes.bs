@@ -13,10 +13,10 @@ namespace routes
 
     function all() as routes.Route[]
         return [
-            { id: RouteId.home, label: "Home", icon: "pkg:/images/home_icon.png", component: nav.ViewId.home }
-            { id: RouteId.movies, label: "Movies", icon: "pkg:/images/settings_icon.png", component: nav.ViewId.movies }
-            { id: RouteId.games, label: "Games", icon: "pkg:/images/menu_icon.png", component: nav.ViewId.games }
-            { id: RouteId.multiview, label: "Multiview", icon: "pkg:/images/menu_icon.png", component: nav.ViewId.multiview }
+            { id: RouteId.home, label: "Home", icon: "pkg:/assets/images/home_icon.png", component: nav.ViewId.home }
+            { id: RouteId.movies, label: "Movies", icon: "pkg:/assets/images/settings_icon.png", component: nav.ViewId.movies }
+            { id: RouteId.games, label: "Games", icon: "pkg:/assets/images/menu_icon.png", component: nav.ViewId.games }
+            { id: RouteId.multiview, label: "Multiview", icon: "pkg:/assets/images/menu_icon.png", component: nav.ViewId.multiview }
         ]
     end function
 

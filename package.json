@@ -4,13 +4,18 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "genconfig": "node scripts/genLocalConfig.js",
+    "prebuild": "npm run genconfig",
     "build": "npx bsc",
+    "prebuild:watch": "npm run genconfig",
     "build:watch": "npx bsc --watch",
     "deploy": "npm run build && npx roku-deploy",
     "lint": "npx bslint",
     "lint:fix": "npx bslint --fix",
     "lint:usage": "npx bslint --checkUsage",
+    "prebuild:test": "npm run genconfig",
     "build:test": "npx bsc --project ./bsconfig-test.json",
+    "pretest": "npm run genconfig",
     "test": "npx rooibos --project ./bsconfig-test.json --host $(node -p \"require('./bsconfig.local.json').host\") --password $(node -p \"require('./bsconfig.local.json').password\")"
   },
   "keywords": [],

@@ -127,7 +127,6 @@ namespace tests
         sub _(position as float, expected as integer)
             bookmarks.savePosition("tst-1", position, 100.0)
 
-            ' A fresh section object, so the value came from the registry store.
             m.assertEqual(m.storedRaw("tst-1"), expected.ToStr(), "stored as a truncated string")
             m.assertEqual(bookmarks.positionFor("tst-1"), expected)
         end sub

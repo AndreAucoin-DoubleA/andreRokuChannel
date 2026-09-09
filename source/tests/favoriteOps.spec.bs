@@ -34,13 +34,13 @@ namespace tests
             toggle = m.newToggle()
             icon = toggle.findNode("favIcon")
 
-            m.assertEqual(icon.uri, "pkg:/images/favorite_empty.png", "starts unfavorited")
+            m.assertEqual(icon.uri, "pkg:/assets/images/favorite_empty.png", "starts unfavorited")
 
             toggle.favorited = true
-            m.assertEqual(icon.uri, "pkg:/images/favorite_filled.png")
+            m.assertEqual(icon.uri, "pkg:/assets/images/favorite_filled.png")
 
             toggle.favorited = false
-            m.assertEqual(icon.uri, "pkg:/images/favorite_empty.png", "must swap back")
+            m.assertEqual(icon.uri, "pkg:/assets/images/favorite_empty.png", "must swap back")
         end sub
 
         @it("gaining focus announces the current state")
