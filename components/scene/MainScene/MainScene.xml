@@ -15,14 +15,13 @@
         <Timer id="launchTimeout" duration="8" repeat="false"/>
 
         <Group id="chrome">
-            <Poster
+            <Rectangle
                 id="navFade"
                 translation="[0,0]"
-                width="140"
+                width="120"
                 height="1080"
-                opacity="0"
-                loadDisplayMode="scaleToFill"
-                uri="pkg:/assets/images/nav_fade.png"/>
+                opacity="1"
+                color="0x101018FF"/>
 
             <Animation id="navFadeAnim" duration="0.2" easeFunction="outQuad">
                 <FloatFieldInterpolator
@@ -30,11 +29,11 @@
                     key="[0,1]"
                     keyValue="[140,140]"
                     fieldToInterp="navFade.width"/>
-                <FloatFieldInterpolator
-                    id="navFadeOpacityInterp"
-                    key="[0,1]"
-                    keyValue="[0,0]"
-                    fieldToInterp="navFade.opacity"/>
+                <Vector2DFieldInterpolator
+                    id="contentShiftInterp"
+                    key="[0.0, 1.0]"
+                    keyValue="[[0,0],[0,0]]"
+                    fieldToInterp="screens.translation"/>
             </Animation>
 
             <SiteNav id="sideBar" translation="[40,100]"/>

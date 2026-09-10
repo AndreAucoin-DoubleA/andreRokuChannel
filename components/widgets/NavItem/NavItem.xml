@@ -17,7 +17,7 @@
             opacity="0.0"/>
         <Poster
             id="icon"
-            translation="[20,15]"
+            translation="[0,15]"
             width="40"
             height="40"/>
         <Label
