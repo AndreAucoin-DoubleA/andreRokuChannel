@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="EnlargePosterItem" extends="Group">
+    <script type="text/brightscript" uri="pkg:/components/widgets/EnlargePosterItem/EnlargePosterItem.bs" />
+
+    <interface>
+        <field id="itemContent" type="node" onChange="onContentChanged" />
+        <field id="width" type="float" onChange="onSizeChanged" />
+        <field id="height" type="float" onChange="onSizeChanged" />
+        <field id="padding" type="float" value="0" onChange="onSizeChanged" />
+        <field id="focusPercent" type="float" onChange="onFocusPercentChanged" />
+        <field id="maxScale" type="float" value="1.0" />
+    </interface>
+
+    <children>
+        <Group id="scaler">
+            <MaskGroup
+                id="posterMask"
+                maskUri="pkg:/assets/images/poster_mask_hero.png"
+                maskOffset="[0,0]">
+                <Poster
+                    id="poster"
+                    loadDisplayMode="scaleToZoom"
+                    failedBitmapUri="pkg:/assets/images/poster_placeholder_landscape.png" />
+            </MaskGroup>
+            <Label
+                id="itemLabel"
+                horizAlign="left"
+                vertAlign="top"
+                translation="[54,369]"
+                color="0xFFFFFFFF"
+                font="font:LargeBoldSystemFont" />
+        </Group>
+    </children>
+</component>
+

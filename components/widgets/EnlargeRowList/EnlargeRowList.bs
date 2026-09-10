@@ -1,0 +1,56 @@
+sub init()
+    m.rowList = m.top.findNode("rowList")
+    m.pageIndicator = m.top.findNode("pageIndicator")
+
+    m.rowList.observeField("rowItemFocused", "onRowItemFocused")
+    m.pageIndicator.observeField("trayWidth", "onIndicatorResized")
+
+    m.rowList.content = stubContent(m.top.itemCount)
+
+    syncIndicator()
+end sub
+
+
+sub syncIndicator()
+    row = m.rowlist.content.getChild(0)
+
+    if row = invalid
+        m.pageIndicator.numDots = 0
+        return
+    end if
+
+    m.pageIndicator.numDots = row.getChildCount()
+end sub
+
+sub onRowItemFocused()
+    m.pageIndicator.focusedIndex = m.rowList.rowItemFocused[1]
+end sub
+
+sub onIndicatorResized()
+    rowWidth = m.rowList.itemSize[0]
+    labelStrip = m.rowList.itemSize[1] - m.rowList.rowItemSize[0][1]
+    trayHeight = m.pageIndicator.trayHeight
+
+    x = Int((rowWidth - m.pageIndicator.trayWidth) / 2)
+    y = labelStrip + m.rowList.rowItemSize[0][1] - trayHeight - 24
+
+    m.pageIndicator.translation = [x, y]
+end sub
+
+function stubContent(count as integer) as object
+    root = CreateObject("roSGNode", "ContentNode")
+
+    row = root.createChild("ContentNode")
+
+    for index = 1 to count
+        item = row.createChild("ContentNode")
+        item.title = `Item ${index}`
+        item.HDPosterUrl = "pkg:/assets/images/poster_placeholder_landscape.png"
+    end for
+
+    return root
+end function
+
+function focusRows() as boolean
+    return m.rowList.setFocus(true)
+end function

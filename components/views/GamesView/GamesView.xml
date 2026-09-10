@@ -5,6 +5,14 @@
     <interface>
         <!-- Exposed for tests. -->
         <function name="applyTheme"/>
+
+        <!-- Exposed for tests: favorites row assembly and the loader. -->
+        <function name="refreshFavorites"/>
+        <function name="updateLoader"/>
+        <function name="favoriteMovies"/>
+        <function name="cachedFavoriteIds"/>
+        <function name="catalogIndex"/>
+        <function name="favoritesSignature"/>
     </interface>
     <children>
         <Label
@@ -18,5 +26,16 @@
             itemSpacings="[15]">
             <Label id="game1Label" text="1. Mario Kart World Tour"/>
         </LayoutGroup>
+
+        <MovieRowList
+            id="movieRows"
+            translation="[40, 530]"
+            rowSpacing="40"/>
+
+        <LoadingIndicator
+            id="loader"
+            translation="[750,490]"
+            message="Loading..."
+            errorMessage="Couldn't load content"/>
     </children>
 </component>

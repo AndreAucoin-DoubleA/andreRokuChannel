@@ -1,6 +1,5 @@
 sub init()
     m.poster = m.top.findNode("poster")
-    m.poster.observeField("loadStatus", "onPosterLoadStatus")
 end sub
 
 sub onContentChanged()

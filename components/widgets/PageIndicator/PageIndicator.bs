@@ -1,0 +1,77 @@
+import "pkg:/source/theme/theme.bs"
+
+const DOT_SIZE = 10
+const DOT_FOCUS_URI = "pkg:/assets/images/dot_focus.png"
+const DOT_UNFOCUS_URI = "pkg:/assets/images/dot_unfocus.png"
+
+
+sub init()
+    m.tray = m.top.findNode("tray")
+    m.dots = m.top.findNode("dots")
+
+    t = theme.current()
+    m.tray.blendColor = t.color("component.pageIndicator.trayColor", "0x1B1B1F80")
+end sub
+
+sub onLayoutChanged()
+    count = m.top.numDots
+
+    m.top.visible = (count > 1)
+
+    if count <= 0
+        m.dots.removeChildrenIndex(m.dots.getChildCount(), 0)
+        m.top.trayWidth = 0
+        return
+    end if
+
+    syncDotCount(count)
+
+    spacing = m.top.dotSpacing
+    padX = m.top.paddingX
+    dotY = m.top.dotOffsetY
+
+    width = (count * DOT_SIZE) + ((count - 1) * spacing) + (padX * 2)
+
+    m.tray.width = width
+    m.tray.height = m.top.trayHeight
+
+    for index = 0 to count - 1
+        m.dots.getChild(index).translation = [padX + (index * (DOT_SIZE + spacing)), dotY]
+    end for
+
+    applyFocus()
+
+    m.top.trayWidth = width
+end sub
+
+sub syncDotCount(count as integer)
+    current = m.dots.getChildCount()
+
+    if current > count
+        m.dots.removeChildrenIndex(current - count, count)
+        return
+    end if
+
+    for index = current to count - 1
+        dot = m.dots.createChild("Poster")
+        dot.width = DOT_SIZE
+        dot.height = DOT_SIZE
+        dot.uri = DOT_UNFOCUS_URI
+    end for
+end sub
+
+sub onFocusedIndexChanged()
+    applyFocus()
+end sub
+
+sub applyFocus()
+    focused = m.top.focusedIndex
+
+    for index = 0 to m.dots.getChildCount() - 1
+        if index = focused
+            m.dots.getChild(index).uri = DOT_FOCUS_URI
+        else
+            m.dots.getChild(index).uri = DOT_UNFOCUS_URI
+        end if
+    end for
+end sub

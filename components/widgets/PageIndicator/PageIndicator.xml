@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="PageIndicator" extends="Group">
+    <script type="text/brightscript" uri="pkg:/components/widgets/PageIndicator/PageIndicator.bs" />
+
+    <interface>
+        <field id="numDots" type="integer" value="0" onChange="onLayoutChanged" />
+        <field id="focusedIndex" type="integer" value="0" onChange="onFocusedIndexChanged" />
+        <field id="dotSpacing" type="float" value="16" onChange="onLayoutChanged" />
+        <field id="paddingX" type="float" value="20" onChange="onLayoutChanged" />
+        <field id="trayHeight" type="float" value="26" onChange="onLayoutChanged" />
+        <field id="dotOffsetY" type="float" value="8" onChange="onLayoutChanged" />
+        <field id="trayWidth" type="float" value="0" />
+    </interface>
+
+    <children>
+        <Poster id="tray" uri="pkg:/assets/images/dot_tray.9.png" />
+        <Group id="dots" />
+    </children>
+</component>

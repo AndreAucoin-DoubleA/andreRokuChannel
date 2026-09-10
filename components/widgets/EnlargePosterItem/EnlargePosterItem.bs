@@ -1,0 +1,44 @@
+sub init()
+    m.scaler = m.top.findNode("scaler")
+    m.poster = m.top.findNode("poster")
+    m.itemLabel = m.top.findNode("itemLabel")
+    m.posterMask = m.top.findNode("posterMask")
+end sub
+
+sub onSizeChanged()
+    pad = m.top.padding
+    posterWidth = m.top.width - (pad * 2)
+    posterHeight = m.top.height - (pad * 2)
+
+    if posterWidth <= 0 or posterHeight <= 0 then return
+
+    m.poster.width = posterWidth
+    m.poster.height = posterHeight
+    m.poster.loadWidth = posterWidth
+    m.poster.loadHeight = posterHeight
+    m.posterMask.maskSize = [posterWidth, posterHeight]
+
+    m.itemLabel.width = posterWidth
+    m.itemLabel.height = posterHeight
+
+    m.scaler.translation = [pad, pad]
+    m.scaler.scaleRotateCenter = [posterWidth / 2, posterHeight / 2]
+end sub
+
+sub onContentChanged()
+    content = m.top.itemContent
+
+    if content = invalid
+        m.poster.uri = ""
+        m.itemLabel.text = ""
+        return
+    end if
+
+    m.poster.uri = content.HDPosterUrl
+    m.itemLabel.text = content.title
+end sub
+
+sub onFocusPercentChanged()
+    grow = 1.0 + ((m.top.maxScale - 1.0) * m.top.focusPercent)
+    m.scaler.scale = [grow, grow]
+end sub

@@ -3,36 +3,18 @@
     <script type="text/brightscript" uri="pkg:/components/views/HomeView/HomeView.bs"/>
 
     <interface>
-        <!-- Exposed for tests: favorites row assembly and the loader. -->
-        <function name="refreshFavorites"/>
-        <function name="updateLoader"/>
-        <function name="favoriteMovies"/>
-        <function name="cachedFavoriteIds"/>
-        <function name="catalogIndex"/>
-        <function name="favoritesSignature"/>
         <function name="reportLaunchContentReady"/>
     </interface>
     <children>
-        <Label
-            id="titleLabel"
-            translation="[40,80]"
-            text="Home"/>
-        <Label
-            id="bodyLabel"
-            translation="[40,160]"
-            text="Welcome to the home page. Use the arrow keys to navigate."
-            width="800"
-            wrap="true"/>
-
-        <MovieRowList
-            id="movieRows"
-            translation="[40, 530]"
-            rowSpacing="40"/>
-
-        <LoadingIndicator
-            id="loader"
-            translation="[750,490]"
-            message="Loading..."
-            errorMessage="Couldn't load content"/>
+        <EnlargeRowList
+            id="enlargeRows"
+            translation="[290, 100]"/>
+        <Poster
+            id="shubi_poster"
+            uri="pkg:/assets/images/shubi_logo.png"
+            width="166"
+            height="55"
+            loadDisplayMode="scaleToFill"
+            translation="[1465, 60]"/>
     </children>
 </component>
