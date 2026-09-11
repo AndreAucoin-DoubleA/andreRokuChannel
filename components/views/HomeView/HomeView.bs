@@ -1,4 +1,5 @@
-const LOGO_MARGIN_RIGHT = 9
+const LOGO_MARGIN_RIGHT = 400
+const LOGO_GAP_ABOVE_ROWS = 10
 
 sub init()
     m.enlargeRows = m.top.findNode("enlargeRows")
@@ -9,10 +10,14 @@ sub init()
     m.global.observeField("contentWidth", "onContentWidthChanged")
     m.global.observeField("catalogVersion", "reportLaunchContentReady")
     m.global.observeField("catalogReady", "reportLaunchContentReady")
+    m.enlargeRows.observeField("translation", "onRowsMoved")
 
     positionLogo()
 end sub
 
+sub onRowsMoved()
+    positionLogo()
+end sub
 
 sub onContentWidthChanged()
     positionLogo()
@@ -20,11 +25,10 @@ end sub
 
 
 sub positionLogo()
-    width = m.global.contentWidth
-    if width = invalid then return
-    if width <= 0 then return
+    rowsPos = m.enlargeRows.translation
+    if rowsPos = invalid then return
 
-    m.logo.translation = [width - m.logo.width - LOGO_MARGIN_RIGHT, m.logo.translation[1]]
+    m.logo.translation = [rowsPos[0] + m.enlargeRows.rowWidth - m.logo.width, rowsPos[1] - m.logo.height - LOGO_GAP_ABOVE_ROWS]
 end sub
 
 sub viewWillAppear()

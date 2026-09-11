@@ -15,6 +15,6 @@
             width="166"
             height="55"
             loadDisplayMode="scaleToFill"
-            translation="[50, 60]"/>
+            translation="[0, 60]"/>
     </children>
 </component>

@@ -11,7 +11,16 @@
     </interface>
 
     <children>
+        <Rectangle
+            id="backgroundOverlay"
+            translation="[0,0]"
+            width="1920"
+            height="1080"
+            color="0x000000FF"
+            opacity="0.4"/>
+
         <ScreenManager id="screens"/>
+
         <Timer id="launchTimeout" duration="8" repeat="false"/>
 
         <Group id="chrome">

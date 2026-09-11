@@ -4,6 +4,7 @@
 
     <interface>
         <field id="itemCount" type="integer" value="5" />
+        <field id="rowWidth" type="float" />
         <function name="focusRows" />
     </interface>
 

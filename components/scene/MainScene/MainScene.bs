@@ -17,6 +17,7 @@ sub init()
     m.navFadeAnim = m.top.findNode("navFadeAnim")
     m.navFadeWidthInterp = m.top.findNode("navFadeWidthInterp")
     m.contentShiftInterp = m.top.findNode("contentShiftInterp")
+    m.backgroundOverlay = m.top.findNode("backgroundOverlay")
 
     m.launchBeaconFired = false
     m.launchReason = invalid
@@ -167,6 +168,9 @@ end sub
 
 sub applyTheme()
     t = theme.current()
+
+    m.backgroundOverlay.color = t.color("component.scene.overlayColor", "0x000000FF")
+    m.backgroundOverlay.opacity = t.number("component.scene.overlayOpacity", 0.4)
 
     m.top.backgroundURI = "pkg:/assets/images/background_application.jpg"
     m.top.backgroundColor = t.color("component.scene.backgroundColor", "0x202226FF")

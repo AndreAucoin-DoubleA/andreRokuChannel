@@ -7,6 +7,8 @@ sub init()
 
     m.rowList.content = stubContent(m.top.itemCount)
 
+    m.top.rowWidth = m.rowList.itemSize[0]
+
     syncIndicator()
 end sub
 
