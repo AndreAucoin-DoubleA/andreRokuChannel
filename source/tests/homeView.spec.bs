@@ -11,11 +11,13 @@ namespace tests
             m.ensure("catalogVersion", 0)
             m.ensure("catalogReady", false)
             m.ensure("favoritesVersion", 0)
+            m.ensure("contentWidth", 1795.0)
 
             m.global.catalog = CreateObject("roSGNode", "ContentNode")
             m.global.catalogVersion = 0
             m.global.catalogReady = false
             m.global.favoritesVersion = 0
+            m.global.contentWidth = 1795.0
         end sub
 
         sub ensure(field as string, value as dynamic)

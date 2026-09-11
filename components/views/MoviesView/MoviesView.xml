@@ -2,7 +2,7 @@
 <component name="MoviesView" extends="BaseView">
     <script type="text/brightscript" uri="pkg:/components/views/MoviesView/MoviesView.bs"/>
     <children>
-        <Group id="heroGroup" opacity="0">
+        <Group id="heroGroup" translation="[160,0]" opacity="0">
             <MaskGroup
                 id="itemSelectBackgroundMask"
                 translation="[460, 0]"
@@ -48,18 +48,18 @@
 
         <MovieRowList
             id="movieRows"
-            translation="[40, 500]"
+            translation="[200, 500]"
             rowSpacing="115"/>
 
         <LoadingIndicator
             id="loader"
-            translation="[750,490]"
+            translation="[910,490]"
             message="Loading movies..."
             errorMessage="Couldn't load movies"/>
 
         <Poster
             id="rightFade"
-            translation="[1570,0]"
+            translation="[1730,0]"
             width="400"
             height="1080"
             loadDisplayMode="scaleToFill"

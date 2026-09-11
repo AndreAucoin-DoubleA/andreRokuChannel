@@ -10,12 +10,12 @@
     <children>
         <Label
             id="titleLabel"
-            translation="[40,80]"
+            translation="[200,80]"
             text="Multiview"/>
         
         <Label
             id="bodyLabel"
-            translation="[40,170]"
+            translation="[200,170]"
             width="1200"
             wrap="true"
             text="Four camera feeds composited into one synchronised stream. Arrow keys change which feed you hear. Press OK to zoom a feed to full screen."/>
@@ -24,12 +24,12 @@
             id="startButton"
             text="Start Multivew Button"
             width="440"
-            translation="[40,340]"
+            translation="[200,340]"
             audioGuideText="Start multiview demo"/>
         
         <Label
             id="statusLabel"
-            translation="[40,450]"
+            translation="[200,450]"
             width="1200"
             wrap="true"/>
     </children>

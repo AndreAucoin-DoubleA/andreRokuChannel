@@ -7,7 +7,7 @@ namespace screenOps
     end function
 
     function rootInset() as object
-        return [160, 0]
+        return [0, 0]
     end function
 
     function showStack(ctx as object, id as string, resolve as function) as object

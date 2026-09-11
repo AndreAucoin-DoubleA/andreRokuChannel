@@ -75,14 +75,14 @@ namespace tests
             m.assertNotInvalid(ctx.stacks["home"], "the stack should be cached by id")
         end sub
 
-        @it("the root is created with the [160, 0] inset")
+        @it("the root is created with no inset - MainScene owns horizontal placement")
         sub _()
             ctx = m.newCtx()
 
             stack = screenOps.showStack(ctx, "home", m.resolver())
             root = m.rootOf(stack)
 
-            m.assertEqual(Int(root.translation[0]), 160, "the sidebar inset")
+            m.assertEqual(Int(root.translation[0]), 0, "the rail offset lives on ScreenManager.translation")
             m.assertEqual(Int(root.translation[1]), 0)
         end sub
 

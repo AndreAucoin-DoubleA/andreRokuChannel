@@ -8,13 +8,13 @@
     <children>
         <EnlargeRowList
             id="enlargeRows"
-            translation="[290, 100]"/>
+            translation="[49, 100]"/>
         <Poster
             id="shubi_poster"
             uri="pkg:/assets/images/shubi_logo.png"
             width="166"
             height="55"
             loadDisplayMode="scaleToFill"
-            translation="[1465, 60]"/>
+            translation="[50, 60]"/>
     </children>
 </component>

@@ -1,10 +1,30 @@
+const LOGO_MARGIN_RIGHT = 9
+
 sub init()
     m.enlargeRows = m.top.findNode("enlargeRows")
+    m.logo = m.top.findNode("shubi_poster")
 
     m.launchReported = false
 
+    m.global.observeField("contentWidth", "onContentWidthChanged")
     m.global.observeField("catalogVersion", "reportLaunchContentReady")
     m.global.observeField("catalogReady", "reportLaunchContentReady")
+
+    positionLogo()
+end sub
+
+
+sub onContentWidthChanged()
+    positionLogo()
+end sub
+
+
+sub positionLogo()
+    width = m.global.contentWidth
+    if width = invalid then return
+    if width <= 0 then return
+
+    m.logo.translation = [width - m.logo.width - LOGO_MARGIN_RIGHT, m.logo.translation[1]]
 end sub
 
 sub viewWillAppear()

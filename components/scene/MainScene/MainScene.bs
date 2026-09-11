@@ -6,6 +6,9 @@ import "pkg:/source/utils/logger.bs"
 import "pkg:/source/navigation/nav.interface.bs"
 import "pkg:/components/tasks/FetchMovieTask/FetchMovieTask.interface.bs"
 
+const SCREEN_WIDTH = 1920
+const CONTENT_GAP = 5
+
 sub init()
     m.sideBar = m.top.findNode("sideBar")
     m.chrome = m.top.findNode("chrome")
@@ -174,8 +177,9 @@ sub applyTheme()
     m.navFade.color = t.color("component.scene.navRailColor", "0x101018FF")
     m.navFade.width = navRailWidth(m.global.navCollapsed)
 
-    m.contentShift = m.navRailExpanded - m.navRailCollapsed
     m.screens.translation = contentOffset(m.global.navCollapsed)
+    m.global.contentWidth = contentWidth(m.global.navCollapsed)
+
     m.bottomFade.blendColor = t.color("component.scene.bottomFadeBlendColor", "0x3D1D16FF")
 end sub
 
@@ -185,9 +189,11 @@ function navRailWidth(collapsed as boolean) as float
 end function
 
 function contentOffset(collapsed as boolean) as object
-    if collapsed then return [0, 0]
+    return [navRailWidth(collapsed) + CONTENT_GAP, 0]
+end function
 
-    return [m.contentShift, 0]
+function contentWidth(collapsed as boolean) as float
+    return SCREEN_WIDTH - navRailWidth(collapsed) - CONTENT_GAP
 end function
 
 
@@ -206,6 +212,8 @@ sub onNavCollapsedChanged()
     m.contentShiftInterp.keyValue = [m.screens.translation, contentOffset(m.global.navCollapsed)]
 
     m.navFadeWidthInterp.keyValue = [m.navFade.width, targetWidth]
+    m.global.contentWidth = contentWidth(m.global.navCollapsed)
+
     m.navFadeAnim.control = "stop"
     m.navFadeAnim.control = "start"
 end sub

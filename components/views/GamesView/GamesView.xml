@@ -17,11 +17,11 @@
     <children>
         <Label
             id="titleLabel"
-            translation="[40,80]"
+            translation="[200,80]"
             text="Games"/>
         <LayoutGroup
             id="gamesList"
-            translation="[40, 160]"
+            translation="[200, 160]"
             layoutDirection="vert"
             itemSpacings="[15]">
             <Label id="game1Label" text="1. Mario Kart World Tour"/>
@@ -29,12 +29,12 @@
 
         <MovieRowList
             id="movieRows"
-            translation="[40, 530]"
+            translation="[200, 530]"
             rowSpacing="40"/>
 
         <LoadingIndicator
             id="loader"
-            translation="[750,490]"
+            translation="[910,490]"
             message="Loading..."
             errorMessage="Couldn't load content"/>
     </children>
