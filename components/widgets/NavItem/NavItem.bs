@@ -6,14 +6,8 @@ sub init()
 
     applyTheme()
 
-    m.global.observeField("navCollapsed", "onCollapsedChanged")
-
-    navItemOps.applyInitial(m.ctx, isCollapsed())
+    navItemOps.applyInitial(m.ctx)
 end sub
-
-function isCollapsed() as boolean
-    return m.global.navCollapsed = true
-end function
 
 sub applyTheme()
     t = theme.current()
@@ -22,7 +16,6 @@ sub applyTheme()
     m.ctx.labelColorFocused = t.color("component.navItem.labelColorFocused", "0xFFFFFFFF")
 
     m.ctx.widthExpanded = t.size("component.navItem.width", 250)
-    m.ctx.widthCollapsed = t.size("component.navItem.widthCollapsed", 80)
 
     itemHeight = t.size("component.navItem.height", 70)
 
@@ -44,9 +37,5 @@ sub updateHighlight()
     if m.ctx = invalid then return
 
     navItemOps.updateHighlight(m.ctx)
-end sub
-
-sub onCollapsedChanged()
-    navItemOps.applyCollapsed(m.ctx, isCollapsed())
 end sub
 

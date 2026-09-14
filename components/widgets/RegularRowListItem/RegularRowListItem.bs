@@ -1,0 +1,44 @@
+import "pkg:/source/theme/theme.bs"
+
+sub init()
+    m.inset = m.top.findNode("inset")
+    m.cardMask = m.top.findNode("cardMask")
+    m.poster = m.top.findNode("poster")
+    m.cardBorder = m.top.findNode("cardBorder")
+
+    t = theme.current()
+    m.cardBorder.blendColor = t.color("component.regularPoster.borderColor", "0xB7BDC5FF")
+end sub
+
+sub onContentChanged()
+    if m.poster = invalid then return
+
+    content = m.top.itemContent
+
+    if content = invalid
+        m.poster.uri = ""
+        return
+    end if
+
+    m.poster.uri = content.HDPosterUrl
+end sub
+
+sub onSizeChanged()
+    pad = m.top.padding
+    cardWidth = m.top.width - (pad * 2) - m.top.leadingOffset
+    cardHeight = m.top.height - (pad * 2)
+
+    if cardWidth <= 0 or cardHeight <= 0 then return
+
+    m.inset.translation = [pad + m.top.leadingOffset, pad]
+
+    m.poster.width = cardWidth
+    m.poster.height = cardHeight
+    m.poster.loadWidth = cardWidth
+    m.poster.loadHeight = cardHeight
+
+    m.cardMask.maskSize = [cardWidth, cardHeight]
+
+    m.cardBorder.width = cardWidth
+    m.cardBorder.height = cardHeight
+end sub

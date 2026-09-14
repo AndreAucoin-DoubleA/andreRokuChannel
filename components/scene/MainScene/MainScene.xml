@@ -27,23 +27,10 @@
             <Rectangle
                 id="navFade"
                 translation="[0,0]"
-                width="120"
+                width="290"
                 height="1080"
                 opacity="1"
                 color="0x101018FF"/>
-
-            <Animation id="navFadeAnim" duration="0.2" easeFunction="outQuad">
-                <FloatFieldInterpolator
-                    id="navFadeWidthInterp"
-                    key="[0,1]"
-                    keyValue="[140,140]"
-                    fieldToInterp="navFade.width"/>
-                <Vector2DFieldInterpolator
-                    id="contentShiftInterp"
-                    key="[0.0, 1.0]"
-                    keyValue="[[0,0],[0,0]]"
-                    fieldToInterp="screens.translation"/>
-            </Animation>
 
             <SiteNav id="sideBar" translation="[40,100]"/>
 

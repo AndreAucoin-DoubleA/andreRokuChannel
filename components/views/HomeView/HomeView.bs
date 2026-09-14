@@ -1,34 +1,11 @@
-const LOGO_MARGIN_RIGHT = 400
-const LOGO_GAP_ABOVE_ROWS = 10
-
 sub init()
     m.enlargeRows = m.top.findNode("enlargeRows")
-    m.logo = m.top.findNode("shubi_poster")
+    m.regularRows = m.top.findNode("regularRows")
 
     m.launchReported = false
 
-    m.global.observeField("contentWidth", "onContentWidthChanged")
     m.global.observeField("catalogVersion", "reportLaunchContentReady")
     m.global.observeField("catalogReady", "reportLaunchContentReady")
-    m.enlargeRows.observeField("translation", "onRowsMoved")
-
-    positionLogo()
-end sub
-
-sub onRowsMoved()
-    positionLogo()
-end sub
-
-sub onContentWidthChanged()
-    positionLogo()
-end sub
-
-
-sub positionLogo()
-    rowsPos = m.enlargeRows.translation
-    if rowsPos = invalid then return
-
-    m.logo.translation = [rowsPos[0] + m.enlargeRows.rowWidth - m.logo.width, rowsPos[1] - m.logo.height - LOGO_GAP_ABOVE_ROWS]
 end sub
 
 sub viewWillAppear()
@@ -37,6 +14,20 @@ end sub
 
 function setViewFocus() as boolean
     return m.enlargeRows.callFunc("focusRows")
+end function
+
+function onKeyEvent(key as string, press as boolean) as boolean
+    if not press then return false
+
+    if key = "down" and m.enlargeRows.isInFocusChain()
+        return m.regularRows.callFunc("focusRows")
+    end if
+
+    if key = "up" and m.regularRows.isInFocusChain()
+        return m.enlargeRows.callFunc("focusRows")
+    end if
+
+    return false
 end function
 
 sub reportLaunchContentReady()

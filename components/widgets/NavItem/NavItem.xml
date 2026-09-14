@@ -25,18 +25,5 @@
             translation="[90,2]"
             height="70"
             vertAlign="center"/>
-
-        <Animation id="collapseAnim" duration="0.2" easeFunction="outQuad" optional="true">
-            <FloatFieldInterpolator
-                id="fadeInterp"
-                key="[0.0, 1.0]"
-                keyValue="[1.0, 1.0]"
-                fieldToInterp="label.opacity"/>
-            <FloatFieldInterpolator
-                id="highlightWidthInterp"
-                key="[0.0, 1.0]"
-                keyValue="[250, 250]"
-                fieldToInterp="highlight.width"/>
-        </Animation>
     </children>
 </component>

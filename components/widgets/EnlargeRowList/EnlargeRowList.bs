@@ -1,15 +1,35 @@
+import "pkg:/source/theme/theme.bs"
+
+const ROW_OVERHANG = 54
+
 sub init()
     m.rowList = m.top.findNode("rowList")
     m.pageIndicator = m.top.findNode("pageIndicator")
+    m.focusRing = m.top.findNode("focusRing")
+
+    t = theme.current()
+    m.focusRing.blendColor = t.color("component.enlargePoster.focusRingColor", "0xB7BDC5FF")
 
     m.rowList.observeField("rowItemFocused", "onRowItemFocused")
     m.pageIndicator.observeField("trayWidth", "onIndicatorResized")
 
     m.rowList.content = stubContent(m.top.itemCount)
 
-    m.top.rowWidth = m.rowList.itemSize[0]
-
     syncIndicator()
+
+    m.top.observeField("focusedChild", "onRowFocusChanged")
+    m.rowList.observeField("focusedChild", "onRowFocusChanged")
+
+    onRowFocusChanged()
+end sub
+
+sub onRowFocusChanged()
+    if m.focusRing = invalid then return
+
+    lit = 0.0
+    if m.rowList.isInFocusChain() then lit = 1.0
+
+    m.focusRing.opacity = lit
 end sub
 
 
@@ -29,7 +49,7 @@ sub onRowItemFocused()
 end sub
 
 sub onIndicatorResized()
-    rowWidth = m.rowList.itemSize[0]
+    rowWidth = m.rowList.itemSize[0] - ROW_OVERHANG
     labelStrip = m.rowList.itemSize[1] - m.rowList.rowItemSize[0][1]
     trayHeight = m.pageIndicator.trayHeight
 
@@ -47,7 +67,7 @@ function stubContent(count as integer) as object
     for index = 1 to count
         item = row.createChild("ContentNode")
         item.title = `Item ${index}`
-        item.HDPosterUrl = "pkg:/assets/images/poster_placeholder_landscape.png"
+        item.HDPosterUrl = "pkg:/assets/images/demo_image.jpg"
     end for
 
     return root

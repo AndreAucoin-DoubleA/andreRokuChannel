@@ -1,0 +1,46 @@
+import "pkg:/source/theme/theme.bs"
+
+sub init()
+    m.rowList = m.top.findNode("rowList")
+    m.focusRing = m.top.findNode("focusRing")
+
+    t = theme.current()
+    m.focusRing.blendColor = t.color("component.regularPoster.focusRingColor", "0xB7BDC5FF")
+
+    m.rowList.content = stubContent(m.top.rowCount, m.top.itemCount)
+
+    m.top.observeField("focusedChild", "onRowFocusChanged")
+    m.rowList.observeField("focusedChild", "onRowFocusChanged")
+
+    onRowFocusChanged()
+end sub
+
+sub onRowFocusChanged()
+    if m.focusRing = invalid then return
+
+    lit = 0.0
+    if m.rowList.isInFocusChain() then lit = 1.0
+
+    m.focusRing.opacity = lit
+end sub
+
+function stubContent(rows as integer, count as integer) as object
+    root = CreateObject("roSGNode", "ContentNode")
+
+    for rowIndex = 1 to rows
+        row = root.createChild("ContentNode")
+        row.title = `Row ${rowIndex}`
+
+        for index = 1 to count
+            item = row.createChild("ContentNode")
+            item.title = `Item ${index}`
+            item.HDPosterUrl = "pkg:/assets/images/demo_image.jpg"
+        end for
+    end for
+
+    return root
+end function
+
+function focusRows() as boolean
+    return m.rowList.setFocus(true)
+end function

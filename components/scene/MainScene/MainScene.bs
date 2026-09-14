@@ -14,9 +14,6 @@ sub init()
     m.chrome = m.top.findNode("chrome")
     m.navFade = m.top.findNode("navFade")
     m.bottomFade = m.top.findNode("bottomFade")
-    m.navFadeAnim = m.top.findNode("navFadeAnim")
-    m.navFadeWidthInterp = m.top.findNode("navFadeWidthInterp")
-    m.contentShiftInterp = m.top.findNode("contentShiftInterp")
     m.backgroundOverlay = m.top.findNode("backgroundOverlay")
 
     m.launchBeaconFired = false
@@ -35,8 +32,6 @@ sub init()
     applyTheme()
     startAnalytics()
     startSpeech()
-
-    m.global.observeField("navCollapsed", "onNavCollapsedChanged")
 
     m.navPages = routes.all()
 
@@ -176,28 +171,22 @@ sub applyTheme()
     m.top.backgroundColor = t.color("component.scene.backgroundColor", "0x202226FF")
 
     m.navRailExpanded = t.size("component.scene.navRailExpanded", 300)
-    m.navRailCollapsed = t.size("component.scene.navRailCollapsed", 120)
 
     m.navFade.color = t.color("component.scene.navRailColor", "0x101018FF")
-    m.navFade.width = navRailWidth(m.global.navCollapsed)
+    m.navFade.width = m.navRailExpanded
 
-    m.screens.translation = contentOffset(m.global.navCollapsed)
-    m.global.contentWidth = contentWidth(m.global.navCollapsed)
+    m.screens.translation = contentOffset()
+    m.global.contentWidth = contentWidth()
 
     m.bottomFade.blendColor = t.color("component.scene.bottomFadeBlendColor", "0x3D1D16FF")
 end sub
 
-function navRailWidth(collapsed as boolean) as float
-    if collapsed then return m.navRailCollapsed
-    return m.navRailExpanded
+function contentOffset() as object
+    return [m.navRailExpanded + CONTENT_GAP, 0]
 end function
 
-function contentOffset(collapsed as boolean) as object
-    return [navRailWidth(collapsed) + CONTENT_GAP, 0]
-end function
-
-function contentWidth(collapsed as boolean) as float
-    return SCREEN_WIDTH - navRailWidth(collapsed) - CONTENT_GAP
+function contentWidth() as float
+    return SCREEN_WIDTH - m.navRailExpanded - CONTENT_GAP
 end function
 
 
@@ -211,26 +200,13 @@ sub onActiveDepthChanged()
     m.chrome.visible = (m.screens.activeDepth <= 1)
 end sub
 
-sub onNavCollapsedChanged()
-    targetWidth = navRailWidth(m.global.navCollapsed)
-    m.contentShiftInterp.keyValue = [m.screens.translation, contentOffset(m.global.navCollapsed)]
-
-    m.navFadeWidthInterp.keyValue = [m.navFade.width, targetWidth]
-    m.global.contentWidth = contentWidth(m.global.navCollapsed)
-
-    m.navFadeAnim.control = "stop"
-    m.navFadeAnim.control = "start"
-end sub
-
 sub focusContentArea()
     m.focusOnSidebar = false
-    m.global.navCollapsed = true
     m.screens.callFunc("focusActive")
 end sub
 
 sub focusSidebar()
     m.focusOnSidebar = true
-    m.global.navCollapsed = false
     m.sideBar.callFunc("setFocusToList")
 end sub
 

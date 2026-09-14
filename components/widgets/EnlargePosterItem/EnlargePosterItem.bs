@@ -3,11 +3,12 @@ sub init()
     m.poster = m.top.findNode("poster")
     m.itemLabel = m.top.findNode("itemLabel")
     m.posterMask = m.top.findNode("posterMask")
+    m.cardFade = m.top.findNode("cardFade")
 end sub
 
 sub onSizeChanged()
     pad = m.top.padding
-    posterWidth = m.top.width - (pad * 2)
+    posterWidth = m.top.width - (pad * 2) - m.top.leadingOffset
     posterHeight = m.top.height - (pad * 2)
 
     if posterWidth <= 0 or posterHeight <= 0 then return
@@ -17,11 +18,13 @@ sub onSizeChanged()
     m.poster.loadWidth = posterWidth
     m.poster.loadHeight = posterHeight
     m.posterMask.maskSize = [posterWidth, posterHeight]
+    m.cardFade.width = posterWidth
+    m.cardFade.height = posterHeight
 
     m.itemLabel.width = posterWidth
     m.itemLabel.height = posterHeight
 
-    m.scaler.translation = [pad, pad]
+    m.scaler.translation = [pad + m.top.leadingOffset, pad]
     m.scaler.scaleRotateCenter = [posterWidth / 2, posterHeight / 2]
 end sub
 
@@ -39,6 +42,8 @@ sub onContentChanged()
 end sub
 
 sub onFocusPercentChanged()
+    if m.scaler = invalid then return
+
     grow = 1.0 + ((m.top.maxScale - 1.0) * m.top.focusPercent)
     m.scaler.scale = [grow, grow]
 end sub

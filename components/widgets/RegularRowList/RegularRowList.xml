@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="RegularRowList" extends="Group">
+    <script type="text/brightscript" uri="pkg:/components/widgets/RegularRowList/RegularRowList.bs" />
+
+    <interface>
+        <field id="itemCount" type="integer" value="8" />
+        <field id="rowCount" type="integer" value="3" />
+        <function name="focusRows" />
+    </interface>
+
+    <children>
+        <RowList
+            id="rowList"
+            translation="[-54,0]"
+            showRowLabel="true"
+            itemComponentName="RegularRowListItem"
+            numRows="1"
+            rowFocusAnimationStyle="fixedFocus"
+            vertFocusAnimationStyle="fixedFocus"
+            drawFocusFeedback="false"
+            itemSize="[1679,300]"
+            itemSpacing="[0,70]"
+            rowItemSize="[[472,238]]"
+            rowLabelOffset="[[79,25]]"
+            rowItemSpacing="[[-14,0]]" />
+
+        <Poster
+            id="focusRing"
+            uri="pkg:/assets/images/card_focus_ring_regular.png"
+            width="418"
+            height="238"
+            translation="[0,62]"
+            opacity="0.0" />
+    </children>
+</component>

@@ -20,46 +20,6 @@ namespace tests
             return probe.color
         end function
 
-        @it("labelOpacity at focusPercent 0")
-        sub _()
-            m.assertEqual(m.milli(navItemOps.labelOpacity(true)), 0, "collapsed hides the label")
-        end sub
-
-        @it("labelOpacity at focusPercent 1")
-        sub _()
-            m.assertEqual(m.milli(navItemOps.labelOpacity(false)), 1000, "expanded shows the label")
-        end sub
-
-        @it("labelOpacity interpolates between")
-        sub _()
-            ctx = m.newCtx()
-
-            ctx.label.opacity = 1.0
-
-            navItemOps.applyCollapsed(ctx, true)
-
-            keys = ctx.fadeInterp.keyValue
-            m.assertArrayCount(keys, 2)
-            m.assertEqual(m.milli(keys[0]), 1000, "tween starts at the current opacity")
-            m.assertEqual(m.milli(keys[1]), 0, "and ends at the collapsed value")
-            m.assertEqual(ctx.collapseAnim.control, "start", "the animation must be restarted")
-
-            ctx.label.opacity = 0.0
-            navItemOps.applyCollapsed(ctx, false)
-
-            keys = ctx.fadeInterp.keyValue
-            m.assertEqual(m.milli(keys[0]), 0, "tween starts where it left off")
-            m.assertEqual(m.milli(keys[1]), 1000)
-        end sub
-
-        @it("highlightWidth when expanded")
-        sub _()
-            ctx = m.newCtx()
-
-            m.assertEqual(Int(navItemOps.highlightWidth(ctx, false)), 250, "the expanded rail width")
-
-        end sub
-
         @it("updateHighlight applies both values")
         @params(0.0, 0, false)
         @params(0.25, 250, false)

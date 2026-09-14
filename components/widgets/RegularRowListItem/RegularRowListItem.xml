@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="RegularRowListItem" extends="Group">
+    <script type="text/brightscript" uri="pkg:/components/widgets/RegularRowListItem/RegularRowListItem.bs" />
+
+    <interface>
+        <field id="itemContent" type="node" onChange="onContentChanged"/>
+        <field id="width" type="float" onChange="onSizeChanged"/>
+        <field id="height" type="float" onChange="onSizeChanged"/>
+        <field id="padding" type="float" value="4" onChange="onSizeChanged"/>
+        <field id="leadingOffset" type="float" value="54" onChange="onSizeChanged"/>
+    </interface>
+
+    <children>
+        <Group id="inset">
+            <MaskGroup
+                id="cardMask"
+                maskUri="pkg:/assets/images/card_mask_regular.png"
+                maskOffset="[0,0]">
+                <Poster
+                    id="poster"
+                    loadDisplayMode="scaleToZoom"
+                    failedBitmapUri="pkg:/assets/images/demo_image.jpg"/>
+            </MaskGroup>
+
+            <Poster
+                id="cardBorder"
+                uri="pkg:/assets/images/card_border_regular.png" />
+        </Group>
+    </children>
+</component>

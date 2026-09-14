@@ -24,8 +24,7 @@ sub Main(args as object)
     globals = screen.getGlobalNode()
 
     globals.addFields({
-        navCollapsed: true,
-        contentWidth: 1800.0,
+        contentWidth: 1625.0,
         screenReaderOn: deviceInfo.IsAudioGuideEnabled(),
         designTokens: tokens.loadTokens("pkg:/assets/tokens/tokens.json"),
         catalog: CreateObject("roSGNode", "ContentNode"),
