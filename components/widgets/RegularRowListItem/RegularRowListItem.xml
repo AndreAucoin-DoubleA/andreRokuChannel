@@ -24,10 +24,6 @@
                     failedBitmapUri="pkg:/assets/images/demo_image.jpg"/>
             </MaskGroup>
 
-            <Poster
-                id="cardBorder"
-                uri="pkg:/assets/images/card_border_regular.png" />
-
             <Label
                 id="titleLabel"
                 wrap="true"

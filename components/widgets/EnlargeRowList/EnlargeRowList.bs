@@ -1,20 +1,31 @@
-const HERO_CONTENT_X = 485
+import "pkg:/source/theme/theme.bs"
+
 const HERO_INDICATOR_Y = 614
 
 sub init()
     m.rowList = m.top.findNode("rowList")
     m.pageIndicator = m.top.findNode("pageIndicator")
+    m.preloadNext = m.top.findNode("preloadNext")
+    m.preloadPrev = m.top.findNode("preloadPrev")
 
     m.rowList.observeField("rowItemFocused", "onRowItemFocused")
+    m.rowList.observeField("rowItemSelected", "onRowItemSelected")
     m.pageIndicator.observeField("trayWidth", "onIndicatorResized")
+end sub
 
-    m.rowList.content = stubContent(m.top.itemCount)
+sub onContentChanged()
+    if m.rowList = invalid then return
+
+    m.rowList.content = m.top.content
 
     syncIndicator()
+    preloadAround(0)
 end sub
 
 sub syncIndicator()
-    row = m.rowlist.content.getChild(0)
+    content = m.top.content
+    row = invalid
+    if content <> invalid then row = content.getChild(0)
 
     if row = invalid
         m.pageIndicator.numDots = 0
@@ -25,26 +36,58 @@ sub syncIndicator()
 end sub
 
 sub onRowItemFocused()
-    m.pageIndicator.focusedIndex = m.rowList.rowItemFocused[1]
+    index = m.rowList.rowItemFocused[1]
+
+    m.pageIndicator.focusedIndex = index
+    preloadAround(index)
 end sub
+
+sub onRowItemSelected()
+    sel = m.rowList.rowItemSelected
+    if sel = invalid or sel.Count() < 2 then return
+
+    content = m.top.content
+    if content = invalid then return
+
+    row = content.getChild(sel[0])
+    if row = invalid then return
+
+    movie = row.getChild(sel[1])
+    if movie = invalid then return
+
+    m.top.selectedRow = row
+    m.top.selectedIndex = sel[1]
+    m.top.selectedMovie = movie
+end sub
+
+sub preloadAround(index as integer)
+    m.preloadNext.uri = backdropAt(index + 1)
+    m.preloadPrev.uri = backdropAt(index - 1)
+end sub
+
+function backdropAt(index as integer) as string
+    content = m.top.content
+    if content = invalid then return ""
+
+    row = content.getChild(0)
+    if row = invalid then return ""
+    if index < 0 or index >= row.getChildCount() then return ""
+
+    item = row.getChild(index)
+    if item = invalid then return ""
+
+    uri = item.HDBackgroundImageUrl
+    if uri = invalid then return ""
+
+    return uri
+end function
 
 sub onIndicatorResized()
-    m.pageIndicator.translation = [HERO_CONTENT_X, HERO_INDICATOR_Y]
+    middle = m.global.contentOffsetX + (m.global.contentWidth / 2)
+    x = Int(middle - (m.pageIndicator.trayWidth / 2))
+
+    m.pageIndicator.translation = [x, HERO_INDICATOR_Y]
 end sub
-
-function stubContent(count as integer) as object
-    root = CreateObject("roSGNode", "ContentNode")
-
-    row = root.createChild("ContentNode")
-
-    for index = 1 to count
-        item = row.createChild("ContentNode")
-        item.title = `Item ${index}`
-        item.HDPosterUrl = "pkg:/assets/images/demo_image.jpg"
-    end for
-
-    return root
-end function
 
 function focusRows() as boolean
     return m.rowList.setFocus(true)

@@ -1,0 +1,79 @@
+import "pkg:/source/data/catalog.bs"
+
+namespace homeRows
+
+    const HERO_LIST_NAME = "Top Rated"
+    const HERO_ITEM_COUNT = 10
+    const CATEGORY_ROW_COUNT = 5
+
+    function heroTitle() as string
+        return catalog.rowTitle(HERO_LIST_NAME, 1)
+    end function
+
+    function categoryTitles() as object
+        titles = []
+
+        for each genre in catalog.genres()
+            if titles.Count() >= CATEGORY_ROW_COUNT then exit for
+
+            titles.Push(catalog.rowTitle(genre.title, 1))
+        end for
+
+        return titles
+    end function
+
+    function findRow(root as object, title as string) as object
+        if root = invalid then return invalid
+
+        for index = 0 to root.getChildCount() - 1
+            row = root.getChild(index)
+            if row.title = title then return row
+        end for
+
+        return invalid
+    end function
+
+    function heroContent(root as object) as object
+        source = findRow(root, heroTitle())
+        if source = invalid then return invalid
+
+        count = source.getChildCount()
+        if count = 0 then return invalid
+        if count > HERO_ITEM_COUNT then count = HERO_ITEM_COUNT
+
+        out = CreateObject("roSGNode", "ContentNode")
+        row = out.createChild("ContentNode")
+
+        for index = 0 to count - 1
+            row.appendChild(source.getChild(index).clone(true))
+        end for
+
+        return out
+    end function
+
+    function categoryContent(root as object) as object
+        out = CreateObject("roSGNode", "ContentNode")
+
+        for each title in categoryTitles()
+            source = findRow(root, title)
+            if source <> invalid then out.appendChild(source.clone(true))
+        end for
+
+        return out
+    end function
+
+    function isReady(root as object) as boolean
+        hero = findRow(root, heroTitle())
+        if hero = invalid or hero.getChildCount() < HERO_ITEM_COUNT then return false
+
+        for each title in categoryTitles()
+            if findRow(root, title) = invalid then return false
+        end for
+
+        return true
+    end function
+
+
+
+
+end namespace

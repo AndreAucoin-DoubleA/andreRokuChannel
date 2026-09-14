@@ -19,5 +19,11 @@
         <RegularRowList
             id="regularRows"
             translation="[49, 660]" />
+
+        <LoadingIndicator
+            id="loader"
+            timeout="0"
+            message="Loading..."
+            errorMessage="Couldn't load movies"/>
     </children>
 </component>

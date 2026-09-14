@@ -6,6 +6,7 @@
         <field id="itemContent" type="node" onChange="onContentChanged" />
         <field id="width" type="float" onChange="onSizeChanged" />
         <field id="height" type="float" onChange="onSizeChanged" />
+        <field id="rowListHasFocus" type="boolean" onChange="onRowListFocusChanged" />
     </interface>
 
     <children>
@@ -26,12 +27,38 @@
 
         <Label
             id="itemLabel"
+            wrap="true"
+            maxLines="1"
+            ellipsizeOnBoundary="true"
             horizAlign="left"
             vertAlign="top"
-            translation="[485,420]"
-            width="900"
-            color="0xFFFFFFFF"
-            font="font:LargeBoldSystemFont" />
+            translation="[460,250]"
+            width="900" />
+
+        <Label
+            id="itemDescription"
+            wrap="true"
+            maxLines="3"
+            ellipsizeOnBoundary="true"
+            horizAlign="left"
+            vertAlign="top"
+            translation="[460,340]"
+            width="665"/>
+
+        <Group id="cta" translation="[460,488]">
+            <Poster
+                id="ctaFill"
+                uri="pkg:/assets/images/cta_pill.9.png"
+                width="255"
+                height="72" />
+            <Label
+                id="ctaLabel"
+                text="More Info"
+                width="255"
+                height="72"
+                horizAlign="center"
+                vertAlign="center" />
+        </Group>
     </children>
 </component>
 

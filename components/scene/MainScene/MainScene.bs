@@ -27,6 +27,7 @@ sub init()
 
     m.screens = m.top.findNode("screens")
     m.screens.observeField("activeDepth", "onActiveDepthChanged")
+    m.screens.observeField("activeStackId", "onActiveStackChanged")
 
     applyTheme()
     startAnalytics()
@@ -190,6 +191,10 @@ sub onMenuFocused()
     entry = m.navPages[m.sideBar.itemFocused]
     if entry = invalid then return
     m.screens.callFunc("showStack", entry.id)
+end sub
+
+sub onActiveStackChanged()
+    m.bottomFade.visible = (m.screens.activeStackId <> routes.RouteId.home)
 end sub
 
 sub onActiveDepthChanged()

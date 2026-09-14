@@ -3,7 +3,10 @@
     <script type="text/brightscript" uri="pkg:/components/widgets/EnlargeRowList/EnlargeRowList.bs" />
 
     <interface>
-        <field id="itemCount" type="integer" value="5" />
+        <field id="content" type="node" onChange="onContentChanged" />
+        <field id="selectedMovie" type="node" alwaysNotify="true"/>
+        <field id="selectedRow" type="node"/>
+        <field id="selectedIndex" type="integer" value="-1"/>
         <function name="focusRows" />
     </interface>
 
@@ -20,6 +23,19 @@
             itemSize="[1920,1080]"
             rowItemSize="[[1920,1080]]"
             rowItemSpacing="[[10,0]]" />
+
+        <Group id="preload" opacity="0">
+            <Poster
+                id="preloadNext"
+                width="1920"
+                height="1080"
+                loadDisplayMode="scaleToZoom" />
+            <Poster
+                id="preloadPrev"
+                width="1920"
+                height="1080"
+                loadDisplayMode="scaleToZoom" />
+        </Group>
 
         <PageIndicator id="pageIndicator"/>
     </children>

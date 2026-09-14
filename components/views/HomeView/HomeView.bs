@@ -1,20 +1,85 @@
+import "pkg:/source/data/homeRows.bs"
+
 sub init()
     m.enlargeRows = m.top.findNode("enlargeRows")
     m.regularRows = m.top.findNode("regularRows")
+    m.loader = m.top.findNode("loader")
+
     m.enlargeRows.translation = [-m.global.contentOffsetX, 0]
+    m.loader.translation = [910 - m.global.contentOffsetX, 490]
+
+    m.loader.observeField("errorDismissed", "onLoadErrorDismissed")
+    m.enlargeRows.observeField("selectedMovie", "onHeroSelected")
 
     m.launchReported = false
+    m.contentApplied = false
 
-    m.global.observeField("catalogVersion", "reportLaunchContentReady")
-    m.global.observeField("catalogReady", "reportLaunchContentReady")
+    m.global.observeField("catalogVersion", "onCatalogChanged")
+    m.global.observeField("catalogReady", "onCatalogChanged")
+end sub
+
+sub viewDidLoad(params as object)
+    onCatalogChanged()
+
+    if not m.contentApplied then m.loader.callFunc("show")
+end sub
+
+sub onCatalogChanged()
+    applyContent()
+    reportLaunchContentReady()
+end sub
+
+sub applyContent()
+    if m.contentApplied then return
+
+    catalogRoot = m.global.catalog
+
+    if not homeRows.isReady(catalogRoot) and not m.global.catalogReady then return
+
+    hero = homeRows.heroContent(catalogRoot)
+    if hero <> invalid then m.enlargeRows.content = hero
+
+    m.regularRows.content = homeRows.categoryContent(catalogRoot)
+
+    m.contentApplied = true
+    m.loader.callFunc("hide")
+
+    if not hasRows(m.enlargeRows) and not hasRows(m.regularRows)
+        m.loader.callFunc("showError", "Couldn't load movies")
+        return
+    end if
+
+    if m.top.isInFocusChain() then setViewFocus()
+end sub
+
+sub onHeroSelected()
+    pushMovieDetails(m.enlargeRows)
+end sub
+
+sub onLoadErrorDismissed()
+    m.top.setFocus(true)
 end sub
 
 sub viewWillAppear()
     reportLaunchContentReady()
 end sub
 
+sub viewWillDisappear()
+    m.loader.callFunc("hide")
+end sub
+
 function setViewFocus() as boolean
-    return m.enlargeRows.callFunc("focusRows")
+    if hasRows(m.enlargeRows) then return m.enlargeRows.callFunc("focusRows")
+    if hasRows(m.regularRows) then return m.regularRows.callFunc("focusRows")
+
+    return m.top.setFocus(true)
+end function
+
+function hasRows(widget as object) as boolean
+    content = widget.content
+    if content = invalid then return false
+
+    return content.getChildCount() > 0
 end function
 
 function onKeyEvent(key as string, press as boolean) as boolean

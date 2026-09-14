@@ -1,18 +1,31 @@
 import "pkg:/source/theme/theme.bs"
 
+' clips at screen x=430 - past the previous card's 410px edge, clear of the focus ring at 454
+const ROW_CLIP = [-24, 0, 1944, 460]
+
 sub init()
     m.rowList = m.top.findNode("rowList")
     m.focusRing = m.top.findNode("focusRing")
+    m.cardBorder = m.top.findNode("cardBorder")
+
+    m.top.clippingRect = ROW_CLIP
 
     t = theme.current()
     m.focusRing.blendColor = t.color("component.regularPoster.focusRingColor", "0xB7BDC5FF")
-
-    m.rowList.content = stubContent(m.top.rowCount, m.top.itemCount)
+    m.cardBorder.blendColor = t.color("component.regularPoster.borderColor", "0x007AFFFF")
+    m.rowList.rowLabelColor = t.color("component.rowList.rowLabelColor", "0x8E949DFF")
+    m.rowList.rowLabelFont = t.font("component.rowList.rowLabelTypography", "font:SmallSystemFont")
 
     m.top.observeField("focusedChild", "onRowFocusChanged")
     m.rowList.observeField("focusedChild", "onRowFocusChanged")
 
     onRowFocusChanged()
+end sub
+
+sub onContentChanged()
+    if m.rowList = invalid then return
+
+    m.rowList.content = m.top.content
 end sub
 
 sub onRowFocusChanged()
@@ -22,24 +35,8 @@ sub onRowFocusChanged()
     if m.rowList.isInFocusChain() then lit = 1.0
 
     m.focusRing.opacity = lit
+    m.cardBorder.opacity = lit
 end sub
-
-function stubContent(rows as integer, count as integer) as object
-    root = CreateObject("roSGNode", "ContentNode")
-
-    for rowIndex = 1 to rows
-        row = root.createChild("ContentNode")
-        row.title = `Row ${rowIndex}`
-
-        for index = 1 to count
-            item = row.createChild("ContentNode")
-            item.title = `Item ${index}`
-            item.HDPosterUrl = "pkg:/assets/images/demo_image.jpg"
-        end for
-    end for
-
-    return root
-end function
 
 function focusRows() as boolean
     return m.rowList.setFocus(true)

@@ -1,8 +1,45 @@
+import "pkg:/source/theme/theme.bs"
+
 sub init()
     m.poster = m.top.findNode("poster")
     m.scrimHorizontal = m.top.findNode("scrimHorizontal")
     m.scrimVertical = m.top.findNode("scrimVertical")
     m.itemLabel = m.top.findNode("itemLabel")
+    m.itemDescription = m.top.findNode("itemDescription")
+    m.ctaFill = m.top.findNode("ctaFill")
+    m.ctaLabel = m.top.findNode("ctaLabel")
+
+    t = theme.current()
+    m.itemLabel.color = t.color("component.page.heroTitleColor", "0xFFFFFFFF")
+    m.itemLabel.font = t.font("component.page.heroTitleTypography", "font:LargeBoldSystemFont")
+
+    descFont = CreateObject("roSGNode", "Font")
+    descFont.uri = theme.FontUri("Inter Regular")
+    descFont.size = 28
+
+    m.itemDescription.color = t.color("color.text.body", "0xDDE0E4FF")
+    m.itemDescription.font = descFont
+
+    m.ctaResting = t.color("color.surface.raised", "0x2A2D32FF")
+    m.ctaFocused = t.color("color.key.secondary", "0x007AFFFF")
+    m.ctaLabelResting = t.color("component.button.labelColor", "0xB7BDC5FF")
+    m.ctaLabelFocused = t.color("component.button.labelColorFocused", "0xFFFFFFFF")
+    m.ctaLabel.font = t.font("component.button.labelTypography", "font:MediumBoldSystemFont")
+
+    onRowListFocusChanged()
+end sub
+
+sub onRowListFocusChanged()
+    if m.ctaFill = invalid then return
+
+    if m.top.rowListHasFocus
+        m.ctaFill.blendColor = m.ctaFocused
+        m.ctaLabel.color = m.ctaLabelFocused
+        return
+    end if
+
+    m.ctaFill.blendColor = m.ctaResting
+    m.ctaLabel.color = m.ctaLabelResting
 end sub
 
 sub onSizeChanged()
@@ -13,8 +50,7 @@ sub onSizeChanged()
 
     m.poster.width = tempWidth
     m.poster.height = tempHeight
-    m.poster.loadWidth = tempWidth
-    m.poster.loadHeight = tempHeight
+    m.poster.translation = [Int(m.global.contentOffsetX / 2), 0]
 
     m.scrimHorizontal.width = tempWidth
     m.scrimHorizontal.height = tempHeight
@@ -29,9 +65,11 @@ sub onContentChanged()
     if content = invalid
         m.poster.uri = ""
         m.itemLabel.text = ""
+        m.itemDescription.text = ""
         return
     end if
 
-    m.poster.uri = content.HDPosterUrl
+    m.poster.uri = content.HDBackgroundImageUrl
     m.itemLabel.text = content.title
+    m.itemDescription.text = content.description
 end sub

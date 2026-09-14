@@ -4,11 +4,9 @@ sub init()
     m.inset = m.top.findNode("inset")
     m.cardMask = m.top.findNode("cardMask")
     m.poster = m.top.findNode("poster")
-    m.cardBorder = m.top.findNode("cardBorder")
     m.titleLabel = m.top.findNode("titleLabel")
 
     t = theme.current()
-    m.cardBorder.blendColor = t.color("component.regularPoster.borderColor", "0xB7BDC5FF")
     m.titleLabel.color = t.color("color.text.primary", "0xFFFFFFFF")
     m.titleLabel.font = t.font("component.rowList.rowLabelTypography", "font:MediumSystemFont")
 end sub
@@ -43,9 +41,6 @@ sub onSizeChanged()
     m.poster.loadHeight = cardHeight
 
     m.cardMask.maskSize = [cardWidth, cardHeight]
-
-    m.cardBorder.width = cardWidth
-    m.cardBorder.height = cardHeight
 
     m.titleLabel.width = cardWidth
     m.titleLabel.translation = [0, cardHeight + m.top.titleGap]
