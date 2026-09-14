@@ -8,6 +8,7 @@ import "pkg:/source/data/trickplay.bs"
 import "pkg:/components/views/MovieDetailsView/MovieDetailsView.interface.bs"
 
 sub init()
+    m.top.translation = [-m.global.contentOffsetX, 0]
     m.meta = m.top.findNode("meta")
     m.desc = m.top.findNode("desc")
     m.scrim = m.top.findNode("scrim")
