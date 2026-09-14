@@ -1,0 +1,35 @@
+namespace tests
+
+    @suite("comingSoonOps")
+    class ComingSoonOpsTests extends rooibos.BaseTestSuite
+
+        @describe("comingSoonOps")
+
+        @it("titleFor takes the page title from the route that opens the view")
+        @params("SearchView", "Search")
+        @params("TVView", "TV")
+        @params("SettingsView", "Settings")
+        sub _(subtype as string, expected as string)
+            m.assertEqual(comingSoonOps.titleFor(subtype), expected)
+        end sub
+
+        @it("titleFor is empty for a view no route points at")
+        @params("")
+        @params("GamesView")
+        @params("MosaicPlayerView")
+        sub _(subtype as string)
+            m.assertEqual(comingSoonOps.titleFor(subtype), "")
+        end sub
+
+        @it("every coming-soon view resolves a non-empty title")
+        sub _()
+            for each subtype in ["SearchView", "TVView", "SettingsView"]
+                view = CreateObject("roSGNode", subtype)
+
+                m.assertNotInvalid(view, `${subtype} does not exist`)
+                m.assertNotEmpty(view.findNode("titleLabel").text, `${subtype} rendered an empty title`)
+                m.assertEqual(view.findNode("bodyLabel").text, "Coming soon")
+            end for
+        end sub
+    end class
+end namespace

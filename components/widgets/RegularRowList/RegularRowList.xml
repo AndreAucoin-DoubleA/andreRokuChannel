@@ -4,6 +4,11 @@
 
     <interface>
         <field id="content" type="node" onChange="onContentChanged" />
+
+        <field id="selectedMovie" type="node" alwaysNotify="true"/>
+        <field id="selectedRow" type="node"/>
+        <field id="selectedIndex" type="integer" value="-1"/>
+
         <function name="focusRows" />
     </interface>
 

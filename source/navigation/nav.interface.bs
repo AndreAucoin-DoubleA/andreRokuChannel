@@ -5,8 +5,11 @@ namespace nav
     end enum
 
     enum ViewId
+        search = "SearchView"
         home = "HomeView"
         movies = "MoviesView"
+        tv = "TVView"
+        settings = "SettingsView"
         games = "GamesView"
         movieDetails = "MovieDetailsView"
         multiview = "MultiviewView"
@@ -19,5 +22,3 @@ namespace nav
         optional params as object
     end interface
 end namespace
-
-

@@ -10,6 +10,7 @@ sub init()
 
     m.loader.observeField("errorDismissed", "onLoadErrorDismissed")
     m.enlargeRows.observeField("selectedMovie", "onHeroSelected")
+    m.regularRows.observeField("selectedMovie", "onRegularSelected")
 
     m.launchReported = false
     m.contentApplied = false
@@ -54,6 +55,10 @@ end sub
 
 sub onHeroSelected()
     pushMovieDetails(m.enlargeRows)
+end sub
+
+sub onRegularSelected()
+    pushMovieDetails(m.regularRows)
 end sub
 
 sub onLoadErrorDismissed()

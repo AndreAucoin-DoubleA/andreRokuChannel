@@ -1,0 +1,21 @@
+import "pkg:/source/theme/theme.bs"
+import "pkg:/source/operations/comingSoonOps.bs"
+
+sub init()
+    m.titleLabel = m.top.findNode("titleLabel")
+    m.bodyLabel = m.top.findNode("bodyLabel")
+
+    m.titleLabel.text = comingSoonOps.titleFor(m.top.subtype())
+
+    applyTheme()
+end sub
+
+sub applyTheme()
+    t = theme.current()
+
+    m.titleLabel.color = t.color("component.page.titleColor", "0xFFFFFFFF")
+    m.titleLabel.font = t.font("component.page.titleTypography", "font:LargeBoldSystemFont")
+
+    m.bodyLabel.color = t.color("component.page.bodyColor", "0xB7BDC5FF")
+    m.bodyLabel.font = t.font("component.page.bodyTypography", "font:MediumSystemFont")
+end sub

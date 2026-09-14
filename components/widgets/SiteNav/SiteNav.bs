@@ -10,6 +10,7 @@ sub init()
     for each route in routes.all()
         item = content.createChild("ContentNode")
         item.setFields({ title: route.label, hdPosterUrl: route.icon })
+        item.addFields({ iconFilled: route.iconFilled })
     end for
 
     m.menuList.content = content
@@ -20,6 +21,9 @@ sub applyTheme()
     itemWidth = t.size("component.navItem.width", 250)
     itemHeight = t.size("component.navItem.height", 70)
     m.menuList.itemSize = [itemWidth, itemHeight]
+
+    ' navItem.spacing is not in tokens.json yet - literal until it is exported
+    m.menuList.itemSpacing = [0, 20]
 end sub
 
 sub setFocusToList()

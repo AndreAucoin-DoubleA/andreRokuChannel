@@ -1,13 +1,20 @@
 namespace navItemOps
+
     function newContext(top as object) as object
         return {
             top: top,
             icon: top.findNode("icon"),
             label: top.findNode("label"),
-            highlight: top.findNode("highlight"),
-            labelColor: "0x8E949DFF",
-            labelColorFocused: "0xFFFFFFFF",
-            widthExpanded: 250.0
+            backdrop: top.findNode("iconBackdrop"),
+            iconResting: "",
+            iconFilled: "",
+            inkResting: "0xC5C8CAFF",
+            inkSelected: "0xE1E5E6FF",
+            inkActive: "0x101018FF",
+            discSelected: "0xFFFFFF33",
+            discActive: "0x007AFFFF",
+            fontResting: invalid,
+            fontFocused: invalid
         }
     end function
 
@@ -15,25 +22,64 @@ namespace navItemOps
         content = ctx.top.itemContent
 
         ctx.label.text = content.title
-        ctx.icon.uri = content.hdPosterUrl
+        ctx.iconResting = content.hdPosterUrl
+
+        ctx.iconFilled = content.hdPosterUrl
+        if content.hasField("iconFilled") and content.iconFilled <> ""
+            ctx.iconFilled = content.iconFilled
+        end if
+
+        navItemOps.updateHighlight(ctx)
     end sub
 
-    sub updateHighlight(ctx as object)
-        p = ctx.top.focusPercent
-
-        dimFactor = 1.0
-        if not ctx.top.listHasFocus then dimFactor = 0.45
-        ctx.highlight.opacity = p * dimFactor
-
-        if p > 0.5
-            ctx.label.color = ctx.labelColorFocused
-        else
-            ctx.label.color = ctx.labelColor
+    function stateFor(ctx as object) as object
+        if ctx.top.focusPercent <= 0.5
+            return {
+                uri: ctx.iconResting,
+                ink: ctx.inkResting,
+                labelInk: ctx.inkResting,
+                disc: invalid,
+                font: ctx.fontResting
+            }
         end if
+
+        if ctx.top.listHasFocus
+            return {
+                uri: ctx.iconFilled,
+                ink: ctx.inkActive,
+                labelInk: ctx.inkSelected,
+                disc: ctx.discActive,
+                font: ctx.fontFocused
+            }
+        end if
+
+        return {
+            uri: ctx.iconFilled,
+            ink: ctx.inkSelected,
+            labelInk: ctx.inkSelected,
+            disc: ctx.discSelected,
+            font: ctx.fontFocused
+        }
+    end function
+
+    sub updateHighlight(ctx as object)
+        navItemOps.applyState(ctx, navItemOps.stateFor(ctx))
+    end sub
+
+    sub applyState(ctx as object, state as object)
+        if state.uri <> "" and ctx.icon.uri <> state.uri then ctx.icon.uri = state.uri
+
+        ctx.icon.blendColor = state.ink
+        ctx.label.color = state.labelInk
+
+        ctx.backdrop.visible = state.disc <> invalid
+        if state.disc <> invalid then ctx.backdrop.blendColor = state.disc
+
+        if state.font <> invalid then ctx.label.font = state.font
     end sub
 
     sub applyInitial(ctx as object)
-        ctx.highlight.width = ctx.widthExpanded
+        navItemOps.updateHighlight(ctx)
     end sub
 
 end namespace

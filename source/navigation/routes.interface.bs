@@ -6,6 +6,7 @@ namespace routes
         id as string
         label as string
         icon as string
+        iconFilled as string
         component as nav.ViewId
     end interface
 

@@ -1,4 +1,5 @@
 import "pkg:/source/theme/theme.bs"
+import "pkg:/source/operations/rowListOps.bs"
 
 ' clips at screen x=430 - past the previous card's 410px edge, clear of the focus ring at 454
 const ROW_CLIP = [-24, 0, 1944, 460]
@@ -18,6 +19,7 @@ sub init()
 
     m.top.observeField("focusedChild", "onRowFocusChanged")
     m.rowList.observeField("focusedChild", "onRowFocusChanged")
+    m.rowList.observeField("rowItemSelected", "onRowItemSelected")
 
     onRowFocusChanged()
 end sub
@@ -36,6 +38,12 @@ sub onRowFocusChanged()
 
     m.focusRing.opacity = lit
     m.cardBorder.opacity = lit
+end sub
+
+sub onRowItemSelected()
+    ' rowListOps.rowItemSelected reads only ctx.top and ctx.rowList. This widget
+    ' carries no RowListChrome, so there is no decor node to hand it.
+    rowListOps.rowItemSelected({ top: m.top, rowList: m.rowList })
 end sub
 
 function focusRows() as boolean

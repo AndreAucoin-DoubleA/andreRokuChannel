@@ -1,0 +1,93 @@
+namespace tests
+
+    @suite("RegularRowList")
+    class RegularRowListTests extends rooibos.BaseTestSuite
+
+        @describe("RegularRowList")
+
+        function newWidget() as object
+            return CreateObject("roSGNode", "RegularRowList")
+        end function
+
+        function catalogNode() as object
+            root = CreateObject("roSGNode", "ContentNode")
+
+            row = root.createChild("ContentNode")
+            row.title = "Action"
+
+            for each title in ["Heat", "Ronin"]
+                movie = row.createChild("ContentNode")
+                movie.title = title
+            end for
+
+            return root
+        end function
+
+        @it("publishes the selection contract viewNav.pushMovieDetails reads")
+        sub _()
+            widget = m.newWidget()
+
+            for each field in ["selectedMovie", "selectedRow", "selectedIndex"]
+                m.assertTrue(widget.hasField(field), `RegularRowList must expose ${field}`)
+            end for
+
+            m.assertInvalid(widget.selectedMovie, "nothing is selected yet")
+            m.assertEqual(widget.selectedIndex, -1, "index starts unset")
+        end sub
+
+        @it("pressing an item records the movie, its row and its index")
+        @params(0, "Heat")
+        @params(1, "Ronin")
+        sub _(index as integer, expectedTitle as string)
+            widget = m.newWidget()
+            widget.content = m.catalogNode()
+
+            rowList = widget.findNode("rowList")
+            rowList.rowItemSelected = [0, index]
+
+            rowListOps.rowItemSelected({ top: widget, rowList: rowList })
+
+            m.assertEqual(widget.selectedMovie.title, expectedTitle)
+            m.assertEqual(widget.selectedRow.title, "Action", "selectedRow is the row node, not an index")
+            m.assertEqual(widget.selectedIndex, index)
+        end sub
+
+        @it("a selection out of range leaves the last good one alone")
+        sub _()
+            widget = m.newWidget()
+            widget.content = m.catalogNode()
+
+            rowList = widget.findNode("rowList")
+
+            rowList.rowItemSelected = [0, 0]
+            rowListOps.rowItemSelected({ top: widget, rowList: rowList })
+
+            rowList.rowItemSelected = [0, 99]
+            rowListOps.rowItemSelected({ top: widget, rowList: rowList })
+
+            m.assertEqual(widget.selectedMovie.title, "Heat", "a bad selection must not overwrite")
+            m.assertEqual(widget.selectedIndex, 0)
+        end sub
+
+        @it("a selected movie reaches MovieDetailsView as a push request")
+        sub _()
+            widget = m.newWidget()
+            widget.content = m.catalogNode()
+
+            rowList = widget.findNode("rowList")
+            rowList.rowItemSelected = [0, 1]
+            rowListOps.rowItemSelected({ top: widget, rowList: rowList })
+
+            view = CreateObject("roSGNode", "BaseView")
+            viewNav.pushMovieDetails(view, widget)
+
+            request = view.navRequest
+
+            m.assertAAHasKeys(request, ["action", "view", "params"])
+            m.assertEqual(request.action, "push")
+            m.assertEqual(request.view, "MovieDetailsView")
+            m.assertEqual(request.params.movie.title, "Ronin")
+            m.assertEqual(request.params.index, 1)
+        end sub
+    end class
+end namespace

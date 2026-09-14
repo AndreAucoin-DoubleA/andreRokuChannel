@@ -5,8 +5,11 @@ namespace tests
 
         function viewIds() as object
             return [
+                nav.ViewId.search,
                 nav.ViewId.home,
                 nav.ViewId.movies,
+                nav.ViewId.tv,
+                nav.ViewId.settings,
                 nav.ViewId.games,
                 nav.ViewId.movieDetails,
                 nav.ViewId.multiview,
@@ -16,18 +19,19 @@ namespace tests
 
         @describe("routes")
 
-        @it("all returns four routes")
+        @it("all returns six routes")
         sub _()
-            m.assertArrayCount(routes.all(), 4)
+            m.assertArrayCount(routes.all(), 6)
         end sub
 
         @it("every route has id, label, icon and component")
         sub _()
             for each route in routes.all()
-                m.assertAAHasKeys(route, ["id", "label", "icon", "component"])
+                m.assertAAHasKeys(route, ["id", "label", "icon", "iconFilled", "component"])
                 m.assertNotEmpty(route.id, "a route is missing its id")
                 m.assertNotEmpty(route.label, `route ${route.id} is missing its label`)
-                m.assertNotEmpty(route.icon, `route ${route.id} is missing its component`)
+                m.assertNotEmpty(route.icon, `route ${route.id} is missing its icon`)
+                m.assertNotEmpty(route.iconFilled, `route ${route.id} is missing its filled icon`)
             end for
         end sub
 
@@ -50,10 +54,12 @@ namespace tests
             end for
         end sub
 
-        @it("byId resolves each of the four ids")
+        @it("byId resolves each of the six ids")
+        @params("search", "Search", "SearchView")
         @params("home", "Home", "HomeView")
         @params("movies", "Movies", "MoviesView")
-        @params("games", "Games", "GamesView")
+        @params("tv", "TV", "TVView")
+        @params("settings", "Settings", "SettingsView")
         @params("multiview", "Multiview", "MultiviewView")
         sub _(id as string, expectedLabel as string, expectedComponent as string)
             route = routes.byId(id)
@@ -66,25 +72,26 @@ namespace tests
 
         @it("byId with a unknown id return invalid")
         @params("")
-        @params("settings")
+        @params("games")
         @params("Home")
         sub _(id as string)
             m.assertInvalid(routes.byId(id))
         end sub
 
-        @it("indexOf('home') is 0")
-        sub _()
-            m.assertEqual(routes.indexOf("home"), 0)
-        end sub
-
-        @it("indexOf('multiview) is 3")
-        sub _()
-            m.assertEqual(routes.indexOf("multiview"), 3)
+        @it("indexOf follows the rail order")
+        @params("search", 0)
+        @params("home", 1)
+        @params("movies", 2)
+        @params("tv", 3)
+        @params("settings", 4)
+        @params("multiview", 5)
+        sub _(id as string, expectedIndex as integer)
+            m.assertEqual(routes.indexOf(id), expectedIndex)
         end sub
 
         @it("indexOf with an unknown id is -1")
         @params("")
-        @params("settings")
+        @params("games")
         @params("Home")
         sub _(id as string)
             m.assertEqual(routes.indexOf(id), -1)

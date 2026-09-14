@@ -42,8 +42,7 @@ sub init()
     m.focusOnSidebar = true
     m.sideBar.observeField("itemFocused", "onMenuFocused")
 
-    m.screens.callFunc("showStack", m.navPages[0].id)
-    focusContentArea()
+    goToPage(routes.RouteId.home)
 
     startCatalogLoad()
 end sub

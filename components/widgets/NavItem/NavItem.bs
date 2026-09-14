@@ -12,20 +12,27 @@ end sub
 sub applyTheme()
     t = theme.current()
 
-    m.ctx.labelColor = t.color("component.navItem.labelColor", "0x8E949DFF")
-    m.ctx.labelColorFocused = t.color("component.navItem.labelColorFocused", "0xFFFFFFFF")
+    ' neutral80 / neutral90 are not in tokens.json yet - literals until they are exported
+    m.ctx.inkResting = "0xC5C8CAFF"
+    m.ctx.inkSelected = "0xE1E5E6FF"
+    m.ctx.inkActive = t.color("color.key.primary", "0x101018FF")
 
-    m.ctx.widthExpanded = t.size("component.navItem.width", 250)
+    ' neutral100-alpha20 is white at 20% - blendColor carries the alpha through
+    m.ctx.discSelected = "0xFFFFFF33"
+    m.ctx.discActive = t.color("color.key.secondary", "0x007AFFFF")
 
-    itemHeight = t.size("component.navItem.height", 70)
+    m.ctx.fontResting = navLabelFont(31)
+    m.ctx.fontFocused = navLabelFont(38)
 
-    m.ctx.highlight.blendColor = t.color("component.navItem.highlightColor", "0x6C3FA0FF")
-    m.ctx.highlight.height = itemHeight
-
-    m.ctx.label.height = itemHeight
-    m.ctx.label.color = m.ctx.labelColor
-    m.ctx.label.font = t.font("component.navItem.labelTypography", "font:MediumSystemFont")
+    m.ctx.label.height = t.size("component.navItem.height", 70)
 end sub
+
+function navLabelFont(size as integer) as object
+    font = CreateObject("roSGNode", "Font")
+    font.uri = theme.FontUri("Inter Regular")
+    font.size = size
+    return font
+end function
 
 sub onContentChanged()
     if m.ctx = invalid then return
@@ -38,4 +45,3 @@ sub updateHighlight()
 
     navItemOps.updateHighlight(m.ctx)
 end sub
-

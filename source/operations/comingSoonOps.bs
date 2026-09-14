@@ -1,0 +1,15 @@
+import "pkg:/source/navigation/routes.bs"
+
+namespace comingSoonOps
+
+    ' The page title is the nav label for whichever route points at this view,
+    ' so the rail and the page it opens can never drift apart.
+    function titleFor(subtype as string) as string
+        for each route in routes.all()
+            if route.component = subtype then return route.label
+        end for
+
+        return ""
+    end function
+
+end namespace

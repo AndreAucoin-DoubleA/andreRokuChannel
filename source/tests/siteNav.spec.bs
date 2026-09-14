@@ -9,16 +9,33 @@ namespace tests
             return CreateObject("roSGNode", "SiteNav")
         end function
 
+        @it("the rail leaves a 90px gap between items")
+        sub _()
+            siteNav = m.newNav()
+            menuList = siteNav.findNode("menuList")
+
+            m.assertEqual(menuList.itemSize[1], 70, "the cell is still one item tall")
+            m.assertEqual(menuList.itemSpacing[1], 90, "the gap rides in itemSpacing, not the cell")
+
+            pitch = menuList.itemSize[1] + menuList.itemSpacing[1]
+            m.assertEqual(pitch, 160, "so consecutive items sit 160px apart")
+
+            railHeight = pitch * menuList.content.getChildCount()
+            m.assertTrue(railHeight <= 980, `six items at ${pitch}px must still clear the 1080 screen from y=100`)
+        end sub
+
         @it("setSelectedIndex moves the selection")
         @params(0)
         @params(1)
         @params(2)
         @params(3)
+        @params(4)
+        @params(5)
         sub _(index as integer)
             siteNav = m.newNav()
             menuList = siteNav.findNode("menuList")
 
-            m.assertEqual(menuList.content.getChildCount(), 4, "one item per route")
+            m.assertEqual(menuList.content.getChildCount(), 6, "one item per route")
             m.assertEqual(menuList.jumpToItem, -1, "precondition: nothing jumped to yet")
 
             siteNav.callFunc("setSelectedIndex", index)
@@ -28,7 +45,7 @@ namespace tests
 
         @it("an out-of-range index is ignored")
         @params(99)
-        @params(4)
+        @params(6)
         @params(-1)
         sub _(index as integer)
             siteNav = m.newNav()
@@ -40,7 +57,7 @@ namespace tests
             siteNav.callFunc("setSelectedIndex", index)
 
             m.assertEqual(menuList.jumpToItem, index, "the out-of-range value is passed straight through")
-            m.assertEqual(menuList.content.getChildCount(), 4, "but the content is untouched")
+            m.assertEqual(menuList.content.getChildCount(), 6, "but the content is untouched")
         end sub
 
         @it("setFocusToList moves focus to the menu")

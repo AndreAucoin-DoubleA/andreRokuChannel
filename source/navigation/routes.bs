@@ -5,18 +5,22 @@ import "pkg:/source/navigation/nav.interface.bs"
 namespace routes
 
     enum RouteId
+        search = "search"
         home = "home"
         movies = "movies"
-        games = "games"
+        tv = "tv"
+        settings = "settings"
         multiview = "multiview"
     end enum
 
     function all() as routes.Route[]
         return [
-            { id: RouteId.home, label: "Home", icon: "pkg:/assets/images/home_icon.png", component: nav.ViewId.home }
-            { id: RouteId.movies, label: "Movies", icon: "pkg:/assets/images/settings_icon.png", component: nav.ViewId.movies }
-            { id: RouteId.games, label: "Games", icon: "pkg:/assets/images/menu_icon.png", component: nav.ViewId.games }
-            { id: RouteId.multiview, label: "Multiview", icon: "pkg:/assets/images/menu_icon.png", component: nav.ViewId.multiview }
+            { id: RouteId.search, label: "Search", icon: "pkg:/assets/images/searchEmpty/Search@2x-1.png", iconFilled: "pkg:/assets/images/searchEmpty/Search@2x-1.png", component: nav.ViewId.search }
+            { id: RouteId.home, label: "Home", icon: "pkg:/assets/images/home_page/Home@2x-1.png", iconFilled: "pkg:/assets/images/homeFill/Home_fill_46@2x.png", component: nav.ViewId.home }
+            { id: RouteId.movies, label: "Movies", icon: "pkg:/assets/images/moviesEmpty/Movies@2x-1.png", iconFilled: "pkg:/assets/images/moviesFill/Movies_fill@2x-1.png", component: nav.ViewId.movies }
+            { id: RouteId.tv, label: "TV", icon: "pkg:/assets/images/tvEmpty/TV@2x-1.png", iconFilled: "pkg:/assets/images/tvFill/TV_fill@2x-1.png", component: nav.ViewId.tv }
+            { id: RouteId.settings, label: "Settings", icon: "pkg:/assets/images/settingsEmpty/Settings@2x-1.png", iconFilled: "pkg:/assets/images/settingsFill/Settings_fill@2x-1.png", component: nav.ViewId.settings }
+            { id: RouteId.multiview, label: "Multiview", icon: "pkg:/assets/images/menu_icon.png", iconFilled: "pkg:/assets/images/menu_icon.png", component: nav.ViewId.multiview }
         ]
     end function
 
