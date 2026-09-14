@@ -1,31 +1,26 @@
 sub init()
-    m.scaler = m.top.findNode("scaler")
     m.poster = m.top.findNode("poster")
+    m.scrimHorizontal = m.top.findNode("scrimHorizontal")
+    m.scrimVertical = m.top.findNode("scrimVertical")
     m.itemLabel = m.top.findNode("itemLabel")
-    m.posterMask = m.top.findNode("posterMask")
-    m.cardFade = m.top.findNode("cardFade")
 end sub
 
 sub onSizeChanged()
-    pad = m.top.padding
-    posterWidth = m.top.width - (pad * 2) - m.top.leadingOffset
-    posterHeight = m.top.height - (pad * 2)
+    tempWidth = m.top.width
+    tempHeight = m.top.height
 
-    if posterWidth <= 0 or posterHeight <= 0 then return
+    if tempWidth <= 0 or tempHeight <= 0 then return
 
-    m.poster.width = posterWidth
-    m.poster.height = posterHeight
-    m.poster.loadWidth = posterWidth
-    m.poster.loadHeight = posterHeight
-    m.posterMask.maskSize = [posterWidth, posterHeight]
-    m.cardFade.width = posterWidth
-    m.cardFade.height = posterHeight
+    m.poster.width = tempWidth
+    m.poster.height = tempHeight
+    m.poster.loadWidth = tempWidth
+    m.poster.loadHeight = tempHeight
 
-    m.itemLabel.width = posterWidth
-    m.itemLabel.height = posterHeight
+    m.scrimHorizontal.width = tempWidth
+    m.scrimHorizontal.height = tempHeight
 
-    m.scaler.translation = [pad + m.top.leadingOffset, pad]
-    m.scaler.scaleRotateCenter = [posterWidth / 2, posterHeight / 2]
+    m.scrimVertical.width = tempWidth
+    m.scrimVertical.height = tempHeight
 end sub
 
 sub onContentChanged()
@@ -39,11 +34,4 @@ sub onContentChanged()
 
     m.poster.uri = content.HDPosterUrl
     m.itemLabel.text = content.title
-end sub
-
-sub onFocusPercentChanged()
-    if m.scaler = invalid then return
-
-    grow = 1.0 + ((m.top.maxScale - 1.0) * m.top.focusPercent)
-    m.scaler.scale = [grow, grow]
 end sub

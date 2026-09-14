@@ -8,6 +8,8 @@
         <field id="height" type="float" onChange="onSizeChanged"/>
         <field id="padding" type="float" value="4" onChange="onSizeChanged"/>
         <field id="leadingOffset" type="float" value="54" onChange="onSizeChanged"/>
+        <field id="titleGap" type="float" value="12" onChange="onSizeChanged"/>
+        <field id="titleHeight" type="float" value="68" onChange="onSizeChanged"/>
     </interface>
 
     <children>
@@ -25,6 +27,14 @@
             <Poster
                 id="cardBorder"
                 uri="pkg:/assets/images/card_border_regular.png" />
+
+            <Label
+                id="titleLabel"
+                wrap="true"
+                maxLines="2"
+                ellipsizeOnBoundary="true"
+                horizAlign="left"
+                vertAlign="top" />
         </Group>
     </children>
 </component>

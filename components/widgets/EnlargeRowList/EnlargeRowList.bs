@@ -1,14 +1,9 @@
-import "pkg:/source/theme/theme.bs"
-
-const ROW_OVERHANG = 54
+const HERO_CONTENT_X = 485
+const HERO_INDICATOR_Y = 614
 
 sub init()
     m.rowList = m.top.findNode("rowList")
     m.pageIndicator = m.top.findNode("pageIndicator")
-    m.focusRing = m.top.findNode("focusRing")
-
-    t = theme.current()
-    m.focusRing.blendColor = t.color("component.enlargePoster.focusRingColor", "0xB7BDC5FF")
 
     m.rowList.observeField("rowItemFocused", "onRowItemFocused")
     m.pageIndicator.observeField("trayWidth", "onIndicatorResized")
@@ -16,22 +11,7 @@ sub init()
     m.rowList.content = stubContent(m.top.itemCount)
 
     syncIndicator()
-
-    m.top.observeField("focusedChild", "onRowFocusChanged")
-    m.rowList.observeField("focusedChild", "onRowFocusChanged")
-
-    onRowFocusChanged()
 end sub
-
-sub onRowFocusChanged()
-    if m.focusRing = invalid then return
-
-    lit = 0.0
-    if m.rowList.isInFocusChain() then lit = 1.0
-
-    m.focusRing.opacity = lit
-end sub
-
 
 sub syncIndicator()
     row = m.rowlist.content.getChild(0)
@@ -49,14 +29,7 @@ sub onRowItemFocused()
 end sub
 
 sub onIndicatorResized()
-    rowWidth = m.rowList.itemSize[0] - ROW_OVERHANG
-    labelStrip = m.rowList.itemSize[1] - m.rowList.rowItemSize[0][1]
-    trayHeight = m.pageIndicator.trayHeight
-
-    x = Int((rowWidth - m.pageIndicator.trayWidth) / 2)
-    y = labelStrip + m.rowList.rowItemSize[0][1] - trayHeight - 24
-
-    m.pageIndicator.translation = [x, y]
+    m.pageIndicator.translation = [HERO_CONTENT_X, HERO_INDICATOR_Y]
 end sub
 
 function stubContent(count as integer) as object

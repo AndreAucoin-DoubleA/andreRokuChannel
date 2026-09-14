@@ -14,7 +14,6 @@ sub init()
     m.chrome = m.top.findNode("chrome")
     m.navFade = m.top.findNode("navFade")
     m.bottomFade = m.top.findNode("bottomFade")
-    m.backgroundOverlay = m.top.findNode("backgroundOverlay")
 
     m.launchBeaconFired = false
     m.launchReason = invalid
@@ -164,10 +163,6 @@ end sub
 sub applyTheme()
     t = theme.current()
 
-    m.backgroundOverlay.color = t.color("component.scene.overlayColor", "0x000000FF")
-    m.backgroundOverlay.opacity = t.number("component.scene.overlayOpacity", 0.4)
-
-    m.top.backgroundURI = "pkg:/assets/images/background_application.jpg"
     m.top.backgroundColor = t.color("component.scene.backgroundColor", "0x202226FF")
 
     m.navRailExpanded = t.size("component.scene.navRailExpanded", 300)
@@ -177,6 +172,7 @@ sub applyTheme()
 
     m.screens.translation = contentOffset()
     m.global.contentWidth = contentWidth()
+    m.global.contentOffsetX = contentOffset()[0]
 
     m.bottomFade.blendColor = t.color("component.scene.bottomFadeBlendColor", "0x3D1D16FF")
 end sub

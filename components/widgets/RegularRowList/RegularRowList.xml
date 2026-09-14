@@ -18,9 +18,9 @@
             rowFocusAnimationStyle="fixedFocus"
             vertFocusAnimationStyle="fixedFocus"
             drawFocusFeedback="false"
-            itemSize="[1679,300]"
+            itemSize="[1679,380]"
             itemSpacing="[0,70]"
-            rowItemSize="[[472,238]]"
+            rowItemSize="[[472,318]]"
             rowLabelOffset="[[79,25]]"
             rowItemSpacing="[[-14,0]]" />
 

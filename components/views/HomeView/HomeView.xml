@@ -6,19 +6,18 @@
         <function name="reportLaunchContentReady"/>
     </interface>
     <children>
-        <EnlargeRowList
-            id="enlargeRows"
-            translation="[49, 65]"/>
+        <EnlargeRowList id="enlargeRows"/>
+
         <Poster
             id="shubi_poster"
             uri="pkg:/assets/images/shubi_logo.png"
             width="166"
             height="55"
             loadDisplayMode="scaleToFill"
-            translation="[1220, 35]"/>
+            translation="[80, 35]"/>
 
         <RegularRowList
             id="regularRows"
-            translation="[49, 690]" />
+            translation="[49, 660]" />
     </children>
 </component>

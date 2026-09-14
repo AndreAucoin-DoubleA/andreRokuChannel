@@ -6,35 +6,32 @@
         <field id="itemContent" type="node" onChange="onContentChanged" />
         <field id="width" type="float" onChange="onSizeChanged" />
         <field id="height" type="float" onChange="onSizeChanged" />
-        <field id="padding" type="float" value="4" onChange="onSizeChanged" />
-        <field id="focusPercent" type="float" onChange="onFocusPercentChanged" />
-        <field id="maxScale" type="float" value="1.0" />
-        <field id="leadingOffset" type="float" value="54" onChange="onSizeChanged" />
     </interface>
 
     <children>
-        <Group id="scaler">
-            <MaskGroup
-                id="posterMask"
-                maskUri="pkg:/assets/images/poster_mask_hero.png"
-                maskOffset="[0,0]">
-                <Poster
-                    id="poster"
-                    loadDisplayMode="scaleToZoom"
-                    failedBitmapUri="pkg:/assets/images/demo_image.jpg" />
-                <Poster
-                    id="cardFade"
-                    loadDisplayMode="scaleToFill"
-                    uri="pkg:/assets/images/card_left_fade.png" />
-            </MaskGroup>
-            <Label
-                id="itemLabel"
-                horizAlign="left"
-                vertAlign="top"
-                translation="[54,369]"
-                color="0xFFFFFFFF"
-                font="font:LargeBoldSystemFont" />
-        </Group>
+        <Poster
+            id="poster"
+            loadDisplayMode="scaleToZoom"
+            failedBitmapUri="pkg:/assets/images/demo_image.jpg" />
+
+        <Poster
+            id="scrimHorizontal"
+            loadDisplayMode="scaleToFill"
+            uri="pkg:/assets/images/hero_scrim_horizontal.png" />
+
+        <Poster
+            id="scrimVertical"
+            loadDisplayMode="scaleToFill"
+            uri="pkg:/assets/images/hero_scrim_vertical.png" />
+
+        <Label
+            id="itemLabel"
+            horizAlign="left"
+            vertAlign="top"
+            translation="[485,420]"
+            width="900"
+            color="0xFFFFFFFF"
+            font="font:LargeBoldSystemFont" />
     </children>
 </component>
 

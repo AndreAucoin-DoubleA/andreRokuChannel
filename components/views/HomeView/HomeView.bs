@@ -1,6 +1,7 @@
 sub init()
     m.enlargeRows = m.top.findNode("enlargeRows")
     m.regularRows = m.top.findNode("regularRows")
+    m.enlargeRows.translation = [-m.global.contentOffsetX, 0]
 
     m.launchReported = false
 
