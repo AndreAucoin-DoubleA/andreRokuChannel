@@ -1,0 +1,115 @@
+import "pkg:/source/services/bookmarks.bs"
+import "pkg:/source/services/a11y.bs"
+import "pkg:/source/utils/logger.bs"
+import "pkg:/source/data/trickplay.bs"
+import "pkg:/components/views/PlayerView/PlayerView.interface.bs"
+
+const STREAM_URL = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8"
+
+sub init()
+    m.top.translation = [-m.global.contentOffsetX, 0]
+
+    m.video = m.top.findNode("videoPlayer")
+    m.video.observeField("state", "onVideoStateChanged")
+    m.video.observeField("overlayButtonSelected", "onOverlayButtonSelected")
+
+    m.backdrop = m.top.findNode("playerBackdrop")
+
+    m.load = m.top.findNode("videoLoad")
+    m.load.observeField("errorDismissed", "onErrorDismissed")
+
+    m.movieId = ""
+    m.started = false
+    m.pictureShown = false
+end sub
+
+sub viewDidLoad(params as player.Params)
+    m.movieId = params.movieId
+    if m.movieId = invalid then m.movieId = ""
+
+    if params.backdropUri <> invalid then m.backdrop.uri = params.backdropUri
+    if params.title <> invalid then m.video.overlayTitle = params.title
+    if params.description <> invalid then m.video.overlayInfo = params.description
+
+    m.video.overlayButtonText = "More Info"
+
+    m.load.callFunc("show")
+end sub
+
+sub viewWillAppear()
+    if m.started then return
+
+    m.started = true
+    startPlayback()
+end sub
+
+function setViewFocus() as boolean
+    return m.video.setFocus(true)
+end function
+
+sub startPlayback()
+    content = CreateObject("roSGNode", "ContentNode")
+
+    content.url = STREAM_URL
+    content.streamFormat = "hls"
+    content.ClosedCaptions = true
+    content.playStart = bookmarks.positionFor(m.movieId)
+
+    logger.info("PlayerView", `resume at ${content.playStart}`)
+
+    m.video.movieId = m.movieId
+    m.video.trackProgress = true
+    m.video.trickplayFeed = trickplay.singleFrameFeed(m.backdrop.uri)
+
+    m.video.content = content
+    m.video.control = "play"
+end sub
+
+sub onVideoStateChanged()
+    state = m.video.state
+
+    if state = "buffering"
+        m.load.callFunc("show")
+        return
+    end if
+
+    if state = "playing"
+        m.load.callFunc("hide")
+        revealPicture()
+        return
+    end if
+
+    if state = "error"
+        m.load.callFunc("showError")
+        return
+    end if
+
+    if state = "finished"
+        m.video.control = "stop"
+        popView()
+    end if
+end sub
+
+sub revealPicture()
+    if m.pictureShown then return
+
+    m.pictureShown = true
+    m.video.visible = true
+    a11y.focus("Playing")
+end sub
+
+sub onErrorDismissed()
+    popView()
+end sub
+
+sub onOverlayButtonSelected()
+    logger.info("PlayerView", `overlay button selected for movie ${m.movieId}`)
+    popView()
+end sub
+
+sub viewWillDisappear()
+    m.video.callFunc("commitProgress")
+    m.video.control = "stop"
+    m.video.visible = false
+    m.load.callFunc("hide")
+end sub

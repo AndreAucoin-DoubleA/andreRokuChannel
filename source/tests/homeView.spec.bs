@@ -10,14 +10,12 @@ namespace tests
             m.ensure("catalog", CreateObject("roSGNode", "ContentNode"))
             m.ensure("catalogVersion", 0)
             m.ensure("catalogReady", false)
-            m.ensure("favoritesVersion", 0)
             m.ensure("contentWidth", 1771.0)
             m.ensure("contentOffsetX", 149.0)
 
             m.global.catalog = CreateObject("roSGNode", "ContentNode")
             m.global.catalogVersion = 0
             m.global.catalogReady = false
-            m.global.favoritesVersion = 0
             m.global.contentWidth = 1771.0
             m.global.contentOffsetX = 149.0
         end sub
@@ -80,7 +78,7 @@ namespace tests
             view = m.newView()
 
             m.assertNotInvalid(view.findNode("enlargeRows"), "the row is mounted")
-            m.assertInvalid(view.findNode("movieRows"), "the favorites row has moved to GamesView")
+            m.assertInvalid(view.findNode("movieRows"), "HomeView carries no movie row list")
         end sub
 
     end class

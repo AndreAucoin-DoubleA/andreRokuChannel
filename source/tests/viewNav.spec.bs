@@ -79,10 +79,8 @@ namespace tests
 
             m.assertEqual(request.action, "push")
             m.assertEqual(request.view, "MovieDetailsView")
-            m.assertAAHasKeys(request.params, ["movie", "row", "index"])
+            m.assertAAHasKeys(request.params, ["movie"])
             m.assertTrue(request.params.movie.isSameNode(movie), "the selected movie must be forwarded")
-            m.assertEqual(request.params.row, 4)
-            m.assertEqual(request.params.index, 7)
 
             quiet = m.newView()
             viewNav.pushMovieDetails(quiet, m.rowsStub(invalid))

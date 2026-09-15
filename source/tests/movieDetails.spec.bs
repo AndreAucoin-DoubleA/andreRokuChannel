@@ -7,12 +7,6 @@ namespace tests
 
         @setup
         protected override sub setup()
-            m.savedFavorites = {}
-            registry = favorites.section()
-            for each key in registry.GetKeyList()
-                m.savedFavorites[key] = registry.Read(key)
-            end for
-
             m.savedBookmarks = {}
             registry = bookmarks.section()
             for each key in registry.GetKeyList()
@@ -22,7 +16,6 @@ namespace tests
 
         @teardown
         protected override sub tearDown()
-            m.restore(favorites.section(), m.savedFavorites)
             m.restore(bookmarks.section(), m.savedBookmarks)
         end sub
 
@@ -38,18 +31,12 @@ namespace tests
 
         @beforeEach
         protected override sub beforeEach()
-            m.clear(favorites.section())
             m.clear(bookmarks.section())
 
             if not m.global.hasField("screenReaderOn")
                 m.global.addFields({ screenReaderOn: false })
             end if
             m.global.screenReaderOn = false
-
-            if not m.global.hasField("favoritesVersion")
-                m.global.addFields({ favoritesVersion: 0 })
-            end if
-            m.global.favoritesVersion = 0
 
             if not m.global.hasField("contentOffsetX")
                 m.global.addFields({ contentOffsetX: 149.0 })
@@ -74,7 +61,6 @@ namespace tests
 
         @afterEach
         protected override sub afterEach()
-            m.clear(favorites.section())
             m.clear(bookmarks.section())
         end sub
 
@@ -106,17 +92,6 @@ namespace tests
             return movie
         end function
 
-        function rowOf(titles as object) as object
-            row = CreateObject("roSGNode", "ContentNode")
-
-            for each title in titles
-                item = row.createChild("ContentNode")
-                item.title = title
-            end for
-
-            return row
-        end function
-
         function announced() as dynamic
             return m.global.speechTask.request.context
         end function
@@ -139,32 +114,13 @@ namespace tests
             view.findNode("restartButton").visible = true
             m.assertEqual(m.ids(view.callFunc("focusChain")), "playButton,restartButton", "restart follows play")
 
-            view.findNode("nextButton").visible = true
-            m.assertEqual(m.ids(view.callFunc("focusChain")), "playButton,restartButton,nextButton", "next is last")
-
             view.findNode("restartButton").visible = false
-            m.assertEqual(m.ids(view.callFunc("focusChain")), "playButton,nextButton")
-        end sub
-
-        @it("focusedColumnControl resolves the current control")
-        sub _()
-            view = m.newView()
-            view.findNode("restartButton").visible = true
-            view.findNode("nextButton").visible = true
-
-            m.assertEqual(view.callFunc("focusedColumnControl").id, "playButton", "the default")
-
-            view.findNode("nextButton").setFocus(true)
-            m.assertEqual(view.callFunc("focusedColumnControl").id, "nextButton")
-
-            view.findNode("restartButton").setFocus(true)
-            m.assertEqual(view.callFunc("focusedColumnControl").id, "restartButton")
+            m.assertEqual(m.ids(view.callFunc("focusChain")), "playButton", "back to play alone")
         end sub
 
         function focusedView(startId as string) as object
             view = m.newView()
             view.findNode("restartButton").visible = true
-            view.findNode("nextButton").visible = true
             view.findNode(startId).setFocus(true)
 
             return view
@@ -172,7 +128,6 @@ namespace tests
 
         @it("moveFocus down advances one step")
         @params("playButton", "restartButton")
-        @params("restartButton", "nextButton")
         sub _(startId as string, expectedId as string)
             view = m.focusedView(startId)
 
@@ -181,7 +136,6 @@ namespace tests
         end sub
 
         @it("moveFocus up retreats one step")
-        @params("nextButton", "restartButton")
         @params("restartButton", "playButton")
         sub _(startId as string, expectedId as string)
             view = m.focusedView(startId)
@@ -192,7 +146,7 @@ namespace tests
 
         @it("moveFocus stops at the ends rather than wrapping")
         @params("playButton", -1)
-        @params("nextButton", 1)
+        @params("restartButton", 1)
         sub _(startId as string, delta as integer)
             view = m.focusedView(startId)
 
@@ -212,35 +166,7 @@ namespace tests
             view.callFunc("applyMovie", m.newMovie())
             view.callFunc("announceScreen")
 
-            m.assertEqual(m.announced(), "Movie Details. Dune  -  2021  -  PG-13  -  2h 35m", "screen name then metadata")
-        end sub
-
-        @it("nextSibling mid-row returns the next movie")
-        @params(0, "Arrival")
-        @params(1, "Sicario")
-        sub _(index as integer, expected as string)
-            view = m.newView()
-            row = m.rowOf(["Dune", "Arrival", "Sicario"])
-
-            view.callFunc("viewDidLoad", { movie: row.getChild(index), row: row, index: index })
-
-            sibling = view.callFunc("nextSibling")
-
-            m.assertNotInvalid(sibling, `no sibling after index ${index}`)
-            m.assertEqual(sibling.title, expected)
-        end sub
-
-        @it("nextSibling at the end of a row returns invalid")
-        sub _()
-            view = m.newView()
-            row = m.rowOf(["Dune", "Arrival", "Sicario"])
-
-            view.callFunc("viewDidLoad", { movie: row.getChild(2), row: row, index: 2 })
-            m.assertInvalid(view.callFunc("nextSibling"), "the last movie has no sibling")
-
-            bare = m.newView()
-            bare.callFunc("viewDidLoad", { movie: m.newMovie() })
-            m.assertInvalid(bare.callFunc("nextSibling"), "params without a row")
+            m.assertEqual(m.announced(), "Movie Details. Dune. 2021, rated PG-13, 2h 35m", "screen name, title, then metadata")
         end sub
 
         @describe("content & playback")
@@ -251,116 +177,70 @@ namespace tests
 
             view.callFunc("applyMovie", m.newMovie())
 
-            m.assertEqual(view.findNode("meta").text, "Dune  -  2021  -  PG-13  -  2h 35m")
+            m.assertEqual(view.findNode("title").text, "Dune", "the title stands on its own")
+            m.assertEqual(view.findNode("metaYear").text, "2021")
+            m.assertEqual(view.findNode("ratingText").text, "PG-13", "the certification sits in the pill")
+            m.assertTrue(view.findNode("ratingPill").visible, "and the pill is shown")
+            m.assertEqual(view.findNode("metaRuntime").text, "2h 35m")
             m.assertEqual(view.findNode("desc").text, "Paul Atreides leads nomadic tribes.")
             m.assertEqual(view.findNode("cast").text, "Starring: Timothee Chalamet, Rebecca Ferguson, Zendaya")
             m.assertEqual(view.findNode("detailsBack").uri, "https://image.tmdb.org/t/p/w1280/b.jpg", "the backdrop follows")
 
             view.callFunc("applyMovie", invalid)
-            m.assertEqual(view.findNode("meta").text, "Dune  -  2021  -  PG-13  -  2h 35m", "left untouched")
+            m.assertEqual(view.findNode("title").text, "Dune", "left untouched")
+            m.assertEqual(view.findNode("metaYear").text, "2021", "left untouched")
         end sub
 
-        @it("toggling favorite calls favorites.setFavorite")
+        @it("an unrated movie falls back to N/A")
         sub _()
             view = m.newView()
-            view.callFunc("applyMovie", m.newMovie("438631"))
+            movie = m.newMovie()
+            movie.certification = ""
 
-            m.assertFalse(favorites.isFavorite("438631"), "precondition: not favorited")
+            view.callFunc("applyMovie", movie)
 
-            view.findNode("detailsFav").favorited = true
-            view.callFunc("onFavoriteToggled")
-
-            m.assertTrue(favorites.isFavorite("438631"), "the registry is written")
-
-            view.findNode("detailsFav").favorited = false
-            view.callFunc("onFavoriteToggled")
-
-            m.assertFalse(favorites.isFavorite("438631"), "and un-written")
+            m.assertEqual(view.findNode("ratingText").text, "N/A", "the pill still reads")
+            m.assertTrue(view.findNode("ratingPill").visible, "and stays on screen")
         end sub
 
-        @it("autoplayAllowed is false when the screen reader is on")
+        @it("the pill never shrinks below its minimum width")
         sub _()
             view = m.newView()
+            movie = m.newMovie()
+            movie.certification = "R"
 
-            baseline = view.callFunc("autoplayAllowed")
+            view.callFunc("applyMovie", movie)
 
-            m.global.screenReaderOn = true
-            withReader = view.callFunc("autoplayAllowed")
-
-            m.assertEqual(withReader, baseline, "the screen reader does not gate autoplay")
+            m.assertTrue(view.findNode("ratingPillBg").width >= 43, "a short rating keeps the design width")
         end sub
 
-        @it("ambientDelay is longer with the screen reader on")
+        @it("a longer rating widens the pill to fit")
         sub _()
             view = m.newView()
+            movie = m.newMovie()
+            movie.certification = "NC-17"
 
-            m.global.screenReaderOn = false
-            m.assertEqual(Int(view.callFunc("ambientDelay")), 5, "the default countdown")
+            view.callFunc("applyMovie", movie)
+            wide = view.findNode("ratingPillBg").width
 
-            m.global.screenReaderOn = true
-            m.assertEqual(Int(view.callFunc("ambientDelay")), 12, "longer so the announcement can finish")
+            movie.certification = "R"
+            view.callFunc("applyMovie", movie)
+            narrow = view.findNode("ratingPillBg").width
+
+            m.assertTrue(wide > narrow, "the pill grows past its minimum rather than clipping")
+            m.assertEqual(Int(narrow), 43, "and a short rating falls back to the design width")
         end sub
 
-        @it("resetPlayback stops the trailer")
+        @it("an unrated movie is announced as not rated")
         sub _()
             view = m.newView()
-            video = view.findNode("videoPlayer")
+            movie = m.newMovie()
+            movie.certification = ""
 
-            video.visible = true
+            view.callFunc("applyMovie", movie)
+            view.callFunc("announceScreen")
 
-            view.callFunc("resetPlayback")
-
-            m.assertEqual(video.control, "stop", "the player is stopped")
-            m.assertFalse(video.visible, "and hidden")
-            m.assertEqual(view.findNode("bgPlayTimer").control, "stop", "the ambient countdown is cancelled")
-            m.assertEqual(Int(view.findNode("detailsBack").opacity), 1, "the backdrop comes back")
-            m.assertTrue(view.findNode("meta").visible, "and the chrome is restored")
-        end sub
-
-        @it("back during a trailer restores the details chrome")
-        sub _()
-            view = m.newView()
-            view.callFunc("applyMovie", m.newMovie())
-
-            view.callFunc("showDetailsChrome", false)
-            m.assertFalse(view.findNode("meta").visible, "precondition: chrome hidden")
-
-            view.callFunc("restoreDetails")
-
-            m.assertTrue(view.findNode("meta").visible, "the metadata returns")
-            m.assertTrue(view.findNode("desc").visible)
-            m.assertTrue(view.findNode("playButton").visible)
-            m.assertTrue(view.findNode("playButton").hasFocus(), "and focus lands on play")
-            m.assertEqual(m.announced(), "Movie details", "the return is announced")
-        end sub
-
-        @it("a video error opens the playback dialog")
-        sub _()
-            view = m.newView()
-            view.callFunc("applyMovie", m.newMovie())
-            video = view.findNode("videoPlayer")
-
-            video.state = "error"
-            view.callFunc("onVideoStateChanged")
-
-            m.assertInvalid(view.getScene().dialog, "an ambient failure stays silent")
-            m.assertTrue(view.findNode("playButton").hasFocus(), "but focus is recovered")
-            m.assertEqual(video.control, "stop", "and playback is reset")
-        end sub
-
-        @it("dismissing the dialog restores focus")
-        sub _()
-            view = m.newView()
-            view.callFunc("applyMovie", m.newMovie())
-
-            view.findNode("nextButton").visible = true
-            view.findNode("nextButton").setFocus(true)
-            m.assertFalse(view.findNode("playButton").hasFocus(), "precondition: focus elsewhere")
-
-            view.callFunc("onPlaybackErrorDismissed")
-
-            m.assertTrue(view.findNode("playButton").hasFocus(), "focus returns to play")
-            m.assertInvalid(view.getScene().dialog, "and no dialog is left open")
+            m.assertEqual(m.announced(), "Movie Details. Dune. 2021, not rated, 2h 35m", "N/A is not read aloud")
         end sub
 
     end class

@@ -15,11 +15,7 @@ namespace viewNav
 
         if movie = invalid then return
 
-        viewNav.pushView(view, nav.ViewId.movieDetails, {
-            movie: movie,
-            row: rows.selectedRow,
-            index: rows.selectedIndex
-        })
+        viewNav.pushView(view, nav.ViewId.movieDetails, { movie: movie })
     end sub
 
 end namespace

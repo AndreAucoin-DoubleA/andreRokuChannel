@@ -1,0 +1,10 @@
+namespace player
+
+    interface Params
+        movieId as string
+        optional title as string
+        optional description as string
+        optional backdropUri as string
+    end interface
+
+end namespace

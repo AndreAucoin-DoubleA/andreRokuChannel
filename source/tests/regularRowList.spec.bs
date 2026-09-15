@@ -87,7 +87,6 @@ namespace tests
             m.assertEqual(request.action, "push")
             m.assertEqual(request.view, "MovieDetailsView")
             m.assertEqual(request.params.movie.title, "Ronin")
-            m.assertEqual(request.params.index, 1)
         end sub
     end class
 end namespace

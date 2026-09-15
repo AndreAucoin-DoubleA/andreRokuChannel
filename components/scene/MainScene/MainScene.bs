@@ -110,10 +110,24 @@ sub onDeepLinkResolved(msg as object)
         return
     end if
 
+    movie = task.movie
+
     m.screens.callFunc("pushOnActive", {
         view: nav.ViewId.movieDetails,
-        params: { movie: task.movie, autoPlay: link.autoPlay }
+        params: { movie: movie }
     })
+
+    if link.autoPlay
+        m.screens.callFunc("pushOnActive", {
+            view: nav.ViewId.player,
+            params: {
+                movieId: movie.movieId,
+                title: movie.title,
+                description: movie.description,
+                backdropUri: movie.HDBackgroundImageUrl
+            }
+        })
+    end if
 
     signalLaunchComplete()
 end sub

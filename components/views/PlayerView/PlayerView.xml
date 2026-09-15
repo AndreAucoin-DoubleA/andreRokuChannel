@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component name="PlayerView" extends="BaseView">
+    <script type="text/brightscript" uri="pkg:/components/views/PlayerView/PlayerView.bs"/>
+
+    <interface>
+        <!-- Exposed for tests: playback state and teardown. -->
+        <function name="startPlayback"/>
+        <function name="onVideoStateChanged"/>
+        <function name="onErrorDismissed"/>
+        <function name="revealPicture"/>
+    </interface>
+
+    <children>
+        <Rectangle id="playerBack" width="1920" height="1080" color="0x000000FF"/>
+
+        <Poster
+            id="playerBackdrop"
+            width="1920"
+            height="1080"
+            opacity="0.4"
+            loadDisplayMode="scaleToZoom"/>
+
+        <VideoPlayer
+            id="videoPlayer"
+            width="1920"
+            height="1080"
+            visible="false"/>
+
+        <LoadingIndicator
+            id="videoLoad"
+            translation="[910,490]"
+            showDelay="0"
+            timeout="30"
+            message="Loading video"
+            errorTitle="Playback error"
+            errorMessage="We couldn't play this video. Please try again"/>
+    </children>
+</component>

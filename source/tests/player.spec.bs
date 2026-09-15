@@ -1,0 +1,206 @@
+namespace tests
+
+    @suite("PlayerView")
+    class PlayerViewTests extends rooibos.BaseTestSuite
+
+        @describe("loading, playback and teardown")
+
+        @setup
+        protected override sub setup()
+            m.savedBookmarks = {}
+            registry = bookmarks.section()
+            for each key in registry.GetKeyList()
+                m.savedBookmarks[key] = registry.Read(key)
+            end for
+        end sub
+
+        @teardown
+        protected override sub tearDown()
+            registry = bookmarks.section()
+            for each key in registry.GetKeyList()
+                registry.Delete(key)
+            end for
+            for each key in m.savedBookmarks
+                registry.Write(key, m.savedBookmarks[key])
+            end for
+            registry.Flush()
+        end sub
+
+        @beforeEach
+        protected override sub beforeEach()
+            m.clearBookmarks()
+
+            if not m.global.hasField("contentOffsetX")
+                m.global.addFields({ contentOffsetX: 149.0 })
+            end if
+            m.global.contentOffsetX = 149.0
+
+            probe = CreateObject("roSGNode", "ContentNode")
+            probe.addFields({ request: {}, event: {} })
+
+            if m.global.hasField("speechTask")
+                m.global.speechTask = probe
+            else
+                m.global.addFields({ speechTask: probe })
+            end if
+
+            if m.global.hasField("analyticsTask")
+                m.global.analyticsTask = probe
+            else
+                m.global.addFields({ analyticsTask: probe })
+            end if
+        end sub
+
+        @afterEach
+        protected override sub afterEach()
+            m.clearBookmarks()
+        end sub
+
+        sub clearBookmarks()
+            registry = bookmarks.section()
+            for each key in registry.GetKeyList()
+                registry.Delete(key)
+            end for
+            registry.Flush()
+        end sub
+
+        function newView() as object
+            return CreateObject("roSGNode", "PlayerView")
+        end function
+
+        function params(movieId = "438631" as string) as object
+            return {
+                movieId: movieId,
+                title: "Dune",
+                description: "Paul Atreides leads nomadic tribes.",
+                backdropUri: "https://image.tmdb.org/t/p/w1280/b.jpg"
+            }
+        end function
+
+        function focused() as dynamic
+            return m.global.speechTask.request.focus
+        end function
+
+        @it("viewDidLoad shows the spinner before any picture")
+        sub _()
+            view = m.newView()
+
+            view.callFunc("viewDidLoad", m.params())
+
+            m.assertFalse(view.findNode("videoPlayer").visible, "the video stays hidden while loading")
+            m.assertEqual(view.findNode("playerBackdrop").uri, "https://image.tmdb.org/t/p/w1280/b.jpg", "the backdrop stands in")
+        end sub
+
+        @it("viewDidLoad feeds the overlay from the details page")
+        sub _()
+            view = m.newView()
+
+            view.callFunc("viewDidLoad", m.params())
+            video = view.findNode("videoPlayer")
+
+            m.assertEqual(video.overlayTitle, "Dune")
+            m.assertEqual(video.overlayInfo, "Paul Atreides leads nomadic tribes.")
+            m.assertEqual(video.overlayButtonText, "More Info")
+        end sub
+
+        @it("startPlayback resumes from the stored bookmark")
+        sub _()
+            bookmarks.savePosition("438631", 300.0, 1000.0)
+
+            view = m.newView()
+            view.callFunc("viewDidLoad", m.params())
+            view.callFunc("startPlayback")
+
+            video = view.findNode("videoPlayer")
+
+            m.assertEqual(Int(video.content.playStart), 300, "playback picks up where it left off")
+            m.assertEqual(video.movieId, "438631", "and the player knows what it is tracking")
+            m.assertTrue(video.trackProgress, "progress tracking drives scrub and bookmarks")
+        end sub
+
+        @it("startPlayback begins at zero with no bookmark")
+        sub _()
+            view = m.newView()
+            view.callFunc("viewDidLoad", m.params())
+            view.callFunc("startPlayback")
+
+            m.assertEqual(Int(view.findNode("videoPlayer").content.playStart), 0)
+        end sub
+
+        @it("the picture appears once the stream is playing")
+        sub _()
+            view = m.newView()
+            view.callFunc("viewDidLoad", m.params())
+
+            video = view.findNode("videoPlayer")
+            m.assertFalse(video.visible, "precondition: hidden while buffering")
+
+            video.state = "playing"
+            view.callFunc("onVideoStateChanged")
+
+            m.assertTrue(video.visible, "the video is revealed")
+            m.assertEqual(m.focused(), "Playing", "and the change is announced")
+        end sub
+
+        @it("revealPicture announces only the first time")
+        sub _()
+            view = m.newView()
+            view.callFunc("viewDidLoad", m.params())
+
+            view.callFunc("revealPicture")
+            m.assertEqual(m.focused(), "Playing", "precondition: announced once")
+
+            m.global.speechTask.request = {}
+            view.callFunc("revealPicture")
+
+            m.assertInvalid(m.focused(), "a rebuffer does not nag the screen reader")
+        end sub
+
+        @it("a finished stream pops back to the details page")
+        sub _()
+            view = m.newView()
+            view.callFunc("viewDidLoad", m.params())
+
+            video = view.findNode("videoPlayer")
+            video.state = "finished"
+            view.callFunc("onVideoStateChanged")
+
+            m.assertEqual(video.control, "stop", "the player is stopped")
+            m.assertEqual(view.navRequest.action, "pop", "and the view pops itself")
+        end sub
+
+        @it("dismissing the error pops back to the details page")
+        sub _()
+            view = m.newView()
+            view.callFunc("viewDidLoad", m.params())
+
+            view.callFunc("onErrorDismissed")
+
+            m.assertEqual(view.navRequest.action, "pop")
+        end sub
+
+        @it("viewWillDisappear stops and hides the player")
+        sub _()
+            view = m.newView()
+            view.callFunc("viewDidLoad", m.params())
+            view.callFunc("startPlayback")
+
+            view.callFunc("viewWillDisappear")
+
+            video = view.findNode("videoPlayer")
+            m.assertEqual(video.control, "stop", "playback stops on every exit route")
+            m.assertFalse(video.visible, "and nothing is left on screen")
+        end sub
+
+        @it("a missing movieId does not break playback setup")
+        sub _()
+            view = m.newView()
+
+            view.callFunc("viewDidLoad", { movieId: invalid })
+            view.callFunc("startPlayback")
+
+            m.assertEqual(view.findNode("videoPlayer").movieId, "", "an empty id rather than invalid")
+        end sub
+
+    end class
+end namespace
