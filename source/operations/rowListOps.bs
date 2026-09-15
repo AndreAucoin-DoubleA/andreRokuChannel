@@ -42,7 +42,7 @@ namespace rowListOps
         movie = rowListOps.movieAt(ctx, ctx.rowList.rowItemFocused)
         if movie = invalid then return
 
-        ctx.decor.summaryText = movie.title
+        if ctx.decor <> invalid then ctx.decor.summaryText = movie.title
         rowListOps.announceFocus(ctx)
 
         ctx.top.focusedMovie = movie

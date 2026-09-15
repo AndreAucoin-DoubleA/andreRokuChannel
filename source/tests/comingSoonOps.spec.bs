@@ -23,7 +23,7 @@ namespace tests
 
         @it("every coming-soon view resolves a non-empty title")
         sub _()
-            for each subtype in ["SearchView", "TVView", "SettingsView"]
+            for each subtype in ["SearchView", "SettingsView"]
                 view = CreateObject("roSGNode", subtype)
 
                 m.assertNotInvalid(view, `${subtype} does not exist`)

@@ -51,6 +51,11 @@ namespace tests
             end if
             m.global.favoritesVersion = 0
 
+            if not m.global.hasField("contentOffsetX")
+                m.global.addFields({ contentOffsetX: 149.0 })
+            end if
+            m.global.contentOffsetX = 149.0
+
             probe = CreateObject("roSGNode", "ContentNode")
             probe.addFields({ request: {}, event: {} })
 
@@ -86,7 +91,12 @@ namespace tests
 
         function newMovie(movieId = "438631" as string) as object
             movie = CreateObject("roSGNode", "ContentNode")
-            movie.addFields({ movieId: movieId })
+            movie.addFields({
+                movieId: movieId,
+                certification: "PG-13",
+                runtimeMinutes: 155,
+                cast: "Timothee Chalamet, Rebecca Ferguson, Zendaya"
+            })
             movie.title = "Dune"
             movie.description = "Paul Atreides leads nomadic tribes."
             movie.rating = "8.5"
@@ -202,7 +212,7 @@ namespace tests
             view.callFunc("applyMovie", m.newMovie())
             view.callFunc("announceScreen")
 
-            m.assertEqual(m.announced(), "Movie Details. Dune  -  Rating: 8.5  -  Released: 2021-10-22", "screen name then metadata")
+            m.assertEqual(m.announced(), "Movie Details. Dune  -  2021  -  PG-13  -  2h 35m", "screen name then metadata")
         end sub
 
         @it("nextSibling mid-row returns the next movie")
@@ -235,18 +245,19 @@ namespace tests
 
         @describe("content & playback")
 
-        @it("applyMovie populates title, description and rating")
+        @it("applyMovie populates title, description and metadata")
         sub _()
             view = m.newView()
 
             view.callFunc("applyMovie", m.newMovie())
 
-            m.assertEqual(view.findNode("meta").text, "Dune  -  Rating: 8.5  -  Released: 2021-10-22")
+            m.assertEqual(view.findNode("meta").text, "Dune  -  2021  -  PG-13  -  2h 35m")
             m.assertEqual(view.findNode("desc").text, "Paul Atreides leads nomadic tribes.")
+            m.assertEqual(view.findNode("cast").text, "Starring: Timothee Chalamet, Rebecca Ferguson, Zendaya")
             m.assertEqual(view.findNode("detailsBack").uri, "https://image.tmdb.org/t/p/w1280/b.jpg", "the backdrop follows")
 
             view.callFunc("applyMovie", invalid)
-            m.assertEqual(view.findNode("meta").text, "Dune  -  Rating: 8.5  -  Released: 2021-10-22", "left untouched")
+            m.assertEqual(view.findNode("meta").text, "Dune  -  2021  -  PG-13  -  2h 35m", "left untouched")
         end sub
 
         @it("toggling favorite calls favorites.setFavorite")

@@ -12,7 +12,22 @@ namespace tests
                 vote_average: 8.5,
                 release_date: "2021-10-22",
                 backdrop_path: "/backdrop.jpg",
-                poster_path: "/poster.jpg"
+                poster_path: "/poster.jpg",
+                runtime: 155,
+                release_dates: {
+                    results: [
+                        { iso_3166_1: "GB", release_dates: [{ certification: "12A" }] },
+                        { iso_3166_1: "US", release_dates: [{ certification: "" }, { certification: "PG-13" }] }
+                    ]
+                },
+                credits: {
+                    cast: [
+                        { name: "Timothee Chalamet", character: "Paul Atreides", order: 0 },
+                        { name: "Rebecca Ferguson", character: "Lady Jessica", order: 1 },
+                        { name: "Zendaya", character: "Chani", order: 2 },
+                        { name: "Oscar Isaac", character: "Duke Leto", order: 3 }
+                    ]
+                }
             }
         end function
 
@@ -37,6 +52,44 @@ namespace tests
             m.assertEqual(item.description, "Paul Atreides leads nomadic tribes.")
             m.assertEqual(item.rating, "8.5")
             m.assertEqual(item.releaseDate, "2021-10-22")
+        end sub
+
+        @it("runtimeMinutes and the US certification are populated")
+        sub _()
+            item = movieContent.fromJson(m.fullJson())
+
+            m.assertEqual(item.runtimeMinutes, 155)
+            m.assertEqual(item.certification, "PG-13", "the first non-empty US entry wins over the GB one")
+        end sub
+
+        @it("cast is the first three billed names, comma joined")
+        sub _()
+            item = movieContent.fromJson(m.fullJson())
+
+            m.assertEqual(item.cast, "Timothee Chalamet, Rebecca Ferguson, Zendaya", "the fourth name is dropped")
+        end sub
+
+        @it("a nameless cast entry is skipped rather than leaving a gap")
+        sub _()
+            json = { credits: { cast: [{ name: "Zendaya" }, {}, { name: "Oscar Isaac" }] } }
+
+            m.assertEqual(movieContent.fromJson(json).cast, "Zendaya, Oscar Isaac")
+        end sub
+
+        @it("list results without runtime or certifications fall back to empty values")
+        sub _()
+            item = movieContent.fromJson({ id: 438631, title: "Dune" })
+
+            m.assertEqual(item.runtimeMinutes, 0)
+            m.assertEqual(item.certification, "")
+            m.assertEqual(item.cast, "")
+        end sub
+
+        @it("a country with no US entry yields no certification")
+        sub _()
+            json = { release_dates: { results: [{ iso_3166_1: "FR", release_dates: [{ certification: "16" }] }] } }
+
+            m.assertEqual(movieContent.fromJson(json).certification, "")
         end sub
 
         @it("missing fields become empty strings rather than invalid")

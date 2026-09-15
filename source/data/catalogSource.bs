@@ -1,0 +1,28 @@
+import "pkg:/source/navigation/nav.interface.bs"
+
+namespace catalogSource
+
+    function forView(subtype as string) as object
+        if subtype = nav.ViewId.tv
+            return {
+                content: "catalog",
+                version: "catalogVersion",
+                ready: "catalogReady",
+                loadingMessage: "Loading shows...",
+                errorMessage: "Couldn't load shows"
+            }
+        end if
+
+        return {
+            content: "catalog",
+            version: "catalogVersion",
+            ready: "catalogReady",
+            loadingMessage: "Loading movies...",
+            errorMessage: "Couldn't load movies"
+        }
+    end function
+
+
+
+end namespace
+

@@ -17,7 +17,7 @@ namespace tmdb
     end function
 
     function movieUrl(movieId as string) as string
-        return `${BASE_URL}/movie/${movieId}?api_key=${API_KEY}`
+        return `${BASE_URL}/movie/${movieId}?api_key=${API_KEY}&append_to_response=release_dates,credits`
     end function
 
     function movieImagesUrl(movieId as string) as string

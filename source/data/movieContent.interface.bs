@@ -6,6 +6,9 @@ namespace movieContent
         description as string
         rating as string
         releaseDate as string
+        optional certification as string
+        optional runtimeMinutes as integer
+        optional cast as string
         optional HDPosterUrl as string
         optional HDBackgroundImageUrl as string
         optional audioGuideText as string
@@ -17,6 +20,9 @@ namespace movieContent
         optional overview as dynamic
         optional vote_average as dynamic
         optional release_date as dynamic
+        optional runtime as dynamic
+        optional release_dates as dynamic
+        optional credits as dynamic
         optional backdrop_path as dynamic
         optional poster_path as dynamic
     end interface

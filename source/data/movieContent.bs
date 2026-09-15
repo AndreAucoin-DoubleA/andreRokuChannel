@@ -3,10 +3,18 @@ import "pkg:/source/utils/strings.bs"
 import "pkg:/source/data/movieContent.interface.bs"
 
 namespace movieContent
+
+    const CAST_LIMIT = 3
+
     function fromJson(json as movieContent.TmdbResult) as object
         item = CreateObject("roSGNode", "ContentNode")
 
-        item.AddFields({ movieId: strings.fromValue(json.id) })
+        item.AddFields({
+            movieId: strings.fromValue(json.id),
+            certification: usCertification(json),
+            runtimeMinutes: runtimeMinutes(json),
+            cast: topCast(json)
+        })
 
         item.title = strings.fromValue(json.title)
         item.SetField("description", strings.fromValue(json.overview))
@@ -17,6 +25,44 @@ namespace movieContent
         applyAudioGuide(item, spokenLabel(json))
 
         return item
+    end function
+
+    function runtimeMinutes(json as movieContent.TmdbResult) as integer
+        if json.runtime = invalid then return 0
+
+        return Int(json.runtime)
+    end function
+
+    function usCertification(json as movieContent.TmdbResult) as string
+        if json.release_dates = invalid then return ""
+        if json.release_dates.results = invalid then return ""
+
+        for each country in json.release_dates.results
+            if country.iso_3166_1 = "US"
+                for each release in country.release_dates
+                    cert = strings.fromValue(release.certification)
+                    if cert <> "" then return cert
+                end for
+            end if
+        end for
+
+        return ""
+    end function
+
+    function topCast(json as movieContent.TmdbResult) as string
+        if json.credits = invalid then return ""
+        if json.credits.cast = invalid then return ""
+
+        names = []
+
+        for each person in json.credits.cast
+            if names.Count() >= CAST_LIMIT then exit for
+
+            name = strings.fromValue(person.name)
+            if name <> "" then names.Push(name)
+        end for
+
+        return names.Join(", ")
     end function
 
     sub applyArtwork(item as object, json as movieContent.TmdbResult)

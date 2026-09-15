@@ -69,6 +69,10 @@
             id="desc"
             wrap="true"/>
 
+        <Label
+            id="cast"
+            wrap="true"/>
+
         <TextButton
             id="playButton"
             text="Play"

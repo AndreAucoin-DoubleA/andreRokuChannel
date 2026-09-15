@@ -1,14 +1,16 @@
 import "pkg:/source/theme/theme.bs"
 import "pkg:/source/operations/rowListOps.bs"
 
-const ROW_CLIP = [-24, 0, 1944, 460]
+const CLIP_LEFT = -24
+const CLIP_WIDTH = 1944
+const CLIP_SLACK = 80
 
 sub init()
-    m.rowList = m.top.findNode("rowList")
+    m.ctx = rowListOps.newContext(m.top)
+    m.rowList = m.ctx.rowList
+
     m.focusRing = m.top.findNode("focusRing")
     m.cardBorder = m.top.findNode("cardBorder")
-
-    m.top.clippingRect = ROW_CLIP
 
     t = theme.current()
     m.focusRing.blendColor = t.color("component.regularPoster.focusRingColor", "0xB7BDC5FF")
@@ -18,15 +20,36 @@ sub init()
 
     m.top.observeField("focusedChild", "onRowFocusChanged")
     m.rowList.observeField("focusedChild", "onRowFocusChanged")
+    m.rowList.observeField("rowItemFocused", "onRowItemFocused")
     m.rowList.observeField("rowItemSelected", "onRowItemSelected")
 
+    applyNumRows()
     onRowFocusChanged()
 end sub
 
-sub onContentChanged()
-    if m.rowList = invalid then return
+sub applyNumRows()
+    if m.ctx = invalid then return
 
-    m.rowList.content = m.top.content
+    rows = m.top.numRows
+    if rows < 1 then rows = 1
+
+    m.rowlist.numRows = rows
+
+    rowHeight = m.rowList.itemSize[1]
+    spacing = m.rowlIst.itemSpacing[1]
+    clipHeight = (rows * rowHeight) + ((rows - 1) * spacing) + CLIP_SLACK
+
+    m.top.clippingRect = [CLIP_LEFT, 0, CLIP_WIDTH, clipHeight]
+end sub
+
+sub onNumRowsChanged()
+    applyNumRows()
+end sub
+
+sub onContentChanged()
+    if m.ctx = invalid then return
+
+    rowListOps.applyContent(m.ctx)
 end sub
 
 sub onRowFocusChanged()
@@ -39,10 +62,18 @@ sub onRowFocusChanged()
     m.cardBorder.opacity = lit
 end sub
 
+sub onRowItemFocused()
+    if m.ctx = invalid then return
+
+    rowListOps.rowItemFocused(m.ctx)
+end sub
+
 sub onRowItemSelected()
-    rowListOps.rowItemSelected({ top: m.top, rowList: m.rowList })
+    if m.ctx = invalid then return
+
+    rowListOps.rowItemSelected(m.ctx)
 end sub
 
 function focusRows() as boolean
-    return m.rowList.setFocus(true)
+    return rowListOps.focusRows(m.ctx)
 end function

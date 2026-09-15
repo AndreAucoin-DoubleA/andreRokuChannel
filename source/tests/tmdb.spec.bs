@@ -38,9 +38,9 @@ namespace tests
         end sub
 
         @describe("endpoint urls")
-        @it("movieUrl targets the movie and carries the api key")
+        @it("movieUrl carries the api key and asks for release dates and credits")
         sub _()
-            m.assertEqual(tmdb.movieUrl("603"), "https://api.themoviedb.org/3/movie/603?api_key=488f756dc5932e8f8725809c68f6bf9d")
+            m.assertEqual(tmdb.movieUrl("603"), "https://api.themoviedb.org/3/movie/603?api_key=488f756dc5932e8f8725809c68f6bf9d&append_to_response=release_dates,credits")
         end sub
 
         @it("movieImagesUrl appends the images segment")

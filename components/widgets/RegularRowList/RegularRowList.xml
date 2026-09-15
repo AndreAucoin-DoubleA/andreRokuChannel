@@ -5,6 +5,9 @@
     <interface>
         <field id="content" type="node" onChange="onContentChanged" />
 
+        <field id="numRows" type="integer" value="1" onChange="onNumRowsChanged" />
+
+        <field id="focusedMovie" type="node" alwaysNotify="true"/>
         <field id="selectedMovie" type="node" alwaysNotify="true"/>
         <field id="selectedRow" type="node"/>
         <field id="selectedIndex" type="integer" value="-1"/>

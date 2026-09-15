@@ -1,0 +1,82 @@
+import "pkg:/source/theme/theme.bs"
+import "pkg:/source/data/catalogSource.bs"
+
+sub init()
+    m.source = catalogSource.forView(m.top.subtype())
+
+    m.catalogRows = m.top.findNode("catalogRows")
+    m.loader = m.top.findNode("loader")
+    m.pageBackground = m.top.findNode("pageBackground")
+
+    m.pageBackground.translation = [-m.global.contentOffsetX, 0]
+
+    m.loader.translation = [910 - m.global.contentOffsetX, 490]
+    m.loader.message = m.source.loadingMessage
+    m.loader.errorMessage = m.source.errorMessage
+
+    m.rootContent = m.global.getField(m.source.content)
+    if m.rootContent = invalid then m.rootContent = CreateObject("roSGNode", "ContentNode")
+
+    m.catalogRows.content = m.rootContent
+
+    m.loader.observeField("errorDismissed", "onLoadErrorDismissed")
+    m.catalogRows.observeField("selectedMovie", "onItemSelected")
+
+    m.rowsShown = false
+
+    applyTheme()
+end sub
+
+sub applyTheme()
+    t = theme.current()
+
+    m.pageBackground.color = t.color("color.key.primary", "0x101018FF")
+end sub
+
+sub viewDidLoad(params as object)
+    if m.rootContent.getChildCount() > 0
+        onCatalogArrived()
+        return
+    end if
+
+    m.loader.callFunc("show")
+
+    m.global.observeField(m.source.version, "onCatalogVersionChanged")
+    m.global.observeField(m.source.ready, "onCatalogFinished")
+end sub
+
+sub onCatalogVersionChanged()
+    if m.rowsShown then return
+    if m.rootContent.getChildCount() = 0 then return
+
+    onCatalogArrived()
+end sub
+
+sub onCatalogArrived()
+    m.rowsShown = true
+    m.loader.callFunc("hide")
+
+    if m.top.isInFocusChain() then m.catalogRows.callFunc("focusRows")
+end sub
+
+sub onCatalogFinished()
+    if m.rootContent.getChildCount() > 0 then return
+
+    m.loader.callFunc("showError", m.source.errorMessage)
+end sub
+
+sub onLoadErrorDismissed()
+    popView()
+end sub
+
+function setViewFocus() as boolean
+    return m.catalogRows.callFunc("focusRows")
+end function
+
+sub onItemSelected()
+    pushMovieDetails(m.catalogRows)
+end sub
+
+sub viewWillDisappear()
+    m.loader.callFunc("hide")
+end sub

@@ -5,15 +5,18 @@ import "pkg:/source/services/a11y.bs"
 import "pkg:/source/navigation/nav.interface.bs"
 import "pkg:/source/utils/logger.bs"
 import "pkg:/source/data/trickplay.bs"
+import "pkg:/components/tasks/FetchMovieTask/FetchMovieTask.interface.bs"
 import "pkg:/components/views/MovieDetailsView/MovieDetailsView.interface.bs"
 
 const LOGO_INSET = 80
 const DESC_RIGHT_EDGE = 1530
+const DESC_MAX_LINES = 3
 
 sub init()
     m.top.translation = [-m.global.contentOffsetX, 0]
     m.meta = m.top.findNode("meta")
     m.desc = m.top.findNode("desc")
+    m.cast = m.top.findNode("cast")
     m.scrim = m.top.findNode("scrim")
     m.detailsBack = m.top.findNode("detailsBack")
     m.detailsBottomFade = m.top.findNode("detailsBottomFade")
@@ -55,6 +58,7 @@ sub init()
     m.returnFocus = invalid
     m.errorDialog = invalid
     m.autoPlay = false
+    m.detailsTask = invalid
 
     layoutContent()
     applyTheme()
@@ -67,6 +71,11 @@ sub layoutContent()
 
     m.desc.translation = [m.leftEdge, 520]
     m.desc.width = DESC_RIGHT_EDGE - m.leftEdge
+    m.desc.maxLines = DESC_MAX_LINES
+
+    m.cast.translation = [m.leftEdge, 640]
+    m.cast.width = DESC_RIGHT_EDGE - m.leftEdge
+    m.cast.maxLines = 1
 
     m.button.translation = [m.leftEdge, 700]
     m.restartButton.translation = [m.leftEdge, 790]
@@ -90,6 +99,7 @@ end sub
 sub showDetailsChrome(show as boolean)
     m.meta.visible = show
     m.desc.visible = show
+    m.cast.visible = show
     m.button.visible = show
     m.favButton.visible = show
 
@@ -120,6 +130,9 @@ sub applyTheme()
 
     m.desc.color = t.color("component.movieDetails.descriptionColor", "0xDDE0E4FF")
     m.desc.font = t.font("component.movieDetails.descriptionTypography", "font:MediumSystemFont")
+
+    m.cast.color = t.color("component.movieDetails.castColor", "0xB7BDC5FF")
+    m.cast.font = t.font("component.movieDetails.castTypography", "font:MediumSystemFont")
 end sub
 
 sub viewDidLoad(params as movieDetails.Params)
@@ -146,6 +159,7 @@ end sub
 sub viewWillDisappear()
     resetPlayback()
     closePlaybackError()
+    cancelDetailsFetch()
 end sub
 
 function setViewFocus() as boolean
@@ -156,8 +170,9 @@ end function
 sub applyMovie(movie as object)
     if movie = invalid then return
 
-    m.meta.text = movie.title + "  -  Rating: " + movie.rating + "  -  Released: " + movie.releaseDate
+    m.meta.text = titleWithMeta(movie)
     m.desc.text = movie.description
+    m.cast.text = castLine(movie)
 
     m.backdropUri = ""
     if movie.HDBackgroundImageUrl <> invalid then m.backdropUri = movie.HDBackgroundImageUrl
@@ -168,6 +183,92 @@ sub applyMovie(movie as object)
     if m.currentMovieId = invalid then m.currentMovieId = ""
 
     m.favButton.favorited = favorites.isFavorite(m.currentMovieId)
+
+    requestFullDetails(movie)
+end sub
+
+function releaseYear(releaseDate as dynamic) as string
+    if releaseDate = invalid then return ""
+    if Len(releaseDate) < 4 then return ""
+
+    return Left(releaseDate, 4)
+end function
+
+function runtimeText(minutes as dynamic) as string
+    if minutes = invalid then return ""
+    if minutes <= 0 then return ""
+
+    hours = Int(minutes / 60)
+    mins = minutes MOD 60
+
+    if hours = 0 then return mins.ToStr() + "m"
+    if mins = 0 then return hours.ToStr() + "h"
+
+    return hours.ToStr() + "h " + mins.ToStr() + "m"
+end function
+
+function castLine(movie as object) as string
+    if movie.cast = invalid then return ""
+    if movie.cast = "" then return ""
+
+    return "Starring: " + movie.cast
+end function
+
+function titleWithMeta(movie as object) as string
+    parts = []
+
+    year = releaseYear(movie.releaseDate)
+    if year <> "" then parts.Push(year)
+
+    cert = ""
+    if movie.certification <> invalid then cert = movie.certification
+    if cert <> "" then parts.Push(cert)
+
+    runtime = runtimeText(movie.runtimeMinutes)
+    if runtime <> "" then parts.Push(runtime)
+
+    if parts.Count() = 0 then return movie.title
+
+    return movie.title + "  -  " + parts.Join("  -  ")
+end function
+
+sub requestFullDetails(movie as object)
+    if m.currentMovieId = "" then return
+
+    if movie.runtimeMinutes <> invalid
+        if movie.runtimeMinutes > 0 then return
+    end if
+
+    cancelDetailsFetch()
+
+    task = CreateObject("roSGNode", "FetchMovieTask")
+    task.movieId = m.currentMovieId
+    task.observeField("status", "onFullDetailsResolved")
+    m.detailsTask = task
+    task.control = "RUN"
+end sub
+
+sub cancelDetailsFetch()
+    if m.detailsTask = invalid then return
+
+    m.detailsTask.unobserveField("status")
+    m.detailsTask.control = "stop"
+    m.detailsTask = invalid
+end sub
+
+sub onFullDetailsResolved(msg as object)
+    task = msg.GetRoSGNode()
+    status = msg.GetData()
+
+    m.detailsTask = invalid
+
+    if status <> tasks.Status.ok then return
+    if task.movie = invalid then return
+    if task.movie.movieId <> m.currentMovieId then return
+
+    m.meta.text = titleWithMeta(task.movie)
+    m.cast.text = castLine(task.movie)
+    announceScreen()
 end sub
 
 sub onFavoriteToggled()
