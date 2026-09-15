@@ -1,9 +1,0 @@
-import "pkg:/source/data/movieLogo.bs"
-
-sub init()
-    m.top.functionName = "fetchLogo"
-end sub
-
-sub fetchLogo()
-    m.top.logoUrl = movieLogo.forId(m.top.movieId)
-end sub
