@@ -2,9 +2,15 @@ import "pkg:/source/theme/theme.bs"
 import "pkg:/source/services/a11y.bs"
 import "pkg:/source/operations/buttonOps.bs"
 
+const ICON_SIZE = 48
+const ICON_GAP = 8
+const ICON_PAD_X = 24
+
 sub init()
     m.customButton = m.top.findNode("customButton")
     m.label = m.top.findNode("label")
+    m.icon = m.top.findNode("icon")
+    m.defaultWidth = m.customButton.width
 
     applyTheme()
 
@@ -15,37 +21,141 @@ sub applyTheme()
     t = theme.current()
 
     m.bg = t.color("component.button.bgColor", "0x2A2D32FF")
-    m.bgFocused = t.color("component.button.bgColorFocused", "0x6C3FA0FF")
+    m.bgFocused = t.color("component.button.bgColorFocused", "0x007AFFFF")
     m.labelColor = t.color("component.button.labelColor", "0xB7BDC5FF")
     m.labelColorFocused = t.color("component.button.labelColorFocused", "0xFFFFFFFF")
 
-    m.customButton.height = t.size("component.button.height", 70)
+    m.iconColor = t.color("component.button.iconColor", "0xFFFFFFFF")
+    m.iconColorFocused = t.color("component.button.iconColorFocused", "0x101018FF")
+
     m.label.font = t.font("component.button.labelTypography", "font:MediumBoldSystemFont")
+
+    applyButtonHeight()
 
     t.size("component.button.width", 280)
 
+    layoutButtonContent()
     onFocusChanged()
 end sub
 
 sub onTextChanged()
     m.label.text = m.top.text
+    layoutButtonContent()
+end sub
+
+sub onIconChanged()
+    if m.icon = invalid then return
+
+    m.icon.visible = (m.top.iconUri <> "" or m.top.iconUriFocused <> "")
+
+    applyIconUri()
+    layoutButtonContent()
+end sub
+
+sub applyIconUri()
+    if m.icon = invalid then return
+
+    if m.top.hasFocus() and m.top.iconUriFocused <> ""
+        m.icon.uri = m.top.iconUriFocused
+        return
+    end if
+
+    if m.top.iconUri = "" and m.top.iconUriFocused <> ""
+        m.icon.uri = m.top.iconUriFocused
+        return
+    end if
+
+    m.icon.uri = m.top.iconUri
+end sub
+
+sub applyButtonHeight()
+    buttonHeight = m.top.height
+
+    if buttonHeight <= 0
+        buttonHeight = theme.current().size("component.button.height", 70)
+    end if
+
+    m.customButton.height = buttonHeight
+    m.label.height = buttonHeight
+end sub
+
+sub onHeightChanged()
+    if m.label = invalid then return
+
+    applyButtonHeight()
+    layoutButtonContent()
 end sub
 
 sub onWidthChanged()
     if m.label = invalid then return
-    m.customButton.width = m.top.width
-    m.label.width = m.top.width
+
+    layoutButtonContent()
+end sub
+
+sub layoutButtonContent()
+    if m.label = invalid or m.icon = invalid then return
+
+    ' the requested width is a floor, not a cage - a long label grows the pill
+    floorWidth = m.top.width
+    if floorWidth <= 0 then floorWidth = m.defaultWidth
+
+    height = m.customButton.height
+
+    if not m.icon.visible
+        m.customButton.width = floorWidth
+        m.label.horizAlign = "center"
+        m.label.translation = [0, 0]
+        m.label.width = floorWidth
+        return
+    end if
+
+    ' measure the text with the label auto-sized, never from a width we wrote
+    m.icon.width = ICON_SIZE
+    m.icon.height = ICON_SIZE
+
+    m.label.horizAlign = "left"
+    m.label.width = 0
+
+    textWidth = m.label.localBoundingRect().width
+    total = ICON_SIZE + ICON_GAP + textWidth
+
+    width = floorWidth
+    needed = total + (ICON_PAD_X * 2)
+    if needed > width then width = needed
+
+    m.customButton.width = width
+
+    startX = (width - total) / 2
+
+    m.icon.translation = [startX, (height - ICON_SIZE) / 2]
+    m.label.translation = [startX + ICON_SIZE + ICON_GAP, 0]
+    m.label.width = textWidth
 end sub
 
 sub onFocusChanged()
+    applyIconUri()
+
     if m.top.hasFocus()
-        m.customButton.color = m.bgFocused
+        m.customButton.blendColor = m.bgFocused
         m.label.color = m.labelColorFocused
+        tintIcon(m.iconColorFocused)
         announce()
     else
-        m.customButton.color = m.bg
+        m.customButton.blendColor = m.bg
         m.label.color = m.labelColor
+        tintIcon(m.iconColor)
     end if
+end sub
+
+sub tintIcon(color as dynamic)
+    ' a multi-colour glyph must not be tinted - blendColor multiplies every
+    ' channel, so both its colours would collapse to the same shade
+    if not m.top.iconTint
+        m.icon.blendColor = "0xFFFFFFFF"
+        return
+    end if
+
+    m.icon.blendColor = color
 end sub
 
 sub announce()

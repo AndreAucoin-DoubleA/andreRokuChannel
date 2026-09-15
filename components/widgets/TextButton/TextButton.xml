@@ -5,17 +5,32 @@
     <interface>
         <field id="text" type="string" onChange="onTextChanged"/>
         <field id="audioGuideText" type="string"/>
+        <field id="iconUri" type="string" value="" onChange="onIconChanged"/>
+        <field id="iconUriFocused" type="string" value="" onChange="onIconChanged"/>
+        <field id="iconTint" type="boolean" value="true" onChange="onFocusChanged"/>
         <field id="width" type="float" value="0" onChange="onWidthChanged"/>
+        <field id="height" type="float" value="0" onChange="onHeightChanged"/>
         <field id="selected" type="boolean" alwaysNotify="true"/>
     </interface>
 
     <children>
-        <Rectangle id="customButton" width="280" height="70" color="#2A2D32">
+        <Poster
+            id="customButton"
+            uri="pkg:/assets/images/cta_pill.9.png"
+            width="280"
+            height="70">
+            <Poster
+                id="icon"
+                width="48"
+                height="48"
+                visible="false"/>
+
             <Label
                 id="label"
-                translation="[0,20]"
                 width="280"
-                horizAlign="center"/>
-        </Rectangle>
+                height="70"
+                horizAlign="center"
+                vertAlign="center"/>
+        </Poster>
     </children>
 </component>

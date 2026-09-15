@@ -32,6 +32,7 @@ namespace tests
         @params("color.brand.primary", "0x6C3FA0FF")
         @params("color.grey.850", "0x202226FF")
         @params("color.surface.base", "0x202226FF")
+        @params("component.button.bgcolorfocused", "0x007AFFFF")
         @params("fontfamily.body", "Inter Regular")
         sub _(key as string, expected as string)
             map = tokens.loadTokens(m.realPath())

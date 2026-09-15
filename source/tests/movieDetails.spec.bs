@@ -3,7 +3,7 @@ namespace tests
     @suite("MovieDetailsView")
     class MovieDetailsViewTests extends rooibos.BaseTestSuite
 
-        @describe("focus & a11y order")
+        @describe("a11y")
 
         @setup
         protected override sub setup()
@@ -96,64 +96,6 @@ namespace tests
             return m.global.speechTask.request.context
         end function
 
-        function ids(chain as object) as string
-            out = []
-            for each control in chain
-                out.Push(control.id)
-            end for
-
-            return out.Join(",")
-        end function
-
-        @it("focusChain lists controls in the intended order")
-        sub _()
-            view = m.newView()
-
-            m.assertEqual(m.ids(view.callFunc("focusChain")), "playButton", "play only")
-
-            view.findNode("restartButton").visible = true
-            m.assertEqual(m.ids(view.callFunc("focusChain")), "playButton,restartButton", "restart follows play")
-
-            view.findNode("restartButton").visible = false
-            m.assertEqual(m.ids(view.callFunc("focusChain")), "playButton", "back to play alone")
-        end sub
-
-        function focusedView(startId as string) as object
-            view = m.newView()
-            view.findNode("restartButton").visible = true
-            view.findNode(startId).setFocus(true)
-
-            return view
-        end function
-
-        @it("moveFocus down advances one step")
-        @params("playButton", "restartButton")
-        sub _(startId as string, expectedId as string)
-            view = m.focusedView(startId)
-
-            m.assertTrue(view.callFunc("moveFocus", 1), "the move is handled")
-            m.assertTrue(view.findNode(expectedId).hasFocus(), `${startId} -> ${expectedId}`)
-        end sub
-
-        @it("moveFocus up retreats one step")
-        @params("restartButton", "playButton")
-        sub _(startId as string, expectedId as string)
-            view = m.focusedView(startId)
-
-            m.assertTrue(view.callFunc("moveFocus", -1))
-            m.assertTrue(view.findNode(expectedId).hasFocus(), `${startId} -> ${expectedId}`)
-        end sub
-
-        @it("moveFocus stops at the ends rather than wrapping")
-        @params("playButton", -1)
-        @params("restartButton", 1)
-        sub _(startId as string, delta as integer)
-            view = m.focusedView(startId)
-
-            m.assertFalse(view.callFunc("moveFocus", delta), `${delta} from ${startId} must be unhandled`)
-            m.assertTrue(view.findNode(startId).hasFocus(), "and focus must not move")
-        end sub
-
         @it("announceScreen sends context before item focus")
         sub _()
             view = m.newView()
@@ -170,6 +112,112 @@ namespace tests
         end sub
 
         @describe("content & playback")
+
+        function ids(chain as object) as string
+            out = []
+            for each control in chain
+                out.Push(control.id)
+            end for
+
+            return out.Join(",")
+        end function
+
+        function focusedView(startId as string) as object
+            view = m.newView()
+            view.findNode(startId).setFocus(true)
+
+            return view
+        end function
+
+        @it("focusChain lists the row left to right")
+        sub _()
+            view = m.newView()
+
+            m.assertEqual(m.ids(view.callFunc("focusChain")), "playButton,watchlistButton", "play leads the row")
+
+            view.findNode("watchlistButton").visible = false
+            m.assertEqual(m.ids(view.callFunc("focusChain")), "playButton", "a hidden button leaves the focus order")
+        end sub
+
+        @it("moveFocus right advances along the row")
+        sub _()
+            view = m.focusedView("playButton")
+
+            m.assertTrue(view.callFunc("moveFocus", 1), "the move is handled")
+            m.assertTrue(view.findNode("watchlistButton").hasFocus())
+        end sub
+
+        @it("moveFocus left retreats along the row")
+        sub _()
+            view = m.focusedView("watchlistButton")
+
+            m.assertTrue(view.callFunc("moveFocus", -1))
+            m.assertTrue(view.findNode("playButton").hasFocus())
+        end sub
+
+        @it("moveFocus stops at the ends rather than wrapping")
+        @params("playButton", -1)
+        @params("watchlistButton", 1)
+        sub _(startId as string, delta as integer)
+            view = m.focusedView(startId)
+
+            m.assertFalse(view.callFunc("moveFocus", delta), `${delta} from ${startId} must be unhandled`)
+            m.assertTrue(view.findNode(startId).hasFocus(), "and focus must not move")
+        end sub
+
+        @it("the watchlist button carries the add icon untinted")
+        sub _()
+            button = m.newView().findNode("watchlistButton")
+            icon = button.findNode("icon")
+
+            m.assertEqual(button.iconUri, "pkg:/assets/images/addUnfill/Add_unfill@2x-1.png")
+            m.assertTrue(icon.visible, "the icon shows inside the button")
+            m.assertFalse(button.iconTint, "a two-colour glyph must not be tinted")
+        end sub
+
+        @it("the watchlist icon fills when the button takes focus")
+        sub _()
+            view = m.newView()
+            button = view.findNode("watchlistButton")
+            icon = button.findNode("icon")
+
+            m.assertEqual(icon.uri, "pkg:/assets/images/addUnfill/Add_unfill@2x-1.png", "unfilled at rest")
+
+            button.setFocus(true)
+
+            m.assertEqual(icon.uri, "pkg:/assets/images/addFill/Add_fill@2x-1.png", "filled on focus")
+        end sub
+
+        @it("no row button clips its own content")
+        @params("playButton")
+        @params("watchlistButton")
+        sub _(id as string)
+            button = m.newView().findNode(id)
+            icon = button.findNode("icon")
+
+            m.assertTrue(icon.translation[0] >= 0, `${id}: the icon must start inside the pill`)
+        end sub
+
+        @it("both row buttons are real TextButtons")
+        @params("playButton")
+        @params("watchlistButton")
+        sub _(id as string)
+            button = m.newView().findNode(id)
+
+            m.assertSubType(button, "TextButton", "a bare Group would not focus or fire")
+            m.assertTrue(button.hasField("selected"), "the view observes this field")
+        end sub
+
+        @it("the play button is the focusable TextButton, not a bare Group")
+        sub _()
+            view = m.newView()
+            button = view.findNode("playButton")
+
+            m.assertSubType(button, "TextButton", "a duplicate id would shadow the real button")
+            m.assertTrue(button.hasField("selected"), "onButtonPressed observes this field")
+            view.callFunc("setViewFocus")
+            m.assertTrue(button.hasFocus(), "setViewFocus must land on the real button")
+        end sub
 
         @it("applyMovie populates title, description and metadata")
         sub _()

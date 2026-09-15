@@ -30,11 +30,13 @@ sub init()
     m.detailsBack = m.top.findNode("detailsBack")
     m.detailsBottomFade = m.top.findNode("detailsBottomFade")
 
+    m.buttonRow = m.top.findNode("buttonRow")
+
     m.button = m.top.findNode("playButton")
     m.button.observeField("selected", "onButtonPressed")
 
-    m.restartButton = m.top.findNode("restartButton")
-    m.restartButton.observeField("selected", "onRestartPress")
+    m.watchlistButton = m.top.findNode("watchlistButton")
+    m.watchlistButton.observeField("selected", "onWatchlistPressed")
 
     m.currentMovieId = ""
     m.backdropUri = ""
@@ -45,11 +47,11 @@ sub init()
 end sub
 
 sub layoutContent()
-    m.leftEdge = m.global.contentOffsetX + LOGO_INSET
+    m.leftEdge = 96
 
     m.title.translation = [m.leftEdge, 300]
 
-    m.metaRow.translation = [m.leftEdge, 380]
+    m.metaRow.translation = [m.leftEdge, 390]
 
     m.desc.translation = [m.leftEdge, 440]
     m.desc.width = DESC_RIGHT_EDGE - m.leftEdge
@@ -59,8 +61,7 @@ sub layoutContent()
     m.cast.width = DESC_RIGHT_EDGE - m.leftEdge
     m.cast.maxLines = 1
 
-    m.button.translation = [m.leftEdge, 700]
-    m.restartButton.translation = [m.leftEdge, 790]
+    m.buttonRow.translation = [m.leftEdge, 730]
 end sub
 
 sub renderButtons()
@@ -71,13 +72,6 @@ sub renderButtons()
     else
         m.button.text = "Play"
     end if
-
-    m.restartButton.visible = canResume
-end sub
-
-sub onRestartPress()
-    bookmarks.clear(m.currentMovieId)
-    onButtonPressed()
 end sub
 
 sub applyTheme()
@@ -272,18 +266,35 @@ sub onButtonPressed()
     })
 end sub
 
+sub announceScreen()
+    parts = ["Movie Details"]
+
+    if m.title.text <> "" then parts.Push(m.title.text)
+
+    facts = spokenMeta()
+    if facts <> "" then parts.Push(facts)
+
+    a11y.context(parts.Join(". "))
+end sub
+
+sub onWatchlistPressed()
+    logger.info("MovieDetailsView", `watchlist pressed for ${m.currentMovieId}`)
+end sub
+
 function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
 
-    if key = "down" then return moveFocus(1)
-    if key = "up" then return moveFocus(-1)
+    if key = "right" then return moveFocus(1)
+    if key = "left" then return moveFocus(-1)
 
     return false
 end function
 
 function focusChain() as object
-    chain = [m.button]
-    if m.restartButton.visible then chain.Push(m.restartButton)
+    chain = []
+
+    if m.button.visible then chain.Push(m.button)
+    if m.watchlistButton.visible then chain.Push(m.watchlistButton)
 
     return chain
 end function
@@ -303,14 +314,3 @@ function moveFocus(delta as integer) as boolean
 
     return false
 end function
-
-sub announceScreen()
-    parts = ["Movie Details"]
-
-    if m.title.text <> "" then parts.Push(m.title.text)
-
-    facts = spokenMeta()
-    if facts <> "" then parts.Push(facts)
-
-    a11y.context(parts.Join(". "))
-end sub

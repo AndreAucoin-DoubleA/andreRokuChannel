@@ -70,12 +70,26 @@
             id="cast"
             wrap="true"/>
 
-        <TextButton
-            id="playButton"
-            text="Play"
-            width="260"/>
-
-        <TextButton id="restartButton" text="Start Over" width="260"
-            visible="false"/>
+        <LayoutGroup
+            id="buttonRow"
+            layoutDirection="horiz"
+            vertAlignment="center"
+            itemSpacings="[25]">
+                <TextButton
+                    id="playButton"
+                    text="Play"
+                    width="184"
+                    height="74"
+                    iconUri="pkg:/assets/images/play/Play@2x-1.png"/>
+        
+                <TextButton
+                    id="watchlistButton"
+                    text="Watchlist"
+                    width="184"
+                    height="74"
+                    iconTint="false"
+                    iconUri="pkg:/assets/images/addUnfill/Add_unfill@2x-1.png"
+                    iconUriFocused="pkg:/assets/images/addFill/Add_fill@2x-1.png"/>
+        </LayoutGroup>
     </children>
 </component>

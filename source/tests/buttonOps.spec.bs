@@ -63,6 +63,176 @@ namespace tests
             m.assertEqual(Int(button.findNode("label").width), width, "the label must follow so centring works")
         end sub
 
+        function colorValue(spec as dynamic) as dynamic
+            probe = CreateObject("roSGNode", "Poster")
+            probe.blendColor = spec
+
+            return probe.blendColor
+        end function
+
+        function iconButton(text = "Play" as string) as object
+            button = m.newButton()
+            button.width = 255
+            button.text = text
+            button.iconUri = "pkg:/assets/images/play/Play@2x-1.png"
+
+            return button
+        end function
+
+        @it("no icon leaves the label centred across the whole button")
+        sub _()
+            button = m.newButton()
+            button.width = 255
+            button.text = "Play"
+
+            m.assertFalse(button.findNode("icon").visible, "the icon slot stays out of the way")
+            m.assertEqual(Int(button.findNode("label").width), 255, "the label spans the button")
+            m.assertEqual(button.findNode("label").horizAlign, "center")
+        end sub
+
+        @it("an icon and its label are centred together as a pair")
+        @params("Play")
+        @params("Resume")
+        sub _(text as string)
+            button = m.iconButton(text)
+            icon = button.findNode("icon")
+            label = button.findNode("label")
+
+            m.assertTrue(icon.visible, "the icon shows once a uri is set")
+
+            leftGap = icon.translation[0]
+            rightGap = 255 - (label.translation[0] + label.width)
+
+            m.assertEqual(Int(leftGap), Int(rightGap), `${text}: the icon and label must sit centred as one unit`)
+            m.assertTrue(label.translation[0] > icon.translation[0], "the label follows the icon")
+        end sub
+
+        @it("the icon is centred vertically in the button")
+        sub _()
+            button = m.iconButton()
+            icon = button.findNode("icon")
+            height = button.findNode("customButton").height
+
+            m.assertEqual(Int(icon.translation[1]), Int((height - icon.height) / 2))
+        end sub
+
+        @it("the icon tints dark on focus and light at rest")
+        sub _()
+            t = theme.current()
+            button = m.iconButton()
+            icon = button.findNode("icon")
+
+            m.assertEqual(icon.blendColor, m.colorValue(t.color("component.button.iconColor", "0xFFFFFFFF")), "light while resting")
+
+            button.setFocus(true)
+
+            m.assertEqual(icon.blendColor, m.colorValue(t.color("component.button.iconColorFocused", "0x101018FF")), "dark against the focused pill")
+        end sub
+
+        @it("clearing the icon restores the full width label")
+        sub _()
+            button = m.iconButton()
+
+            button.iconUri = ""
+
+            m.assertFalse(button.findNode("icon").visible)
+            m.assertEqual(Int(button.findNode("label").width), 255, "the label reclaims the button")
+            m.assertEqual(button.findNode("label").horizAlign, "center")
+        end sub
+
+        @it("an explicit height overrides the themed height")
+        sub _()
+            button = m.newButton()
+
+            button.height = 74
+
+            m.assertEqual(Int(button.findNode("customButton").height), 74, "the pill takes the instance height")
+            m.assertEqual(Int(button.findNode("label").height), 74, "and the label follows so vertAlign still centres")
+        end sub
+
+        @it("height 0 falls back to the themed height")
+        sub _()
+            t = theme.current()
+            button = m.newButton()
+
+            m.assertEqual(Int(button.findNode("customButton").height), Int(t.size("component.button.height", 70)), "untouched buttons keep the token height")
+        end sub
+
+        @it("the icon re-centres vertically when the height changes")
+        sub _()
+            button = m.iconButton()
+
+            button.height = 74
+            icon = button.findNode("icon")
+
+            m.assertEqual(Int(icon.translation[1]), Int((74 - icon.height) / 2), "the icon tracks the taller pill")
+        end sub
+
+        @it("a focused icon variant swaps on focus and back")
+        sub _()
+            button = m.newButton()
+            button.iconUri = "pkg:/assets/images/addUnfill/Add_unfill@2x-1.png"
+            button.iconUriFocused = "pkg:/assets/images/addFill/Add_fill@2x-1.png"
+
+            icon = button.findNode("icon")
+            m.assertEqual(icon.uri, button.iconUri, "unfilled while resting")
+
+            button.setFocus(true)
+            m.assertEqual(icon.uri, button.iconUriFocused, "filled while focused")
+
+            button.setFocus(false)
+            m.assertEqual(icon.uri, button.iconUri, "back to unfilled on blur")
+        end sub
+
+        @it("an icon with no focused variant stays put")
+        sub _()
+            button = m.iconButton()
+            icon = button.findNode("icon")
+            resting = icon.uri
+
+            button.setFocus(true)
+
+            m.assertEqual(icon.uri, resting, "buttons like Play keep one glyph")
+        end sub
+
+        @it("the background is the stretchable pill asset")
+        sub _()
+            bg = m.newButton().findNode("customButton")
+
+            m.assertSubType(bg, "Poster", "blendColor tinting needs a Poster, not a Rectangle")
+            m.assertEqual(bg.uri, "pkg:/assets/images/cta_pill.9.png", "a nine-patch keeps the corners crisp at any width")
+        end sub
+
+        @it("focus tints the pill and brightens the label")
+        sub _()
+            t = theme.current()
+            button = m.newButton()
+            bg = button.findNode("customButton")
+            label = button.findNode("label")
+
+            m.assertEqual(bg.blendColor, m.colorValue(t.color("component.button.bgColor", "0x2A2D32FF")), "precondition: resting tint")
+
+            button.setFocus(true)
+
+            m.assertEqual(bg.blendColor, m.colorValue(t.color("component.button.bgColorFocused", "0x007AFFFF")), "the pill tints on focus")
+            m.assertEqual(label.color, m.colorValue(t.color("component.button.labelColorFocused", "0xFFFFFFFF")), "and the label brightens")
+        end sub
+
+        @it("losing focus restores the resting tint")
+        sub _()
+            t = theme.current()
+            button = m.newButton()
+            bg = button.findNode("customButton")
+
+            button.setFocus(true)
+            m.assertNotEqual(bg.blendColor, m.colorValue(t.color("component.button.bgColor", "0x2A2D32FF")), "precondition: focused")
+
+            button.setFocus(false)
+
+            m.assertEqual(bg.blendColor, m.colorValue(t.color("component.button.bgColor", "0x2A2D32FF")), "the resting tint returns")
+            m.assertEqual(button.findNode("label").color, m.colorValue(t.color("component.button.labelColor", "0xB7BDC5FF")))
+        end sub
+
         @it("gaining focus announces the label")
         sub _()
             button = m.newButton()
