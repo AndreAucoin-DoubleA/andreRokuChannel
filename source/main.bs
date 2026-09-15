@@ -24,8 +24,8 @@ sub Main(args as object)
     globals = screen.getGlobalNode()
 
     globals.addFields({
-        contentWidth: 1625.0,
-        contentOffsetX: 405.0,
+        contentWidth: 1771.0,
+        contentOffsetX: 149.0,
         screenReaderOn: deviceInfo.IsAudioGuideEnabled(),
         designTokens: tokens.loadTokens("pkg:/assets/tokens/tokens.json"),
         catalog: CreateObject("roSGNode", "ContentNode"),

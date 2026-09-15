@@ -12,12 +12,10 @@ end sub
 sub applyTheme()
     t = theme.current()
 
-    ' neutral80 / neutral90 are not in tokens.json yet - literals until they are exported
     m.ctx.inkResting = "0xC5C8CAFF"
     m.ctx.inkSelected = "0xE1E5E6FF"
     m.ctx.inkActive = t.color("color.key.primary", "0x101018FF")
 
-    ' neutral100-alpha20 is white at 20% - blendColor carries the alpha through
     m.ctx.discSelected = "0xFFFFFF33"
     m.ctx.discActive = t.color("color.key.secondary", "0x007AFFFF")
 

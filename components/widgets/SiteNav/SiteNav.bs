@@ -22,7 +22,6 @@ sub applyTheme()
     itemHeight = t.size("component.navItem.height", 70)
     m.menuList.itemSize = [itemWidth, itemHeight]
 
-    ' navItem.spacing is not in tokens.json yet - literal until it is exported
     m.menuList.itemSpacing = [0, 20]
 end sub
 

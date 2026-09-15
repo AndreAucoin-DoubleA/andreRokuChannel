@@ -63,30 +63,26 @@
         <Timer id="bgPlayTimer" duration="5" repeat="false"/>
 
         <Label
-            id="meta"
-            translation="[430,550]"/>
+            id="meta"/>
 
         <Label
             id="desc"
-            translation="[430,650]"
-            width="1100"
             wrap="true"/>
 
         <TextButton
             id="playButton"
             text="Play"
-            width="260"
-            translation="[110, 550]"/>
+            width="260"/>
 
         <FavoriteToggle
             id="detailsFav"
             translation="[1740, 550]"/>
 
         <TextButton id="restartButton" text="Start Over" width="260"
-            translation="[110,640]" visible="false"/>
+            visible="false"/>
 
         <TextButton id="nextButton" text="Next in row" width="260"
-            translation="[110,640]" visible="false"/>
+            visible="false"/>
         
         <LoadingIndicator
             id="videoLoad"

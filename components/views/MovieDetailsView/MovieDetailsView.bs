@@ -7,6 +7,9 @@ import "pkg:/source/utils/logger.bs"
 import "pkg:/source/data/trickplay.bs"
 import "pkg:/components/views/MovieDetailsView/MovieDetailsView.interface.bs"
 
+const LOGO_INSET = 80
+const DESC_RIGHT_EDGE = 1530
+
 sub init()
     m.top.translation = [-m.global.contentOffsetX, 0]
     m.meta = m.top.findNode("meta")
@@ -53,7 +56,20 @@ sub init()
     m.errorDialog = invalid
     m.autoPlay = false
 
+    layoutContent()
     applyTheme()
+end sub
+
+sub layoutContent()
+    m.leftEdge = m.global.contentOffsetX + LOGO_INSET
+
+    m.meta.translation = [m.leftEdge, 450]
+
+    m.desc.translation = [m.leftEdge, 520]
+    m.desc.width = DESC_RIGHT_EDGE - m.leftEdge
+
+    m.button.translation = [m.leftEdge, 700]
+    m.restartButton.translation = [m.leftEdge, 790]
 end sub
 
 sub renderButtons()
@@ -67,8 +83,8 @@ sub renderButtons()
 
     m.restartButton.visible = canResume
 
-    m.nextButton.translation = [110, 640]
-    if canResume then m.nextButton.translation = [110, 730]
+    m.nextButton.translation = [m.leftEdge, 790]
+    if canResume then m.nextButton.translation = [m.leftEdge, 880]
 end sub
 
 sub showDetailsChrome(show as boolean)

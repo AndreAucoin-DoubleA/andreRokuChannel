@@ -15,6 +15,21 @@
 
         <Timer id="launchTimeout" duration="8" repeat="false"/>
 
+        <!-- One Animation drives both, so the rail strip and the content panel
+             stay on the same clock when a slide is interrupted. -->
+        <Animation id="railAnim" duration="0.2" easeFunction="outQuad">
+            <FloatFieldInterpolator
+                id="railWidthInterp"
+                key="[0,1]"
+                keyValue="[144,144]"
+                fieldToInterp="navFade.width"/>
+            <Vector2DFieldInterpolator
+                id="railSlideInterp"
+                key="[0,1]"
+                keyValue="[[149,0],[149,0]]"
+                fieldToInterp="screens.translation"/>
+        </Animation>
+
         <Group id="chrome">
             <Rectangle
                 id="navFade"

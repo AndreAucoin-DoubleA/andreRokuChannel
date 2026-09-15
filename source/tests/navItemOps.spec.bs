@@ -28,6 +28,20 @@ namespace tests
             m.assertInvalid(state.disc, "no disc behind a resting item")
         end sub
 
+        @it("labels are hidden whenever the rail does not hold focus")
+        @params(0.0, false, 0.0)
+        @params(1.0, false, 0.0)
+        @params(0.0, true, 1.0)
+        @params(1.0, true, 1.0)
+        sub _(focusPercent as float, listHasFocus as boolean, expected as float)
+            ctx = m.newCtx()
+
+            ctx.top.listHasFocus = listHasFocus
+            ctx.top.focusPercent = focusPercent
+
+            m.assertEqual(navItemOps.stateFor(ctx).labelOpacity, expected)
+        end sub
+
         @it("the current item in a focused rail gets the secondary disc and primary glyph")
         sub _()
             ctx = m.newCtx()

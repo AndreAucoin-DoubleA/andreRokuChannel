@@ -1,11 +1,16 @@
 import "pkg:/source/theme/theme.bs"
 
+const LOGO_INSET = 80
+const HERO_TITLE_RIGHT_EDGE = 1360
+const HERO_DESC_RIGHT_EDGE = 1125
+
 sub init()
     m.poster = m.top.findNode("poster")
     m.scrimHorizontal = m.top.findNode("scrimHorizontal")
     m.scrimVertical = m.top.findNode("scrimVertical")
     m.itemLabel = m.top.findNode("itemLabel")
     m.itemDescription = m.top.findNode("itemDescription")
+    m.cta = m.top.findNode("cta")
     m.ctaFill = m.top.findNode("ctaFill")
     m.ctaLabel = m.top.findNode("ctaLabel")
 
@@ -26,7 +31,20 @@ sub init()
     m.ctaLabelFocused = t.color("component.button.labelColorFocused", "0xFFFFFFFF")
     m.ctaLabel.font = t.font("component.button.labelTypography", "font:MediumBoldSystemFont")
 
+    layoutContent()
     onRowListFocusChanged()
+end sub
+
+sub layoutContent()
+    leftEdge = m.global.contentOffsetX + LOGO_INSET
+
+    m.itemLabel.translation = [leftEdge, 250]
+    m.itemLabel.width = HERO_TITLE_RIGHT_EDGE - leftEdge
+
+    m.itemDescription.translation = [leftEdge, 340]
+    m.itemDescription.width = HERO_DESC_RIGHT_EDGE - leftEdge
+
+    m.cta.translation = [leftEdge, 488]
 end sub
 
 sub onRowListFocusChanged()

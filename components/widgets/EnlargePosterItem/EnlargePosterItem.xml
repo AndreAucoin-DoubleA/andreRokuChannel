@@ -32,8 +32,7 @@
             ellipsizeOnBoundary="true"
             horizAlign="left"
             vertAlign="top"
-            translation="[460,250]"
-            width="900" />
+            />
 
         <Label
             id="itemDescription"
@@ -42,10 +41,11 @@
             ellipsizeOnBoundary="true"
             horizAlign="left"
             vertAlign="top"
-            translation="[460,340]"
-            width="665"/>
+            />
 
-        <Group id="cta" translation="[460,488]">
+        <!-- title / description / cta positions are set in layoutContent() so they
+             stay locked to the Shubi logo's x - do not re-add translation here. -->
+        <Group id="cta">
             <Poster
                 id="ctaFill"
                 uri="pkg:/assets/images/cta_pill.9.png"
