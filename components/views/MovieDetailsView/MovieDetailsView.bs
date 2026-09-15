@@ -61,7 +61,7 @@ sub layoutContent()
     m.cast.width = DESC_RIGHT_EDGE - m.leftEdge
     m.cast.maxLines = 1
 
-    m.buttonRow.translation = [m.leftEdge, 730]
+    m.buttonRow.translation = [m.leftEdge, 740]
 end sub
 
 sub renderButtons()
