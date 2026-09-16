@@ -25,7 +25,7 @@
             rowFocusAnimationStyle="fixedFocusWrap"
             vertFocusAnimationStyle="fixedFocus"
             drawFocusFeedback="false"
-            itemSize="[1679,380]"
+            itemSize="[1800,380]"
             itemSpacing="[0,70]"
             rowItemSize="[[472,318]]"
             rowLabelOffset="[[79,25]]"
