@@ -9,5 +9,6 @@ sub fetchMovie()
     result = movieFetch.forId(m.top.movieId)
 
     if result.movie <> invalid then m.top.movie = result.movie
+    if result.trailers <> invalid then m.top.trailers = result.trailers
     m.top.status = result.status
 end sub

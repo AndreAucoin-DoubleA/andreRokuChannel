@@ -1,0 +1,13 @@
+namespace trailers
+
+    const ROW_TITLE = "Trailers & Extras"
+    const MAX_ITEMS = 8
+
+    interface Video
+        youtubeKey as string
+        kind as string
+        streamUrl as string
+        streamFormat as string
+    end interface
+
+end namespace

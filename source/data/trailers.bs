@@ -1,0 +1,91 @@
+import "pkg:/source/utils/strings.bs"
+import "pkg:/source/data/trailers.interface.bs"
+
+namespace trailers
+
+    const THUMB_BASE = "https://i.ytimg.com/vi/"
+
+    function sampleStreams() as string[]
+        return [
+            "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8"
+            "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8"
+        ]
+    end function
+
+    function streamFor(index as integer) as string
+        streams = sampleStreams()
+
+        return streams[index mod streams.Count()]
+    end function
+
+    function thumbFor(youtubeKey as string) as string
+        if youtubeKey = "" then return ""
+
+        return THUMB_BASE + youtubeKey + "/hqdefault.jpg"
+    end function
+
+    function isPlayable(video as object) as boolean
+        if video = invalid then return false
+        if strings.fromValue(video.site) <> "YouTube" then return false
+
+        return strings.fromValue(video.key) <> ""
+    end function
+
+    function labelFor(video as object) as string
+        name = strings.fromValue(video.name)
+        if name <> "" then return name
+
+        kind = strings.fromValue(video["type"])
+        if kind <> "" then return kind
+
+        return "Trailer"
+    end function
+
+    function itemFrom(video as object, index as integer, backdropUri as string) as object
+        item = CreateObject("roSGNode", "ContentNode")
+
+        item.AddFields({
+            youtubeKey: strings.fromValue(video.key),
+            kind: strings.fromValue(video["type"]),
+            streamUrl: streamFor(index),
+            streamFormat: "hls"
+        })
+
+        item.title = labelFor(video)
+
+        thumb = thumbFor(strings.fromValue(video.key))
+        if thumb = "" then thumb = backdropUri
+
+        item.SetField("HDPosterUrl", thumb)
+        item.SetField("HDBackgroundImageUrl", backdropUri)
+
+        return item
+    end function
+
+    function contentFrom(json as object, backdropUri as string) as object
+        if json = invalid then return invalid
+        if json.videos = invalid then return invalid
+        if json.videos.results = invalid then return invalid
+
+        row = CreateObject("roSGNode", "ContentNode")
+        row.title = ROW_TITLE
+
+        index = 0
+        for each video in json.videos.results
+            if row.getChildCount() >= MAX_ITEMS then exit for
+
+            if isPlayable(video)
+                row.appendChild(itemFrom(video, index, backdropUri))
+                index = index + 1
+            end if
+        end for
+
+        if row.getChildCount() = 0 then return invalid
+
+        root = CreateObject("roSGNode", "ContentNode")
+        root.appendChild(row)
+
+        return root
+    end function
+
+end namespace

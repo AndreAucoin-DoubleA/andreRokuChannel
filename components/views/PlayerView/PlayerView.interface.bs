@@ -5,6 +5,9 @@ namespace player
         optional title as string
         optional description as string
         optional backdropUri as string
+        optional streamUrl as string
+        optional streamFormat as string
+        optional trackProgress as boolean
     end interface
 
 end namespace

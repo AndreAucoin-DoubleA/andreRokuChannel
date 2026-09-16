@@ -19,13 +19,26 @@ sub init()
     m.load.observeField("errorDismissed", "onErrorDismissed")
 
     m.movieId = ""
+    m.streamUrl = STREAM_URL
+    m.streamFormat = "hls"
+    m.trackProgress = true
     m.started = false
     m.pictureShown = false
+
 end sub
 
 sub viewDidLoad(params as player.Params)
     m.movieId = params.movieId
     if m.movieId = invalid then m.movieId = ""
+
+    m.streamUrl = STREAM_URL
+    if params.streamUrl <> invalid and params.streamUrl <> "" then m.streamUrl = params.streamUrl
+
+    m.streamFormat = "hls"
+    if params.streamFormat <> invalid and params.streamFormat <> "" then m.streamFormat = params.streamFormat
+
+    m.trackProgress = true
+    if params.trackProgress <> invalid then m.trackProgress = params.trackProgress
 
     if params.backdropUri <> invalid then m.backdrop.uri = params.backdropUri
     if params.title <> invalid then m.video.overlayTitle = params.title
@@ -50,15 +63,20 @@ end function
 sub startPlayback()
     content = CreateObject("roSGNode", "ContentNode")
 
-    content.url = STREAM_URL
-    content.streamFormat = "hls"
+    content.url = m.streamUrl
+    content.streamFormat = m.streamFormat
     content.ClosedCaptions = true
-    content.playStart = bookmarks.positionFor(m.movieId)
+
+    if m.trackProgress
+        content.playStart = bookmarks.positionFor(m.movieId)
+    else
+        content.playStart = 0
+    end if
 
     logger.info("PlayerView", `resume at ${content.playStart}`)
 
     m.video.movieId = m.movieId
-    m.video.trackProgress = true
+    m.video.trackProgress = m.trackProgress
     m.video.trickplayFeed = trickplay.singleFrameFeed(m.backdrop.uri)
 
     m.video.content = content

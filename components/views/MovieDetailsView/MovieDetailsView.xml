@@ -93,6 +93,10 @@
                     iconUri="pkg:/assets/images/addUnfill/Add_unfill@2x-1.png"
                     iconUriFocused="pkg:/assets/images/addFill/Add_fill@2x-1.png"/>
             </LayoutGroup>
+
+            <RegularRowList
+                id="trailerRows"
+                visible="false"/>
         </Group>
 
         <Animation id="enrichFadeAnim" duration="0.3" easeFunction="outQuad">
@@ -100,6 +104,14 @@
                 key="[0,1]"
                 keyValue="[0,1]"
                 fieldToInterp="detailsContent.opacity"/>
+        </Animation>
+
+        <Animation id="shiftAnim" duration="0.25" easeFunction="outQuad">
+            <Vector2DFieldInterpolator
+                id="shiftInterp"
+                key="[0,1]"
+                keyValue="[[0,0],[0,0]]"
+                fieldToInterp="detailsContent.translation"/>
         </Animation>
 
         <LoadingIndicator

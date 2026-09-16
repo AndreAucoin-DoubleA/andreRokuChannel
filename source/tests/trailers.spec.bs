@@ -1,0 +1,83 @@
+namespace tests
+
+    @suite("trailers")
+    class TrailersTests extends rooibos.BaseTestSuite
+
+        @describe("trailers")
+
+        function youtubeVideo(name as string, key as string) as object
+            return { name: name, key: key, site: "YouTube" }
+        end function
+
+        @it("returns invalid when there are no videos")
+        @params(invalid)
+        @params({})
+        @params({ videos: {} })
+        @params({ videos: { results: [] } })
+        sub _(json as dynamic)
+            m.assertInvalid(trailers.contentFrom(json, "http://x/b.jpg"))
+        end sub
+
+        @it("keeps YouTube entries and drops the rest")
+        sub _()
+            json = { videos: { results: [
+                m.youtubeVideo("Trailer", "abc")
+                { name: "Vimeo one", key: "zzz", site: "Vimeo" }
+                { name: "No key", key: "", site: "YouTube" }
+            ] } }
+
+            root = trailers.contentFrom(json, "http://x/b.jpg")
+            row = root.getChild(0)
+
+            m.assertEqual(row.title, trailers.ROW_TITLE)
+            m.assertEqual(row.getChildCount(), 1)
+            m.assertEqual(row.getChild(0).title, "Trailer")
+        end sub
+
+        @it("falls back to the video type when the name is empty")
+        sub _()
+            json = { videos: { results: [{ name: "", key: "abc", site: "YouTube", type: "Teaser" }] } }
+
+            root = trailers.contentFrom(json, "")
+
+            m.assertEqual(root.getChild(0).getChild(0).title, "Teaser")
+        end sub
+
+        @it("caps the row at MAX_ITEMS")
+        sub _()
+            results = []
+            for i = 0 to trailers.MAX_ITEMS + 5
+                results.Push(m.youtubeVideo("T" + i.ToStr(), "k" + i.ToStr()))
+            end for
+
+            root = trailers.contentFrom({ videos: { results: results } }, "")
+
+            m.assertEqual(root.getChild(0).getChildCount(), trailers.MAX_ITEMS)
+        end sub
+
+        @it("every item carries a playable stream and a thumbnail")
+        sub _()
+            json = { videos: { results: [m.youtubeVideo("T", "abc")] } }
+
+            item = trailers.contentFrom(json, "http://x/b.jpg").getChild(0).getChild(0)
+
+            m.assertEqual(item.streamFormat, "hls")
+            m.assertNotEmpty(item.streamUrl)
+            m.assertEqual(item.HDPosterUrl, "https://i.ytimg.com/vi/abc/hqdefault.jpg")
+            m.assertEqual(item.HDBackgroundImageUrl, "http://x/b.jpg")
+        end sub
+
+        @it("falls back to the backdrop when there is no thumbnail key")
+        sub _()
+            m.assertEqual(trailers.thumbFor(""), "")
+        end sub
+
+        @it("streamFor cycles through the sample list")
+        sub _()
+            count = trailers.sampleStreams().Count()
+
+            m.assertEqual(trailers.streamFor(0), trailers.streamFor(count))
+        end sub
+
+    end class
+end namespace

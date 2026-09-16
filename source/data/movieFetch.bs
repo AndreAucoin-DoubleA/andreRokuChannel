@@ -3,11 +3,13 @@ import "pkg:/source/api/tmdb.bs"
 import "pkg:/source/data/movieContent.bs"
 import "pkg:/source/utils/logger.bs"
 import "pkg:/components/tasks/FetchMovieTask/FetchMovieTask.interface.bs"
+import "pkg:/source/data/trailers.bs"
+import "pkg:/source/utils/strings.bs"
 
 namespace movieFetch
 
     function failure() as object
-        return { status: tasks.Status.failed, movie: invalid }
+        return { status: tasks.Status.failed, movie: invalid, trailers: invalid }
     end function
 
     function forId(movieId as string) as object
@@ -20,7 +22,13 @@ namespace movieFetch
             return failure()
         end if
 
-        return { status: tasks.Status.ok, movie: movieContent.fromJson(json) }
+        movie = movieContent.fromJson(json)
+
+        return {
+            status: tasks.Status.ok,
+            movie: movie,
+            trailers: trailers.contentFrom(json, strings.fromValue(movie.HDBackgroundImageUrl))
+        }
     end function
 
 end namespace

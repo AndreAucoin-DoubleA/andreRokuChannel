@@ -6,6 +6,7 @@ import "pkg:/source/utils/logger.bs"
 import "pkg:/components/tasks/FetchMovieTask/FetchMovieTask.interface.bs"
 import "pkg:/components/views/MovieDetailsView/MovieDetailsView.interface.bs"
 import "pkg:/source/services/watchlist.bs"
+import "pkg:/source/data/trailers.bs"
 
 const LOGO_INSET = 80
 const DESC_RIGHT_EDGE = 1530
@@ -19,6 +20,8 @@ const RATING_UNKNOWN = "N/A"
 const WATCHLIST_ADD_ICON = "pkg:/assets/images/addUnfill/Add_unfill@2x-1.png"
 const WATCHLIST_ADD_ICON_FOCUSED = "pkg:/assets/images/addFill/Add_fill@2x-1.png"
 const WATCHLIST_REMOVE_ICON = "pkg:/assets/images/remove/Remove@2x-1.png"
+
+const CONTENT_SHIFT_Y = -160
 
 
 sub init()
@@ -38,7 +41,12 @@ sub init()
 
     m.detailsLoad = m.top.findNode("detailsLoad")
     m.enrichFadeAnim = m.top.findNode("enrichFadeAnim")
+    m.shiftAnim = m.top.findNode("shiftAnim")
+    m.shiftInterp = m.top.findNode("shiftInterp")
     m.detailsContent = m.top.findNode("detailsContent")
+
+    m.trailerRows = m.top.findNode("trailerRows")
+    m.trailerRows.observeField("selectedMovie", "onTrailerSelected")
 
     m.buttonRow = m.top.findNode("buttonRow")
 
@@ -60,19 +68,21 @@ end sub
 sub layoutContent()
     m.leftEdge = 96
 
-    m.title.translation = [m.leftEdge, 300]
+    m.title.translation = [m.leftEdge, 200]
 
-    m.metaRow.translation = [m.leftEdge, 390]
+    m.metaRow.translation = [m.leftEdge, 290]
 
-    m.desc.translation = [m.leftEdge, 440]
+    m.desc.translation = [m.leftEdge, 340]
     m.desc.width = DESC_RIGHT_EDGE - m.leftEdge
     m.desc.maxLines = DESC_MAX_LINES
 
-    m.cast.translation = [m.leftEdge, 640]
+    m.cast.translation = [m.leftEdge, 540]
     m.cast.width = DESC_RIGHT_EDGE - m.leftEdge
     m.cast.maxLines = 1
 
-    m.buttonRow.translation = [m.leftEdge, 740]
+    m.buttonRow.translation = [m.leftEdge, 640]
+
+    m.trailerRows.translation = [m.leftEdge - 4, 720]
 end sub
 
 sub renderButtons()
@@ -157,6 +167,8 @@ sub viewWillDisappear()
 end sub
 
 function setViewFocus() as boolean
+    applyShift(false, false)
+
     return m.button.setFocus(true)
 end function
 
@@ -164,6 +176,8 @@ sub applyMovie(movie as object)
     if movie = invalid then return
 
     m.movie = movie
+    m.trailerRows.visible = false
+    applyShift(false, false)
     enriched = isEnriched(movie)
 
     m.title.text = movie.title
@@ -259,6 +273,21 @@ sub showContent(animate as boolean)
     m.enrichFadeAnim.control = "start"
 end sub
 
+sub applyShift(shifted as boolean, animate as boolean)
+    target = [0, 0]
+    if shifted then target = [0, CONTENT_SHIFT_Y]
+
+    m.shiftAnim.control = "stop"
+
+    if not animate
+        m.detailsContent.translation = target
+        return
+    end if
+
+    m.shiftInterp.keyValue = [m.detailsContent.translation, target]
+    m.shiftAnim.control = "start"
+end sub
+
 sub sizeRatingPill()
     textWidth = m.ratingText.localBoundingRect().width
 
@@ -317,8 +346,14 @@ sub onFullDetailsResolved(msg as object)
     m.detailsLoad.callFunc("hide")
 
     movie = invalid
-    if status = tasks.Status.ok then movie = task.movie
+    trailerContent = invalid
 
+    if status = tasks.Status.ok
+        movie = task.movie
+        trailerContent = task.trailers
+    end if
+
+    applyTrailers(trailerContent)
     applyFullDetails(movie)
 end sub
 
@@ -378,6 +413,20 @@ end sub
 function onKeyEvent(key as string, press as boolean) as boolean
     if not press then return false
 
+    if key = "down" and not m.trailerRows.isInFocusChain()
+        if not hasTrailers() then return false
+
+        applyShift(true, true)
+
+        return m.trailerRows.callFunc("focusRows")
+    end if
+
+    if key = "up" and m.trailerRows.isInFocusChain()
+        applyShift(false, true)
+
+        return m.button.setFocus(true)
+    end if
+
     if key = "right" then return moveFocus(1)
     if key = "left" then return moveFocus(-1)
 
@@ -408,3 +457,37 @@ function moveFocus(delta as integer) as boolean
 
     return false
 end function
+
+sub applyTrailers(content as object)
+    if content = invalid
+        m.trailerRows.visible = false
+        return
+    end if
+
+    m.trailerRows.content = content
+    m.trailerRows.visible = (content.getChildCount() > 0)
+end sub
+
+function hasTrailers() as boolean
+    if not m.trailerRows.visible then return false
+
+    content = m.trailerRows.content
+    if content = invalid then return false
+
+    return content.getChildCount() > 0
+end function
+
+sub onTrailerSelected()
+    trailer = m.trailerRows.selectedMovie
+    if trailer = invalid then return
+
+    pushView(nav.ViewId.player, {
+        movieId: m.currentMovieId,
+        title: trailer.title,
+        description: m.title.text,
+        backdropUri: trailer.HDBackgroundImageUrl,
+        streamUrl: trailer.streamUrl,
+        streamFormat: trailer.streamFormat,
+        trackProgress: false
+    })
+end sub
