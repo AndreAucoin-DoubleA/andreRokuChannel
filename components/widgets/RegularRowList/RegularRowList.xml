@@ -22,7 +22,7 @@
             showRowLabel="true"
             itemComponentName="RegularRowListItem"
             numRows="1"
-            rowFocusAnimationStyle="fixedFocus"
+            rowFocusAnimationStyle="fixedFocusWrap"
             vertFocusAnimationStyle="fixedFocus"
             drawFocusFeedback="false"
             itemSize="[1679,380]"
