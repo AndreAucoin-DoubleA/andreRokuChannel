@@ -91,5 +91,12 @@
                     iconUri="pkg:/assets/images/addUnfill/Add_unfill@2x-1.png"
                     iconUriFocused="pkg:/assets/images/addFill/Add_fill@2x-1.png"/>
         </LayoutGroup>
+
+        <LoadingIndicator
+            id="detailsLoad"
+            translation="[910,490]"
+            showDelay="0.4"
+            timeout="0"
+            message="Loading movie details"/>
     </children>
 </component>

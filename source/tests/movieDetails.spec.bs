@@ -165,6 +165,31 @@ namespace tests
             m.assertTrue(view.findNode(startId).hasFocus(), "and focus must not move")
         end sub
 
+        @it("fetching the remaining details shows the loader")
+        sub _()
+            view = m.newView()
+            movie = m.newMovie()
+            movie.runtimeMinutes = 0
+
+            view.callFunc("applyMovie", movie)
+            timer = view.findNode("detailsLoad").findNode("delayTimer")
+
+            m.assertEqual(timer.control, "start", "the spinner is armed while the fetch runs")
+
+            view.callFunc("viewWillDisappear")
+
+            m.assertEqual(timer.control, "stop", "and cleared when the fetch is torn down")
+        end sub
+
+        @it("an already enriched movie never shows the loader")
+        sub _()
+            view = m.newView()
+
+            view.callFunc("applyMovie", m.newMovie())
+
+            m.assertNotEqual(view.findNode("detailsLoad").findNode("delayTimer").control, "start", "no fetch means no spinner to flash")
+        end sub
+
         @it("the watchlist button carries the add icon untinted")
         sub _()
             button = m.newView().findNode("watchlistButton")

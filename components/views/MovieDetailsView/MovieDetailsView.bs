@@ -30,6 +30,8 @@ sub init()
     m.detailsBack = m.top.findNode("detailsBack")
     m.detailsBottomFade = m.top.findNode("detailsBottomFade")
 
+    m.detailsLoad = m.top.findNode("detailsLoad")
+
     m.buttonRow = m.top.findNode("buttonRow")
 
     m.button = m.top.findNode("playButton")
@@ -231,10 +233,14 @@ sub requestFullDetails(movie as object)
     task.movieId = m.currentMovieId
     task.observeField("status", "onFullDetailsResolved")
     m.detailsTask = task
+
+    m.detailsLoad.callFunc("show")
     task.control = "RUN"
 end sub
 
 sub cancelDetailsFetch()
+    m.detailsLoad.callFunc("hide")
+
     if m.detailsTask = invalid then return
 
     m.detailsTask.unobserveField("status")
@@ -247,6 +253,7 @@ sub onFullDetailsResolved(msg as object)
     status = msg.GetData()
 
     m.detailsTask = invalid
+    m.detailsLoad.callFunc("hide")
 
     if status <> tasks.Status.ok then return
     if task.movie = invalid then return
