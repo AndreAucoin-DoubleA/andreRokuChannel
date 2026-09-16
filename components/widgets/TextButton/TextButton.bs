@@ -95,7 +95,6 @@ end sub
 sub layoutButtonContent()
     if m.label = invalid or m.icon = invalid then return
 
-    ' the requested width is a floor, not a cage - a long label grows the pill
     floorWidth = m.top.width
     if floorWidth <= 0 then floorWidth = m.defaultWidth
 
@@ -109,7 +108,6 @@ sub layoutButtonContent()
         return
     end if
 
-    ' measure the text with the label auto-sized, never from a width we wrote
     m.icon.width = ICON_SIZE
     m.icon.height = ICON_SIZE
 
@@ -148,8 +146,6 @@ sub onFocusChanged()
 end sub
 
 sub tintIcon(color as dynamic)
-    ' a multi-colour glyph must not be tinted - blendColor multiplies every
-    ' channel, so both its colours would collapse to the same shade
     if not m.top.iconTint
         m.icon.blendColor = "0xFFFFFFFF"
         return

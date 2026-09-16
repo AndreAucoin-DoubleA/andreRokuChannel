@@ -7,6 +7,7 @@
         <function name="moveFocus"/>
         <function name="announceScreen"/>
         <function name="applyMovie"/>
+        <function name="applyFullDetails"/>
     </interface>
 
     <children>
@@ -25,63 +26,64 @@
             loadDisplayMode="scaleToFill"
             uri="pkg:/assets/images/details_bottom_fade_overlay.png"/>
 
-        <Label
-            id="title"
-            width="900"
-            height="66"
-            opacity="1"
-            vertAlign="center"/>
-
-        <LayoutGroup
-            id="metaRow"
-            layoutDirection="horiz"
-            vertAlignment="center"
-            itemSpacings="[25]">
+        <Group id="detailsContent">
             <Label
-                id="metaYear"
-                height="34"
+                id="title"
+                width="900"
+                height="66"
+                opacity="1"
                 vertAlign="center"/>
 
-            <Group id="ratingPill">
-                <Poster
-                    id="ratingPillBg"
-                    width="43"
-                    height="34"
-                    opacity="1"
-                    uri="pkg:/assets/images/rating_pill.9.png"/>
-
+            <LayoutGroup
+                id="metaRow"
+                layoutDirection="horiz"
+                vertAlignment="center"
+                itemSpacings="[25]">
                 <Label
-                    id="ratingText"
+                    id="metaYear"
                     height="34"
                     vertAlign="center"/>
-            </Group>
+
+                <Group id="ratingPill">
+                    <Poster
+                        id="ratingPillBg"
+                        width="43"
+                        height="34"
+                        opacity="1"
+                        uri="pkg:/assets/images/rating_pill.9.png"/>
+
+                    <Label
+                        id="ratingText"
+                        height="34"
+                        vertAlign="center"/>
+                </Group>
+
+                <Label
+                    id="metaRuntime"
+                    height="34"
+                    vertAlign="center"/>
+            </LayoutGroup>
 
             <Label
-                id="metaRuntime"
-                height="34"
-                vertAlign="center"/>
-        </LayoutGroup>
+                id="desc"
+                wrap="true"/>
 
-        <Label
-            id="desc"
-            wrap="true"/>
+            <Label
+                id="cast"
+                wrap="true"/>
 
-        <Label
-            id="cast"
-            wrap="true"/>
-
-        <LayoutGroup
-            id="buttonRow"
-            layoutDirection="horiz"
-            vertAlignment="center"
-            itemSpacings="[25]">
+            <LayoutGroup
+                id="buttonRow"
+                layoutDirection="horiz"
+                vertAlignment="center"
+                itemSpacings="[25]">
                 <TextButton
                     id="playButton"
                     text="Play"
                     width="184"
                     height="74"
                     iconUri="pkg:/assets/images/play/Play@2x-1.png"/>
-        
+
                 <TextButton
                     id="watchlistButton"
                     text="Watchlist"
@@ -90,7 +92,15 @@
                     iconTint="false"
                     iconUri="pkg:/assets/images/addUnfill/Add_unfill@2x-1.png"
                     iconUriFocused="pkg:/assets/images/addFill/Add_fill@2x-1.png"/>
-        </LayoutGroup>
+            </LayoutGroup>
+        </Group>
+
+        <Animation id="enrichFadeAnim" duration="0.3" easeFunction="outQuad">
+            <FloatFieldInterpolator
+                key="[0,1]"
+                keyValue="[0,1]"
+                fieldToInterp="detailsContent.opacity"/>
+        </Animation>
 
         <LoadingIndicator
             id="detailsLoad"

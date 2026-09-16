@@ -264,6 +264,109 @@ namespace tests
             m.assertEqual(view.findNode("metaYear").text, "2021", "left untouched")
         end sub
 
+        @it("the page stays blank behind the spinner until the details land")
+        sub _()
+            view = m.newView()
+            movie = m.newMovie()
+            movie.runtimeMinutes = 0
+
+            view.callFunc("applyMovie", movie)
+
+            m.assertEqual(Int(view.findNode("detailsContent").opacity), 0, "nothing half-drawn while we wait")
+            m.assertTrue(view.findNode("buttonRow").isSubtype("LayoutGroup"), "precondition: the row exists")
+            m.assertNotInvalid(view.findNode("detailsContent").findNode("buttonRow"), "the buttons fade with the rest")
+            m.assertEqual(view.findNode("detailsLoad").findNode("delayTimer").control, "start", "the spinner covers the wait")
+
+            view.callFunc("viewWillDisappear")
+        end sub
+
+        @it("an already complete movie renders at once with no fade")
+        sub _()
+            view = m.newView()
+
+            view.callFunc("applyMovie", m.newMovie())
+
+            m.assertEqual(Int(view.findNode("detailsContent").opacity), 1, "the deep link path must not flash")
+            m.assertNotEqual(view.findNode("enrichFadeAnim").control, "start", "and must not animate")
+        end sub
+
+        @it("the whole block fades in once the details resolve")
+        sub _()
+            view = m.newView()
+            pending = m.newMovie()
+            pending.runtimeMinutes = 0
+
+            view.callFunc("applyMovie", pending)
+            view.callFunc("viewWillDisappear")
+
+            view.callFunc("applyFullDetails", m.newMovie())
+
+            m.assertEqual(view.findNode("enrichFadeAnim").control, "start", "one fade for the whole page")
+            m.assertEqual(view.findNode("ratingText").text, "PG-13", "with every value already in place")
+            m.assertEqual(view.findNode("metaRuntime").text, "2h 35m")
+        end sub
+
+        @it("a pending fetch hides the pill instead of claiming N/A")
+        sub _()
+            view = m.newView()
+            movie = m.newMovie()
+            movie.certification = ""
+            movie.runtimeMinutes = 0
+
+            view.callFunc("applyMovie", movie)
+
+            m.assertFalse(view.findNode("ratingPill").visible, "an unknown rating must not read N/A before we have asked")
+            m.assertEqual(view.findNode("metaYear").text, "2021", "what we already know still renders")
+
+            view.callFunc("viewWillDisappear")
+        end sub
+
+        @it("a resolved fetch fills the pill exactly once")
+        sub _()
+            view = m.newView()
+            pending = m.newMovie()
+            pending.certification = ""
+            pending.runtimeMinutes = 0
+
+            view.callFunc("applyMovie", pending)
+            m.assertFalse(view.findNode("ratingPill").visible, "precondition: waiting")
+
+            view.callFunc("viewWillDisappear")
+            view.callFunc("applyFullDetails", m.newMovie())
+
+            m.assertTrue(view.findNode("ratingPill").visible, "the pill arrives with real data")
+            m.assertEqual(view.findNode("ratingText").text, "PG-13", "and never showed N/A on the way")
+            m.assertEqual(view.findNode("metaRuntime").text, "2h 35m")
+        end sub
+
+        @it("a failed fetch settles on N/A rather than waiting forever")
+        sub _()
+            view = m.newView()
+            movie = m.newMovie()
+            movie.certification = ""
+            movie.runtimeMinutes = 0
+
+            view.callFunc("applyMovie", movie)
+            view.callFunc("viewWillDisappear")
+
+            view.callFunc("applyFullDetails", invalid)
+
+            m.assertTrue(view.findNode("ratingPill").visible, "the pill must not stay hidden forever")
+            m.assertEqual(view.findNode("ratingText").text, "N/A")
+        end sub
+
+        @it("a stale response for another movie is ignored")
+        sub _()
+            view = m.newView()
+            view.callFunc("applyMovie", m.newMovie("438631"))
+
+            other = m.newMovie("999999")
+            other.certification = "R"
+            view.callFunc("applyFullDetails", other)
+
+            m.assertEqual(view.findNode("ratingText").text, "PG-13", "the previous movie must not overwrite this one")
+        end sub
+
         @it("an unrated movie falls back to N/A")
         sub _()
             view = m.newView()
