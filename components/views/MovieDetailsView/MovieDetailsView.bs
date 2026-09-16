@@ -5,6 +5,7 @@ import "pkg:/source/navigation/nav.interface.bs"
 import "pkg:/source/utils/logger.bs"
 import "pkg:/components/tasks/FetchMovieTask/FetchMovieTask.interface.bs"
 import "pkg:/components/views/MovieDetailsView/MovieDetailsView.interface.bs"
+import "pkg:/source/services/watchlist.bs"
 
 const LOGO_INSET = 80
 const DESC_RIGHT_EDGE = 1530
@@ -14,6 +15,11 @@ const RATING_FONT_SIZE = 16
 const RATING_MIN_WIDTH = 43
 const RATING_PAD_X = 14
 const RATING_UNKNOWN = "N/A"
+
+const WATCHLIST_ADD_ICON = "pkg:/assets/images/addUnfill/Add_unfill@2x-1.png"
+const WATCHLIST_ADD_ICON_FOCUSED = "pkg:/assets/images/addFill/Add_fill@2x-1.png"
+const WATCHLIST_REMOVE_ICON = "pkg:/assets/images/remove/Remove@2x-1.png"
+
 
 sub init()
     m.top.translation = [-m.global.contentOffsetX, 0]
@@ -76,6 +82,20 @@ sub renderButtons()
         m.button.text = "Resume"
     else
         m.button.text = "Play"
+    end if
+
+    renderWatchlistButton()
+end sub
+
+sub renderWatchlistButton()
+    if watchlist.contains(m.currentMovieId)
+        m.watchlistButton.text = "Remove"
+        m.watchlistButton.iconUri = WATCHLIST_REMOVE_ICON
+        m.watchlistButton.iconUriFocused = WATCHLIST_REMOVE_ICON
+    else
+        m.watchlistButton.text = "Watchlist"
+        m.watchlistButton.iconUri = WATCHLIST_ADD_ICON
+        m.watchlistButton.iconUriFocused = WATCHLIST_ADD_ICON_FOCUSED
     end if
 end sub
 
@@ -312,6 +332,8 @@ sub applyFullDetails(movie as object)
     if movie.movieId <> m.currentMovieId then return
 
     applyMeta(movie, true)
+    m.title.text = movie.title
+    m.desc.text = movie.description
     m.cast.text = castLine(movie)
     showContent(true)
     announceScreen()
@@ -338,7 +360,19 @@ sub announceScreen()
 end sub
 
 sub onWatchlistPressed()
-    logger.info("MovieDetailsView", `watchlist pressed for ${m.currentMovieId}`)
+    if m.movie = invalid then return
+
+    added = watchlist.toggle(m.movie)
+
+    renderWatchlistButton()
+
+    if added
+        a11y.context(`${m.title.text} added to ${watchlist.ROW_TITLE}`)
+    else
+        a11y.context(`${m.title.text} removed from ${watchlist.ROW_TITLE}`)
+    end if
+
+    logger.info("MovieDetailsView", `watchlist ${added} for ${m.currentMovieId}`)
 end sub
 
 function onKeyEvent(key as string, press as boolean) as boolean

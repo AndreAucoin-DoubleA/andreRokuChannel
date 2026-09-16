@@ -1,5 +1,6 @@
 import "pkg:/source/theme/theme.bs"
 import "pkg:/source/data/catalogSource.bs"
+import "pkg:/source/services/watchlist.bs"
 
 sub init()
     m.source = catalogSource.forView(m.top.subtype())
@@ -33,8 +34,17 @@ sub applyTheme()
     m.pageBackground.color = t.color("color.key.primary", "0x101018FF")
 end sub
 
+function hasCatalogRows() as boolean
+    count = m.rootContent.getChildCount()
+    if watchlist.rowIndex(m.rootContent) = 0 then count = count - 1
+
+    return count > 0
+end function
+
 sub viewDidLoad(params as object)
-    if m.rootContent.getChildCount() > 0
+    watchlist.syncRow(m.rootContent)
+
+    if hasCatalogRows()
         onCatalogArrived()
         return
     end if
@@ -47,7 +57,7 @@ end sub
 
 sub onCatalogVersionChanged()
     if m.rowsShown then return
-    if m.rootContent.getChildCount() = 0 then return
+    if not hasCatalogRows() then return
 
     onCatalogArrived()
 end sub
@@ -60,7 +70,7 @@ sub onCatalogArrived()
 end sub
 
 sub onCatalogFinished()
-    if m.rootContent.getChildCount() > 0 then return
+    if hasCatalogRows() then return
 
     m.loader.callFunc("showError", m.source.errorMessage)
 end sub
@@ -79,4 +89,8 @@ end sub
 
 sub viewWillDisappear()
     m.loader.callFunc("hide")
+end sub
+
+sub viewWillAppear()
+    watchlist.syncRow(m.rootContent)
 end sub

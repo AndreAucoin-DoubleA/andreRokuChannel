@@ -1,4 +1,5 @@
 import "pkg:/source/data/homeRows.bs"
+import "pkg:/source/services/watchlist.bs"
 
 sub init()
     m.enlargeRows = m.top.findNode("enlargeRows")
@@ -41,6 +42,7 @@ sub applyContent()
     if hero <> invalid then m.enlargeRows.content = hero
 
     m.regularRows.content = homeRows.categoryContent(catalogRoot)
+    watchlist.syncRow(m.regularRows.content)
 
     m.contentApplied = true
     m.loader.callFunc("hide")
@@ -66,6 +68,7 @@ sub onLoadErrorDismissed()
 end sub
 
 sub viewWillAppear()
+    watchlist.syncRow(m.regularRows.content)
     reportLaunchContentReady()
 end sub
 

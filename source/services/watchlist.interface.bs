@@ -1,0 +1,14 @@
+namespace watchlist
+
+    const ROW_TITLE = "My Watchlist"
+    const MAX_ENTRIES = 30
+
+    interface Entry
+        movieId as string
+        title as string
+        releaseDate as string
+        rating as string
+        poster as string
+        backdrop as string
+    end interface
+end namespace
