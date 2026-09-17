@@ -1,19 +1,40 @@
+import "pkg:/source/services/bookmarks.interface.bs"
+
 namespace bookmarks
 
     const MIN_RESUME_SECONDS = 5
     const END_THRESHOLD_SECONDS = 10
+    const FIELD_SEPARATOR = "|"
 
     function section() as object
         return CreateObject("roRegistrySection", "bookmarks")
     end function
 
-    function positionFor(movieId as dynamic) as integer
-        if movieId = invalid or movieId = "" then return 0
+    function empty() as bookmarks.Entry
+        return { position: 0, duration: 0 }
+    end function
+
+    function entryFor(movieId as dynamic) as bookmarks.Entry
+        if movieId = invalid or movieId = "" then return empty()
 
         registry = section()
-        if not registry.Exists(movieId) then return 0
+        if not registry.Exists(movieId) then return empty()
 
-        return registry.Read(movieId).ToInt()
+        parts = registry.Read(movieId).Split(FIELD_SEPARATOR)
+        if parts.Count() = 0 then return empty()
+
+        entry = { position: parts[0].ToInt(), duration: 0 }
+        if parts.Count() > 1 then entry.duration = parts[1].ToInt()
+
+        return entry
+    end function
+
+    function positionFor(movieId as dynamic) as integer
+        return entryFor(movieId).position
+    end function
+
+    function durationFor(movieId as dynamic) as integer
+        return entryFor(movieId).duration
     end function
 
     sub savePosition(movieId as dynamic, position as float, duration as float)
@@ -26,7 +47,7 @@ namespace bookmarks
         if position < MIN_RESUME_SECONDS or position > duration - END_THRESHOLD_SECONDS
             registry.Delete(movieId)
         else
-            registry.Write(movieId, Int(position).ToStr())
+            registry.Write(movieId, Int(position).ToStr() + FIELD_SEPARATOR + Int(duration).ToStr())
         end if
 
         registry.Flush()

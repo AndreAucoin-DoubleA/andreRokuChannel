@@ -73,6 +73,24 @@
                 wrap="true"/>
 
             <LayoutGroup
+                id="progressRow"
+                layoutDirection="horiz"
+                vertAlignment="center"
+                itemSpacings="[24]">
+
+                <Group id="progressBar">
+                    <Rectangle id="progressTrack" width="389" height="8"/>
+                    <Rectangle id="progressFill" width="0" height="8"/>
+                </Group>
+
+                <Label
+                    id="progressRemaining"
+                    width="199"
+                    height="32"
+                    vertAlign="center"/>
+            </LayoutGroup>
+
+            <LayoutGroup
                 id="buttonRow"
                 layoutDirection="horiz"
                 vertAlignment="center"

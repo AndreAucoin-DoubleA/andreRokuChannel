@@ -1,0 +1,48 @@
+import "pkg:/source/operations/progressOps.interface.bs"
+
+namespace progressOps
+
+    function durationText(minutes as dynamic) as string
+        if minutes = invalid then return ""
+        if minutes <= 0 then return ""
+
+        hours = Int(minutes / 60)
+        mins = minutes mod 60
+
+        if hours = 0 then return mins.ToStr() + "m"
+        if mins = 0 then return hours.ToStr() + "h"
+
+        return hours.ToStr() + "h " + mins.ToStr() + "m"
+    end function
+
+    function fractionOf(positionSeconds as integer, durationSeconds as integer) as float
+        if durationSeconds <= 0 then return 0.0
+        if positionSeconds <= 0 then return 0.0
+
+        value = positionSeconds / durationSeconds
+
+        if value > 1.0 then return 1.0
+
+        return value
+    end function
+
+    function remainingMinutes(positionSeconds as integer, durationSeconds as integer) as integer
+        remaining = durationSeconds - positionSeconds
+        if remaining <= 0 then return 0
+
+        return Int((remaining + 59) / 60)
+    end function
+
+    function compute(positionSeconds as integer, durationSeconds as integer) as progressOps.Progress
+        if durationSeconds <= 0 or positionSeconds <= 0
+            return { visible: false, fraction: 0.0, remainingText: "" }
+        end if
+
+        return {
+            visible: true,
+            fraction: fractionOf(positionSeconds, durationSeconds),
+            remainingText: durationText(remainingMinutes(positionSeconds, durationSeconds))
+        }
+    end function
+
+end namespace

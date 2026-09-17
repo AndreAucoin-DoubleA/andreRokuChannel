@@ -1,0 +1,8 @@
+namespace bookmarks
+
+    interface Entry
+        position as integer
+        duration as integer
+    end interface
+
+end namespace

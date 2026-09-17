@@ -1,0 +1,9 @@
+namespace progressOps
+
+    interface Progress
+        visible as boolean
+        fraction as float
+        remainingText as string
+    end interface
+
+end namespace

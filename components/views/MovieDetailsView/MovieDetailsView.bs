@@ -7,6 +7,7 @@ import "pkg:/components/tasks/FetchMovieTask/FetchMovieTask.interface.bs"
 import "pkg:/components/views/MovieDetailsView/MovieDetailsView.interface.bs"
 import "pkg:/source/services/watchlist.bs"
 import "pkg:/source/data/trailers.bs"
+import "pkg:/source/operations/progressOps.bs"
 
 const LOGO_INSET = 80
 const DESC_RIGHT_EDGE = 1530
@@ -21,7 +22,8 @@ const WATCHLIST_ADD_ICON = "pkg:/assets/images/addUnfill/Add_unfill@2x-1.png"
 const WATCHLIST_ADD_ICON_FOCUSED = "pkg:/assets/images/addFill/Add_fill@2x-1.png"
 const WATCHLIST_REMOVE_ICON = "pkg:/assets/images/remove/Remove@2x-1.png"
 
-const CONTENT_SHIFT_Y = -160
+const CONTENT_SHIFT_Y = -130
+const PROGRESS_BAR_WIDTH = 389
 
 
 sub init()
@@ -48,6 +50,11 @@ sub init()
     m.trailerRows = m.top.findNode("trailerRows")
     m.trailerRows.observeField("selectedMovie", "onTrailerSelected")
 
+    m.progressRow = m.top.findNode("progressRow")
+    m.progressTrack = m.top.findNode("progressTrack")
+    m.progressFill = m.top.findNode("progressFill")
+    m.progressRemaining = m.top.findNode("progressRemaining")
+
     m.buttonRow = m.top.findNode("buttonRow")
 
     m.button = m.top.findNode("playButton")
@@ -58,6 +65,7 @@ sub init()
 
     m.movie = invalid
     m.currentMovieId = ""
+    m.durationSeconds = 0
     m.backdropUri = ""
     m.detailsTask = invalid
 
@@ -68,21 +76,23 @@ end sub
 sub layoutContent()
     m.leftEdge = 96
 
-    m.title.translation = [m.leftEdge, 200]
+    m.title.translation = [m.leftEdge, 170]
 
-    m.metaRow.translation = [m.leftEdge, 290]
+    m.metaRow.translation = [m.leftEdge, 260]
 
-    m.desc.translation = [m.leftEdge, 340]
+    m.desc.translation = [m.leftEdge, 310]
     m.desc.width = DESC_RIGHT_EDGE - m.leftEdge
     m.desc.maxLines = DESC_MAX_LINES
 
-    m.cast.translation = [m.leftEdge, 540]
+    m.cast.translation = [m.leftEdge, 510]
     m.cast.width = DESC_RIGHT_EDGE - m.leftEdge
     m.cast.maxLines = 1
 
-    m.buttonRow.translation = [m.leftEdge, 640]
+    m.buttonRow.translation = [m.leftEdge, 680]
 
-    m.trailerRows.translation = [m.leftEdge - 4, 720]
+    m.progressRow.translation = [m.leftEdge, 770]
+
+    m.trailerRows.translation = [m.leftEdge - 4, 920]
 end sub
 
 sub renderButtons()
@@ -95,6 +105,7 @@ sub renderButtons()
     end if
 
     renderWatchlistButton()
+    renderProgress()
 end sub
 
 sub renderWatchlistButton()
@@ -138,6 +149,12 @@ sub applyTheme()
 
     m.cast.color = t.color("component.movieDetails.castColor", "0xB7BDC5FF")
     m.cast.font = t.font("component.movieDetails.castTypography", "font:MediumSystemFont")
+
+    m.progressTrack.color = t.color("component.movieDetails.progressTrackColor", "0xC5C8CA80")
+    m.progressFill.color = t.color("component.button.bgColorFocused", "0x007AFFFF")
+
+    m.progressRemaining.color = metaColor
+    m.progressRemaining.font = metaFont
 end sub
 
 function interFont(family as string, size as integer, fallback as dynamic) as object
@@ -178,6 +195,7 @@ sub applyMovie(movie as object)
     m.movie = movie
     m.trailerRows.visible = false
     applyShift(false, false)
+    applyDuration(movie)
     enriched = isEnriched(movie)
 
     m.title.text = movie.title
@@ -209,19 +227,6 @@ function releaseYear(releaseDate as dynamic) as string
     return Left(releaseDate, 4)
 end function
 
-function runtimeText(minutes as dynamic) as string
-    if minutes = invalid then return ""
-    if minutes <= 0 then return ""
-
-    hours = Int(minutes / 60)
-    mins = minutes mod 60
-
-    if hours = 0 then return mins.ToStr() + "m"
-    if mins = 0 then return hours.ToStr() + "h"
-
-    return hours.ToStr() + "h " + mins.ToStr() + "m"
-end function
-
 function castLine(movie as object) as string
     if movie.cast = invalid then return ""
     if movie.cast = "" then return ""
@@ -246,7 +251,7 @@ sub applyMeta(movie as object, resolved as boolean)
         m.ratingPill.visible = true
     end if
 
-    m.metaRuntime.text = runtimeText(movie.runtimeMinutes)
+    m.metaRuntime.text = progressOps.durationText(movie.runtimeMinutes)
 end sub
 
 function isEnriched(movie as object) as boolean
@@ -367,9 +372,11 @@ sub applyFullDetails(movie as object)
     if movie.movieId <> m.currentMovieId then return
 
     applyMeta(movie, true)
+    applyDuration(movie)
     m.title.text = movie.title
     m.desc.text = movie.description
     m.cast.text = castLine(movie)
+    renderProgress()
     showContent(true)
     announceScreen()
 end sub
@@ -490,4 +497,29 @@ sub onTrailerSelected()
         streamFormat: trailer.streamFormat,
         trackProgress: false
     })
+end sub
+
+sub applyDuration(movie as object)
+    m.durationSeconds = 0
+
+    if movie = invalid then return
+    if movie.runtimeMinutes = invalid then return
+    if movie.runtimeMinutes <= 0 then return
+
+    m.durationSeconds = movie.runtimeMinutes * 60
+end sub
+
+sub renderProgress()
+    mark = bookmarks.entryFor(m.currentMovieId)
+
+    duration = mark.duration
+    if duration <= 0 then duration = m.durationSeconds
+
+    state = progressOps.compute(mark.position, duration)
+
+    m.progressRow.visible = state.visible
+    if not state.visible then return
+
+    m.progressFill.width = PROGRESS_BAR_WIDTH * state.fraction
+    m.progressRemaining.text = state.remainingText
 end sub

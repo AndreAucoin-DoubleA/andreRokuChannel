@@ -1,0 +1,65 @@
+namespace tests
+
+    @suite("progressOps")
+    class ProgressOpsTests extends rooibos.BaseTestSuite
+
+        @describe("progressOps")
+
+        @it("formats durations as xh ym")
+        @params(invalid, "")
+        @params(0, "")
+        @params(-5, "")
+        @params(1, "1m")
+        @params(45, "45m")
+        @params(60, "1h")
+        @params(120, "2h")
+        @params(135, "2h 15m")
+        sub _(minutes as dynamic, expected as string)
+            m.assertEqual(progressOps.durationText(minutes), expected)
+        end sub
+
+        @it("fraction is zero when either side is missing")
+        @params(0, 7200)
+        @params(1200, 0)
+        @params(-10, 7200)
+        sub _(position as integer, duration as integer)
+            m.assertEqual(progressOps.fractionOf(position, duration), 0.0)
+        end sub
+
+        @it("fraction clamps at 1.0 when position overruns duration")
+        sub _()
+            m.assertEqual(progressOps.fractionOf(9000, 7200), 1.0)
+        end sub
+
+        @it("fraction divides as floating point")
+        sub _()
+            m.assertEqual(progressOps.fractionOf(3600, 7200), 0.5)
+        end sub
+
+        @it("remaining minutes round up")
+        @params(7200, 7200, 0)
+        @params(7110, 7200, 2)
+        @params(7170, 7200, 1)
+        @params(3600, 7200, 60)
+        sub _(position as integer, duration as integer, expected as integer)
+            m.assertEqual(progressOps.remainingMinutes(position, duration), expected)
+        end sub
+
+        @it("compute hides the bar with no position or no duration")
+        @params(0, 7200)
+        @params(1200, 0)
+        sub _(position as integer, duration as integer)
+            m.assertFalse(progressOps.compute(position, duration).visible)
+        end sub
+
+        @it("compute reports fraction and remaining text together")
+        sub _()
+            state = progressOps.compute(3600, 7200)
+
+            m.assertTrue(state.visible)
+            m.assertEqual(state.fraction, 0.5)
+            m.assertEqual(state.remainingText, "1h")
+        end sub
+
+    end class
+end namespace

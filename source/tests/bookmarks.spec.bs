@@ -127,8 +127,9 @@ namespace tests
         sub _(position as float, expected as integer)
             bookmarks.savePosition("tst-1", position, 100.0)
 
-            m.assertEqual(m.storedRaw("tst-1"), expected.ToStr(), "stored as a truncated string")
+            m.assertEqual(m.storedRaw("tst-1"), expected.ToStr() + "|100", "position and duration, both truncated")
             m.assertEqual(bookmarks.positionFor("tst-1"), expected)
+            m.assertEqual(bookmarks.durationFor("tst-1"), 100)
         end sub
 
         @it("a duration of zero or less is ignored")
@@ -168,6 +169,25 @@ namespace tests
 
             m.assertEqual(m.storedRaw("tst-2"), "7", "clear should not touch other ids")
             m.assertEqual(m.keyCount(), 1)
+        end sub
+
+        @it("a legacy value with no duration still reads back")
+        sub _()
+            m.seed("tst-1", "42")
+
+            m.assertEqual(bookmarks.positionFor("tst-1"), 42)
+            m.assertEqual(bookmarks.durationFor("tst-1"), 0, "no duration recorded yet")
+        end sub
+
+        @it("entryFor is zeroed for unknown and empty ids")
+        @params(invalid)
+        @params("")
+        @params("tst-never-written")
+        sub _(movieId as dynamic)
+            entry = bookmarks.entryFor(movieId)
+
+            m.assertEqual(entry.position, 0)
+            m.assertEqual(entry.duration, 0)
         end sub
 
         @it("save then read round-trips the value")
